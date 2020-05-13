@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    #spotter {
+        margin: -10px;
+        width: 500px;
+        height: 500px;
+        border: 1px solid black;
+    }
+</style>
+<body>
+    <div id="spotter">
+
+    </div>
+</body>
+<script>
+    let spotter = document.getElementById("spotter");
+    spotter.addEventListener("click", function(e) {
+        let x = e.clientX;
+        let y = e.clientY;
+        let el = document.createElement("DIV");
+        el.style.borderRadius = 50+'%';
+        el.style.position = "absolute";
+        el.style.left = x+'px';
+        el.style.top = y+'px';
+        el.style.height = '10px';
+        el.style.width = '10px';
+        el.style.backgroundColor = "red";
+        document.getElementsByTagName("body")[0].appendChild(el);
+        console.log(x, y, el);
+    })
+</script>
+</html>
