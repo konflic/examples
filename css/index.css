@@ -73,3 +73,7 @@ table th:hover, td:hover {
 div.margins {
     margin: 10px;
 }
+
+.length {
+  max-width: 350px;
+}
