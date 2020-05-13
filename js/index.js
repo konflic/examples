@@ -26,7 +26,7 @@ function loadXMLDoc() {
     }
   };
 
-  xhttp.open("GET", "data.json", true);
+  xhttp.open("GET", "data/data.json", true);
   xhttp.send();
 }
 

@@ -1,2 +1,3 @@
 # some_app
-This is app is for testing purposes
+
+This is app is made for testing purposes
