@@ -8,7 +8,7 @@
     padding: 10px;
     border: 1px solid blue;
     border-radius: 10px;
-    outline: 0;
+    outline: none;
     overflow: scroll;
 }
 
@@ -16,7 +16,7 @@
     height: 400px;
     width: 500px;
     padding: 5px;
-    border: 1px solid gray;
     outline: 0;
     overflow: scroll;
+    outline: none;
 }
