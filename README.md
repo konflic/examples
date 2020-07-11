@@ -1,5 +1,5 @@
 # some_app
 
-This is app is made for testing purposes
+Application for frontend testing examples.
 
-Link: https://konflic.github.io/some_app/
+Link: https://konflic.github.io/front_example/.
