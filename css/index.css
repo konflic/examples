@@ -18,7 +18,7 @@
     display: none;
 }
 
-.hide {
+.hide_with_opacity {
     opacity: 0;
 }
 
