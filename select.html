@@ -1,31 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select examples</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select examples</title>
 </head>
+
 <body>
 
+  <h1>Стандартные элементы</h1>
+
+  <div>
     <select name="select" id="example">
-        <option value="one">One</option>
-        <option value="two">Two</option>
-        <option value="three">Three</option>
-        <option value="four">Four</option>
-        <option value="five">Five</option>
-        <option value="six">Six</option>
+      <option value="one">One</option>
+      <option value="two">Two</option>
+      <option value="three">Three</option>
+      <option value="four">Four</option>
+      <option value="five">Five</option>
+      <option value="six">Six</option>
     </select>
-
+  </div>
+  <br>
+  <div class="block">
     <div>
-        <input type="checkbox" id="scales" name="scales"
-               checked>
-        <label for="scales">Scales</label>
-      </div>
-      
-      <div>
-        <input type="checkbox" id="horns" name="horns">
-        <label for="horns">Horns</label>
-      </div>
-
+      <input type="checkbox" id="scales" name="scales" checked>
+      <label for="scales">Деньги есть</label>
+    </div>
+    <div>
+      <input type="checkbox" id="horns" name="horns">
+      <label for="horns">Денег нет</label>
+    </div>
+    <div>
+      <input type="checkbox" id="horns" name="horns">
+      <label for="horns">Есть биткоины</label>
+    </div>
+  </div>
+  <br>
+  <div>
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label><br>
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label><br>
+    <input type="radio" id="other" name="gender" value="other">
+    <label for="other">Other</label>
+  </div>
 </body>
+
 </html>
