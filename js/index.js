@@ -42,9 +42,9 @@ var modal = document.getElementById("myModal");
 var btn = document.getElementById("myBtn");
 // Get the <span> element that closes the modal
 var span = document.getElementsByClassName("close")[0];
+
 // When the user clicks the button, open the modal
 btn.onclick = function() {
-console.log("here!");
   modal.style.display = "block";
 }
 // When the user clicks on <span> (x), close the modal
@@ -57,3 +57,9 @@ window.onclick = function(event) {
     modal.style.display = "none";
   }
 }
+
+// Click on disabled button
+var disabled = document.getElementById("disabled");
+disabled.addEventListener("click", function() {
+  modal.style.display = "block";
+});
