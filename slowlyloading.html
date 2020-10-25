@@ -2,10 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Slow loading</title>
+    <title>loading...</title>
 </head>
 <style>
-
+.box {
+  height: 100px;
+  width: 250px;
+  padding: 25px;
+  background-color: cyan;
+}
 </style>
 <body>
 <div id="content">...loading...</div>
@@ -19,11 +24,18 @@
       setTimeout(function() {
         header = document.createElement("H1");
         header.setAttribute("id", "header");
-        header.innerText = "Header of else page";
+        header.innerText = "Header of Slow page";
         document.getElementsByTagName("body")[0].prepend(header);
+
         setTimeout(function() {
-            document.getElementById("content").innerText = "This is else page content.";
+            var content = document.createElement("DIV");
+            content.setAttribute("class", "box");
+            content.innerText = "This is else page content.";
+            document.getElementById("content").innerText = '';
+            document.getElementById("content").appendChild(content);
+            document.title = "Loaded!"
         }, 3000);
+
       }, 2800);
 
 </script>
