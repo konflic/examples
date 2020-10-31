@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>iframe</title>
+</head>
+<body>
+    <div><a id="main" href="#">I am within main context!</a></div>
+    <iframe id="earniphone" width="500px" height="600px" src="http://earniphone.ru"></iframe>
+    <iframe id="html" width="500px" height="600px" src="https://demo.opencart.com/"></iframe>
+    <iframe name="avito" width="500px" height="600px" src="https://www.selenium.dev"></iframe>
+</body>
+<script>
+    var main = document.getElementById("main");
+    main.addEventListener("click", function() {
+       alert("You are here!")
+    });
+</script>
+</html>
