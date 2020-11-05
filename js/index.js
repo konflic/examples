@@ -62,4 +62,19 @@ window.onclick = function(event) {
 var disabled = document.getElementById("disabled");
 disabled.addEventListener("click", function() {
   modal.style.display = "block";
+  modal.getElementById("modal-text").innerText = "Hello from disabled!";
+});
+
+// Click on hidden button
+var hidden = document.getElementById("hidden");
+hidden.addEventListener("click", function() {
+  modal.style.display = "block";
+  modal.getElementById("modal-text").innerText = "Hello from hidden button!";
+});
+
+// Click on hidden button
+var opacity = document.getElementById("opacity");
+opacity.addEventListener("click", function() {
+  modal.style.display = "block";
+  document.getElementById("modal-text").innerText = "Hello from opacity button!";
 });
