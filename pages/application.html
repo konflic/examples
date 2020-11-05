@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Example Application</title>
+</head>
+<body>
+    <div id="login-form">
+        <div>
+            <input type="text" name="login">
+        </div>
+        <div>
+            <input type="text" name="password">
+        </div>
+        <input id="auth" type="submit" value="Submit">
+    </div>
+</body>
+<script>
+
+    function draw_app() {
+
+    }
+
+    function authorize() {
+        var _login = document.getElementsByName("login")[0].value;
+        var _password = document.getElementsByName("password")[0].value;
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.open("LOGIN", "https://my-api-examaple.herokuapp.com/api/auth/login", true);
+
+        xhttp.onreadystatechange = function (e) {
+            if (this.readyState == this.HEADERS_RECEIVED && this.status == 200) {
+                let obj = JSON.parse(this.responseText);
+                if (obj.status == "authorized") {
+                    document.getElementById("login-form").remove();
+                }
+                var cookies = xhttp.getResponseHeader("Set-Cookie");
+                console.log(cookies);
+            }
+        };
+        xhttp.send(JSON.stringify({login: _login, password: _password}));
+    };
+
+    var auth_btn = document.getElementById("auth");
+    auth_btn.addEventListener("click", function(e) {
+        authorize();
+    });
+
+</script>
+</html>

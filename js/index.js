@@ -1,35 +1,5 @@
 var hidden = document.getElementsByClassName("hide")[0];
 
-hidden.addEventListener("mouseover", function(e) {
-    e.target.classList.remove("hide");
-    e.target.className = "btn btn-success"
-});
-
-function loadXMLDoc() {
-  var xhttp = new XMLHttpRequest();
-
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      let obj = JSON.parse(this.responseText);
-      let element = document.createElement(obj.tag);
-      element.className = obj.classes;
-      element.innerText = obj.text;
-      element.style.display = obj.display;
-      element.addEventListener("click", function(e) {
-        setTimeout(function() {
-          e.target.parentElement.firstElementChild.remove();
-        }, 1000);
-      });
-      setTimeout(function() {
-        document.getElementById("demo").appendChild(element);
-      }, 2000);
-    }
-  };
-
-  xhttp.open("GET", "data/data.json", true);
-  xhttp.send();
-}
-
 let table = document.getElementsByClassName("table")[0];
 
 table.addEventListener("click", function(e) {

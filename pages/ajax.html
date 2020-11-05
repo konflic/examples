@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajax</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="../css/index.css">
+</head>
+
+<body>
+    <h1>Ajax example</h1>
+    <div id="demo" class="margins">
+        <button name="showjsbutton" type="button" onclick="loadXMLDoc()">Ajax Request</button>
+        <div id="results"></div>
+    </div>
+</body>
+<script>
+    function loadXMLDoc() {
+        var xhttp = new XMLHttpRequest();
+
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                let obj = JSON.parse(this.responseText);
+                let element = document.createElement(obj.tag);
+                element.className = obj.classes;
+                element.innerText = obj.text;
+                element.style.display = obj.display;
+                element.addEventListener("click", function (e) {
+                    setTimeout(function () {
+                        e.target.parentElement.firstElementChild.remove();
+                    }, 900);
+                });
+                setTimeout(function () {
+                    document.getElementById("results").appendChild(element);
+                }, 2000);
+            }
+        };
+
+        xhttp.open("GET", "https://my-api-examaple.herokuapp.com/api/info/data", true);
+        xhttp.send();
+    }
+</script>
+</html>
