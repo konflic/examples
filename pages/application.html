@@ -30,7 +30,7 @@
         xhttp.open("LOGIN", "https://my-api-examaple.herokuapp.com/api/auth/login", true);
 
         xhttp.onreadystatechange = function (e) {
-            if (this.readyState == this.HEADERS_RECEIVED && this.status == 200) {
+            if (this.readyState == 2 && this.status == 200) {
                 let obj = JSON.parse(this.responseText);
                 if (obj.status == "authorized") {
                     document.getElementById("login-form").remove();
