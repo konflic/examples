@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,10 +10,18 @@
     .content {
         text-align: center;
     }
+
     .button {
-        background-color: ivory;
+        font-size: 1em;
         padding: 10px;
+        color: black;
+        border: 2px solid black;
+        text-decoration: none;
+        cursor: pointer;
+        outline: 0;
+        font-family: Tahoma, Arial, sans-serif;
     }
+
     .result {
         height: 100px;
         width: 250px;
@@ -21,7 +30,61 @@
         line-height: 100px;
         margin-top: 15px;
     }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.7);
+        transition: opacity 500ms;
+        visibility: hidden;
+        opacity: 0;
+    }
+
+    .overlay:target {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .popup {
+        margin: 70px auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 5px;
+        width: 30%;
+        position: relative;
+        transition: all 5s ease-in-out;
+    }
+
+    .popup h2 {
+        margin-top: 0;
+        color: #333;
+        font-family: Tahoma, Arial, sans-serif;
+    }
+
+    .popup .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        transition: all 200ms;
+        font-size: 30px;
+        font-weight: bold;
+        text-decoration: none;
+        color: #333;
+    }
+
+    .popup .close:hover {
+        color: #06D85F;
+    }
+
+    .popup .content {
+        max-height: 30%;
+        overflow: auto;
+    }
 </style>
+
 <body>
     <div class="content">
         <h1>Alerts examples</h1>
@@ -29,8 +92,20 @@
             <button class="button" id="basic">Basic</button>
             <button class="button" id="confirm">Confirm</button>
             <button class="button" id="prompt">Prompt</button>
+            <a class="button" href="#popup1">Let me Pop up</a>
         </div>
         <span id="result" class="result"></span>
+
+        <div id="popup1" class="overlay">
+            <div class="popup">
+                <h2>Here i am</h2>
+                <a class="close" href="#">&times;</a>
+                <div class="content">
+                    Thank to pop me out of that button, but now i'm done so you can close this window.
+                </div>
+            </div>
+        </div>
+
     </div>
 </body>
 <script>
@@ -38,26 +113,28 @@
     var _basic = document.getElementById("basic");
     var _confirm = document.getElementById("confirm");
     var _prompt = document.getElementById("prompt");
+    var _custom = document.getElementById("custom");
 
     function set_result_text(text) {
         var result = document.getElementById("result");
         result.innerText = text;
     }
 
-    _basic.addEventListener("click", function() {
+    _basic.addEventListener("click", function () {
         var result = alert("I am basic alert!");
         set_result_text(result);
     });
 
-    _confirm.addEventListener("click", function() {
+    _confirm.addEventListener("click", function () {
         var result = confirm("I am not against tracking me!");
         set_result_text(result);
     });
 
-    _prompt.addEventListener("click", function() {
+    _prompt.addEventListener("click", function () {
         var result = prompt("How old are you?", 100);
         set_result_text(result);
     });
 
 </script>
+
 </html>
