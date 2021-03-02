@@ -4,13 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Example Application</title>
+    <style>
+        .field {
+            margin-bottom: 10px;
+        }
+        #login-form {
+            display: inline-block;
+            padding: 10px;
+        }
+    </style>
 </head>
 <body>
+    <h2>Authorization</h2>
     <div id="login-form">
-        <div>
+        <div class="field">
             <input type="text" name="login">
         </div>
-        <div>
+        <div class="field">
             <input type="text" name="password">
         </div>
         <input id="auth" type="submit" value="Submit">
@@ -18,8 +28,17 @@
 </body>
 <script>
 
-    function draw_app() {
+    function draw_result(success) {
+        let text = "Not Authorized!";
+        let body = document.getElementsByTagName("body")[0];
+        
+        if (success) {
+            text = "Authorized!"
+        }
 
+        let status_div = document.createElement("DIV");
+        status_div.innerHTML = "<p>" + text + "</p>";
+        body.appendChild(status_div);
     }
 
     function authorize() {
@@ -30,19 +49,26 @@
         xhttp.open("LOGIN", "https://my-api-examaple.herokuapp.com/api/auth/login", true);
 
         xhttp.onreadystatechange = function (e) {
-            if (this.readyState == 2 && this.status == 200) {
-                let obj = JSON.parse(this.responseText);
-                if (obj.status == "authorized") {
+            if (this.readyState == XMLHttpRequest.DONE) {
+
+                let response_data = JSON.parse(this.responseText);
+
+                document.cookie = "user=John;Secure;";
+    
+                if (response_data.status.includes("authorized")) {
                     document.getElementById("login-form").remove();
+                    draw_result(success=true);
+                } else {
+                    document.getElementById("login-form").style.backgroundColor = "red";
                 }
-                var cookies = xhttp.getResponseHeader("Set-Cookie");
-                console.log(cookies);
             }
         };
+
         xhttp.send(JSON.stringify({login: _login, password: _password}));
     };
 
     var auth_btn = document.getElementById("auth");
+
     auth_btn.addEventListener("click", function(e) {
         authorize();
     });
