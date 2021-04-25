@@ -31,23 +31,23 @@
 }
 
 .swiper-viewport .swiper-button-prev {
-    /* opacity: .7; */
+    opacity: .7;
     left: 10px
 }
 
 .swiper-viewport .swiper-button-next {
-    /* opacity: .7; */
+    opacity: .7;
     right: 10px
 }
 
 @media(min-width:768px) {
     .swiper-viewport .swiper-button-prev {
-        /* opacity: 0; */
+        opacity: 1;
         left: -20px
     }
 
     .swiper-viewport .swiper-button-next {
-        /* opacity: 0; */
+        opacity: 1;
         right: -20px
     }
 
