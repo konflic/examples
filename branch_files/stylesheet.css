@@ -144,6 +144,11 @@ div.required .control-label:before {
     background-repeat: repeat-x
 }
 
+#top #form-currency .dropdown-menu {
+    /* Специально сломан паддинг */
+    padding: 20px 0;
+}
+
 #top .btn-link,
 #top-links li,
 #top-links a {
