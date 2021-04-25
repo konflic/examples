@@ -35,6 +35,7 @@ function append_div(e) {
     let div = create_div(e.target.init_x, e.target.init_y, final_x, final_y);
     board.appendChild(div);
     board.removeEventListener("mouseup", append_div);
+    document.title = count + " divs"; 
 }
 
 board.addEventListener("mousedown", function (e) {
