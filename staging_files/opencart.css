@@ -52,12 +52,12 @@
     }
 
     .swiper-viewport:hover .swiper-button-prev {
-        /* opacity: .7; */
+        opacity: .7;
         left: 10px
     }
 
     .swiper-viewport:hover .swiper-button-next {
-        /* opacity: .7; */
+        opacity: .7;
         right: 10px
     }
 }
