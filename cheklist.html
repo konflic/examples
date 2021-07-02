@@ -1,1 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cheklist</title>
+    <style>
+        /*
+
+  NOT SO IMPORTANT STYLE 
+
+*/
+        ::selection {
+            background: #ff0083;
+        }
+
+        html,
+        body {
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+            background: #e9e9e9;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        form {
+            margin-bottom: 0px;
+        }
+
+        * {
+            font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, "San Francisco", Helvetica, Arial, sans-serif;
+            font-weight: 300;
+        }
+
+        h4 {
+            font-size: 40px;
+            color: #111;
+            margin-top: 80px;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+
+        p {
+            font-weight: 400;
+            line-height: 155%;
+        }
+
+        .info-wrapper>p {
+            font-size: 16px;
+            color: #000;
+            max-width: 500px;
+        }
+
+        hr.gradient {
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(90deg, rgb(202, 104, 117), #FDD835, #9C27B0);
+            background: url("https://preview.ibb.co/dpRVAT/wallpaper_1.jpg");
+            background-size: cover;
+
+            border: none;
+        }
+
+        .logo {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 1024px;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 100px;
+        }
+
+        .logo .text {
+            font-size: 25px;
+            color: #000;
+            margin: 0 0;
+            margin-left: 15px;
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+
+        .logo .gradient {
+            margin-left: 20px;
+            background: linear-gradient(90deg, #FDD835, #9C27B0);
+            background: url("https://image.ibb.co/irMrH8/logo_1.jpg");
+            height: 60px;
+            width: 60px;
+            border-radius: 30px;
+            background-size: cover;
+            background-position: center center;
+        }
+
+        .form-wrapper {
+            max-width: 1024px;
+            width: 100%;
+            height: auto;
+            min-height: calc(100vh - 144px);
+            margin-top: 40px;
+            background: #fff;
+            margin-left: auto;
+            margin-right: auto;
+            box-sizing: border-box;
+        }
+
+        .info-wrapper {
+            padding: 0px 40px 20px 40px;
+        }
+
+        .question-wrapper {
+            padding: 40px;
+            border-top: solid 1px #dbdbdb;
+        }
+
+        .question-wrapper>p {
+            font-size: 20px;
+            color: #000;
+            line-height: 155%;
+        }
+
+        .question {
+            font-weight: 400;
+            color: #000;
+            opacity: .9;
+            font-size: 20px;
+            margin-top: 0;
+        }
+
+        .question-label {
+            font-size: 14px;
+            font-weight: 400;
+            color: #000;
+            opacity: .5;
+            margin-bottom: 30px;
+        }
+
+        .form-actions {
+            padding: 40px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .form-actions button {
+            padding: 20px 40px;
+            flex: 1;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: "Work Sans", sans-serif;
+            font-weight: 400;
+            font-size: 20px;
+            border-radius: 2px;
+        }
+
+        footer {
+            background: url("https://preview.ibb.co/dpRVAT/wallpaper_1.jpg");
+            background-size: cover;
+            background-position: 100% 100%;
+            max-width: 1024px;
+            width: 100%;
+            height: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 40px;
+            box-sizing: border-box;
+            display: flex;
+        }
+
+        footer .logo {
+            margin-top: auto !important;
+        }
+
+        footer .logo .gradient {
+            background: #fff;
+            margin-left: 0px;
+        }
+
+        footer .logo .text {
+            color: #fff;
+        }
+
+        /*
+
+IMPORTANT STUFF
+
+*/
+        .radio-wrapper,
+        .checkbox-wrapper {
+            position: relative;
+        }
+
+        input[type="checkbox"],
+        input[type="radio"] {
+            /*display:  none;*/
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            height: 20px;
+            width: 20px;
+            -webkit-appearance: none;
+        }
+
+        .radio-label,
+        .checkbox-label {
+            display: flex;
+            position: relative;
+            font-size: 20px;
+            font-weight: 400;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .radio-label:before,
+        .radio-label:after,
+        .checkbox-label:before,
+        .checkbox-label:after {
+            pointer-events: none;
+        }
+
+        .radio-label:before,
+        .radio-label:after {
+            border-radius: 50%;
+        }
+
+        .radio-label:before,
+        .checkbox-label:before {
+            display: flex;
+            content: ' ';
+            height: 20px;
+            width: 20px;
+            border: solid 3px #000;
+            background: #fff;
+
+            margin-right: 10px;
+        }
+
+        .radio-label:after,
+        .checkbox-label:after {
+            position: absolute;
+            top: 7px;
+            left: 7px;
+            display: flex;
+            content: ' ';
+            height: 12px;
+            width: 12px;
+            background: #000;
+            transform: scale(0);
+            transition: transform .3s ease;
+        }
+
+        .checkbox-label:after {
+            height: 5px;
+            width: 12px;
+            left: 5px;
+            border-bottom: solid 4px #000;
+            border-left: solid 4px #000;
+            background: none;
+            transform: rotate(-45deg) scale(0);
+            transition: transform .1s ease, opacity .1s ease;
+            transform-origin: center center;
+        }
+
+        .radio-wrapper input[type="radio"]:checked+.radio-label:after {
+            transform: scale(1);
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked+.checkbox-label:after {
+            opacity: 1;
+            transform: rotate(-45deg) scale(.8);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="question-wrapper">
+        <p class="question">Чеклист для сдачи домашних работ</p>
+        <div class="checkbox-wrapper">
+            <input type="checkbox" name="Claude Monet" id="question-1-option-1">
+            <label class="checkbox-label" for="question-1-option-1">ДЗ выполнено в отдельной ветке.</label>
+        </div>
+        <div class="checkbox-wrapper">
+            <input type="checkbox" name="Auguste Renoir" id="question-1-option-2">
+            <label class="checkbox-label" for="question-1-option-2">Все файлы проверены на соблюдение кодстайла (минимум PyCharm'ом)</label>
+        </div>
+        <div class="checkbox-wrapper">
+            <input type="checkbox" name="Vincent Van Gogh" id="question-1-option-3">
+            <label class="checkbox-label" for="question-1-option-3">В репозитории нет лишних файлов (отчёты, исходники, логи, .idea, виртуальные окружения)</label>
+        </div>
+        <div class="checkbox-wrapper">
+            <input type="checkbox" name="Diego Rivera" id="question-1-option-6">
+            <label class="checkbox-label" for="question-1-option-6">Создан и заполнен .gitignore</label>
+        </div>
+        <div class="checkbox-wrapper">
+            <input type="checkbox" name="Diego Rivera" id="question-1-option-7">
+            <label class="checkbox-label" for="question-1-option-7">Минимально заполнен README.md</label>
+        </div>
+        <div class="checkbox-wrapper">
+            <input type="checkbox" name="Diego Rivera" id="question-1-option-8">
+            <label class="checkbox-label" for="question-1-option-8">Все тестовые модули (если есть) лежат в папке tests</label>
+        </div>
+        <div class="checkbox-wrapper">
+            <input type="checkbox" name="Diego Rivera" id="question-1-option-4">
+            <label class="checkbox-label" for="question-1-option-4">Задание оформлено в Pull-request</label>
+        </div>
+        <div class="checkbox-wrapper">
+            <input type="checkbox" name="Diego Rivera" id="question-1-option-5">
+            <label class="checkbox-label" for="question-1-option-5">Pull-request проверен визуально перед сдачей</label>
+        </div>
+    </div>
+</body>
+
+</html>
