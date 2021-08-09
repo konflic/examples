@@ -17,8 +17,7 @@
   elem.attachShadow({mode: 'open'});
   elem.shadowRoot.innerHTML = `
     <style> p { font-weight: bold; color: red; } </style>
-    <p>Hello, John!</p>
-    <button id="button" onclick=alert("test")>Hello</button>
-  `;
+    <p id="text">Hello, John!</p>
+    <button id="button" onclick="document.getElementsByTagName('body')[0].innerHTML='<div>SHADOW!</div>'">Hello</button>`;
 </script>
 </html>
