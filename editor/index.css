@@ -12,14 +12,11 @@ body {
     height: 500px;
     padding: 15px;
     outline: none;
-    overflow: scroll;
 }
 
 #ready_text {
-    height: 400px;
-    width: 500px;
+    height: 600px;
     padding: 5px;
     outline: 0;
-    overflow: scroll;
     outline: none;
 }
