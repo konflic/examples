@@ -6,17 +6,24 @@ body {
     background-color: #2e2e2e;
 }
 
+#title {
+    text-align: center;
+    color: lightcoral;
+}
+
 #editor_text {
     background-color: #4a4a4a;
     color: #d6d6d6;
-    height: 500px;
-    padding: 15px;
+    height: 700px;
+    padding: 10px;
+    overflow: auto;
     outline: none;
 }
 
 #ready_text {
-    height: 600px;
-    padding: 5px;
-    outline: 0;
+    color: #d6d6d6;
+    height: 700px;
+    padding: 10px;
+    overflow: auto;
     outline: none;
 }

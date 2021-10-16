@@ -13,14 +13,15 @@
 <body>
 
     <div class="container">
-        <h1>Text editor</h1>
+        <h1 id="title">online text editor</h1>
         <div id="editor">
             <div class="form-group">
                 <div contentEditable="true" name="editor_text" id="editor_text"></div>
             </div>
         </div>
-        <button class="btn btn-primary" id="show">Save</button>
+        <button class="btn btn-primary" id="save">Save</button>
         <button class="btn btn-secondary" id="edit">Edit</button>
+        <button class="btn btn-primary" type="button" id="btnSave">Save as txt</button>
         <input id="file-uploader" type='file' onchange="readURL(this);" />
     </div>
 </body>

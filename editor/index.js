@@ -1,4 +1,4 @@
-let show_btn = document.getElementById("show");
+let save_btn = document.getElementById("save");
 let edit_btn = document.getElementById("edit");
 let text_area = document.getElementById("editor_text");
 let editor = document.getElementById("editor");
@@ -7,8 +7,6 @@ let file = document.getElementById("file");
 function create_div_text(text) {
     let div = document.createElement("DIV");
     div.setAttribute("id", "ready_text");
-    div.style.height = "400px";
-    div.style.width = "500px";
     div.innerHTML = text;
     return div;
 }
@@ -17,8 +15,6 @@ function create_editor(text) {
     let textarea = document.createElement("DIV");
     textarea.setAttribute("id", "editor_text");
     textarea.setAttribute("contentEditable", "true");
-    textarea.style.height = "400px";
-    textarea.style.width = "500px";
     textarea.innerHTML = text;
     return textarea;
 }
@@ -45,12 +41,12 @@ function show_editor_with_text(event) {
     console.log(ready_text);
     ready_text.remove();
     editor.prepend(create_editor(text));
-    show_btn.addEventListener("click", show_edited_text);
-    show_btn.setAttribute("class", "btn btn-primary");
-    show_btn.disabled = false;
+    save_btn.addEventListener("click", show_edited_text);
+    save_btn.setAttribute("class", "btn btn-primary");
+    save_btn.disabled = false;
 }
 
-show_btn.addEventListener("click", show_edited_text);
+save_btn.addEventListener("click", show_edited_text);
 
 function readURL(input) {
     let img = document.createElement("IMG");
@@ -66,3 +62,20 @@ function readURL(input) {
       reader.readAsDataURL(input.files[0]);
     }
   }
+
+const downloadToFile = (content, filename, contentType) => {
+  const a = document.createElement('a');
+  const file = new Blob([content], {type: contentType});
+  a.href= URL.createObjectURL(file);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+document.querySelector('#btnSave').addEventListener('click', () => {
+  const textArea = document.querySelector('#editor_text');
+  let content = textArea.innerText;
+  if (content != "") {
+    downloadToFile(textArea.innerText, 'my-new-file.txt', 'text/plain');
+  }
+});
