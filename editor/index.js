@@ -1,8 +1,20 @@
+const SAVE_KEY = "saved_text"
+
 let save_btn = document.getElementById("save");
-let edit_btn = document.getElementById("edit");
+let load_btn = document.getElementById("load");
 let text_area = document.getElementById("editor_text");
-let editor = document.getElementById("editor");
-let file = document.getElementById("file");
+let save_file_btn = document.querySelector('#save_file');
+let insert_pic_btn = document.querySelector('#insert_picture');
+let file_uploader = document.querySelector("#file-uploader");
+
+function load_saved() {
+  let content = localStorage.getItem(SAVE_KEY);
+  if (content != null) {
+    text_area.innerText = content;
+  }
+}
+
+load_saved();
 
 function create_div_text(text) {
     let div = document.createElement("DIV");
@@ -11,6 +23,21 @@ function create_div_text(text) {
     return div;
 }
 
+save_btn.addEventListener("click", function() {
+  let content = text_area.innerText;
+  if (content != "") {
+    localStorage.setItem(SAVE_KEY, content);
+  }
+});
+
+load_btn.addEventListener("click", function() {
+  const textArea = document.querySelector('#editor_text');
+  let content = textArea.innerText;
+  if (content != "") {
+    localStorage.setItem("saved_text", content);
+  }
+});
+
 function create_editor(text) {
     let textarea = document.createElement("DIV");
     textarea.setAttribute("id", "editor_text");
@@ -18,35 +45,6 @@ function create_editor(text) {
     textarea.innerHTML = text;
     return textarea;
 }
-
-function show_edited_text(event) {
-    event.target.removeEventListener("click", show_edited_text);
-    event.target.setAttribute("class", "btn btn-secondary");
-    event.target.disabled = true;
-    let text_area = document.getElementById("editor_text");
-    let text = text_area.innerHTML;
-    text_area.remove();
-    editor.prepend(create_div_text(text));
-    edit_btn.addEventListener("click", show_editor_with_text);
-    edit_btn.setAttribute("class", "btn btn-primary");
-    edit_btn.disabled = false;
-}
-
-function show_editor_with_text(event) {
-    event.target.removeEventListener("click", show_editor_with_text);
-    event.target.setAttribute("class", "btn btn-secondary");
-    event.target.disabled = true;
-    let ready_text = document.getElementById("ready_text");
-    let text = ready_text.innerHTML;
-    console.log(ready_text);
-    ready_text.remove();
-    editor.prepend(create_editor(text));
-    save_btn.addEventListener("click", show_edited_text);
-    save_btn.setAttribute("class", "btn btn-primary");
-    save_btn.disabled = false;
-}
-
-save_btn.addEventListener("click", show_edited_text);
 
 function readURL(input) {
     let img = document.createElement("IMG");
@@ -72,10 +70,13 @@ const downloadToFile = (content, filename, contentType) => {
   URL.revokeObjectURL(a.href);
 };
 
-document.querySelector('#btnSave').addEventListener('click', () => {
-  const textArea = document.querySelector('#editor_text');
-  let content = textArea.innerText;
+save_file_btn.addEventListener('click', function () {
+  let content = text_area.innerText;
   if (content != "") {
-    downloadToFile(textArea.innerText, 'my-new-file.txt', 'text/plain');
+    downloadToFile(content, 'my-new-file.txt', 'text/plain');
   }
 });
+
+insert_pic_btn.onclick = function() {
+  file_uploader.click();
+}
