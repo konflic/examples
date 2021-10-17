@@ -1,7 +1,6 @@
 const SAVE_KEY = "saved_text"
 
 let save_btn = document.getElementById("save");
-let load_btn = document.getElementById("load");
 let text_area = document.getElementById("editor_text");
 let save_file_btn = document.querySelector('#save_file');
 let insert_pic_btn = document.querySelector('#insert_picture');
