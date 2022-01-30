@@ -58,6 +58,17 @@
     }
 }
 
+@media(max-width:768px) {
+    .swiper-viewport .swiper-button-prev {
+        opacity: 0;
+        left: -20px
+    }
+    .swiper-viewport .swiper-button-next {
+        opacity: 0;
+        right: -20px
+    }
+}
+
 .swiper-button-prev:before {
     width: 40px;
     height: 40px;
