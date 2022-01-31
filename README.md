@@ -1,4 +1,4 @@
-# some_app
+# Demo
 
 Application for frontend testing examples.
 
