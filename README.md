@@ -2,4 +2,4 @@
 
 Application for frontend testing examples.
 
-Link: https://konflic.github.io/front_example/.
+Link: https://konflic.github.io/examples/.
