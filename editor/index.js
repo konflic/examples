@@ -29,13 +29,13 @@ save_btn.addEventListener("click", function() {
   }
 });
 
-load_btn.addEventListener("click", function() {
-  const textArea = document.querySelector('#editor_text');
-  let content = textArea.innerText;
-  if (content != "") {
-    localStorage.setItem("saved_text", content);
-  }
-});
+// load_btn.addEventListener("click", function() {
+//   const textArea = document.querySelector('#editor_text');
+//   let content = textArea.innerText;
+//   if (content != "") {
+//     localStorage.setItem("saved_text", content);
+//   }
+// });
 
 function create_editor(text) {
     let textarea = document.createElement("DIV");
