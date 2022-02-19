@@ -31,7 +31,7 @@ save_btn.addEventListener("click", function() {
 });
 
 clear_btn.addEventListener("click", function() {
-  if confirm("Уверены?") {
+  if (confirm("Уверены?")) {
     localStorage.clear();
     $("div[contenteditable='true']").html("");
   }
