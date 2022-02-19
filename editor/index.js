@@ -79,3 +79,9 @@ save_file_btn.addEventListener('click', function () {
 insert_pic_btn.onclick = function() {
   file_uploader.click();
 }
+
+document.querySelector('div[contenteditable="true"]').addEventListener("paste", function(e) {
+        e.preventDefault();
+        var text = e.clipboardData.getData("text/plain");
+        document.execCommand("insertHTML", false, text);
+});
