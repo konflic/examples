@@ -5,6 +5,7 @@ let text_area = document.getElementById("editor_text");
 let save_file_btn = document.querySelector('#save_file');
 let insert_pic_btn = document.querySelector('#insert_picture');
 let file_uploader = document.querySelector("#file-uploader");
+let clear_btn = document.querySelector("#clear");
 
 function load_saved() {
   let content = localStorage.getItem(SAVE_KEY);
@@ -27,6 +28,10 @@ save_btn.addEventListener("click", function() {
   if (content != "") {
     localStorage.setItem(SAVE_KEY, content);
   }
+});
+
+clear_btn.addEventListener("click", function() {
+  localStorage.clear();
 });
 
 function create_editor(text) {
