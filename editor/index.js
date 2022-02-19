@@ -70,7 +70,7 @@ save_file_btn.addEventListener('click', function () {
 
 insert_pic_btn.onclick = function() {
   file_uploader.click();
-}
+};
 
 [].forEach.call(document.querySelectorAll('div[contenteditable="true"]'), function (el) {
     el.addEventListener('paste', function(e) {
