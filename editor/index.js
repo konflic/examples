@@ -29,14 +29,6 @@ save_btn.addEventListener("click", function() {
   }
 });
 
-// load_btn.addEventListener("click", function() {
-//   const textArea = document.querySelector('#editor_text');
-//   let content = textArea.innerText;
-//   if (content != "") {
-//     localStorage.setItem("saved_text", content);
-//   }
-// });
-
 function create_editor(text) {
     let textarea = document.createElement("DIV");
     textarea.setAttribute("id", "editor_text");
@@ -79,13 +71,6 @@ save_file_btn.addEventListener('click', function () {
 insert_pic_btn.onclick = function() {
   file_uploader.click();
 }
-
-document.querySelector('div[contenteditable="true"]').addEventListener("paste", function(e) {
-  console.log("Pasted!");
-  e.preventDefault();
-  var text = e.clipboardData.getData("text/plain");
-  document.execCommand("insertHTML", false, text);
-});
 
 [].forEach.call(document.querySelectorAll('div[contenteditable="true"]'), function (el) {
     el.addEventListener('paste', function(e) {
