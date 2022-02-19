@@ -31,8 +31,10 @@ save_btn.addEventListener("click", function() {
 });
 
 clear_btn.addEventListener("click", function() {
-  localStorage.clear();
-  $("div[contenteditable='true']").html("");
+  if confirm("Уверены?") {
+    localStorage.clear();
+    $("div[contenteditable='true']").html("");
+  }
 });
 
 function create_editor(text) {
