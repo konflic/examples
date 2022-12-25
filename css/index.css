@@ -81,3 +81,8 @@ div.margins {
 .target {
   margin: 5px;
 }
+
+.outside {
+  position: fixed;
+  left: -150px;
+}
