@@ -86,3 +86,9 @@ div.margins {
   position: fixed;
   left: -150px;
 }
+
+video {
+  margin: 20px;
+  width: 500px;
+  display: block;
+}
