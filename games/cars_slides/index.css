@@ -3,6 +3,10 @@
     margin: 0px;
 }
 
+body {
+    background-color: black;
+}
+
 /* Slideshow container */
 .slideshow-container {
   max-width: 1000px;
@@ -21,25 +25,25 @@
   position: absolute;
   top: 50%;
   width: auto;
-  margin-top: -22px;
-  padding: 16px;
+  margin-top: -50px;
+  padding: 40px;
   color: white;
   font-weight: bold;
-  font-size: 18px;
+  font-size: 15px;
   transition: 0.6s ease;
-  border-radius: 0 3px 3px 0;
+  border-radius: 50px;
   user-select: none;
+  background-color: rgba(0,0,0,0.5);
 }
 
 /* Position the "next button" to the right */
 .next {
   right: 0;
-  border-radius: 3px 0 0 3px;
+  border-radius: 50px;
 }
 
-/* On hover, add a black background color with a little bit see-through */
-.prev:hover, .next:hover {
-  background-color: rgba(0,0,0,0.8);
+.next:hover, .prev:hover {
+    background-color: rgba(250,1,1,0.5);
 }
 
 /* Caption text */
