@@ -15,7 +15,14 @@ function showSlides(n) {
     for (var i = 0; i < slides.length; i++) {
         slides[i].style.display = "none";
     }
-    slides[slideIndex-1].style.display = "grid";
+    slides[slideIndex - 1].style.display = "grid";
+}
+
+function makeLandscape() {
+    // this works on android, not iOS
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape');
+    }
 }
 
 function openFullscreen() {
@@ -26,16 +33,18 @@ function openFullscreen() {
     } else if (show.msRequestFullscreen) { /* IE11 */
         show.msRequestFullscreen();
     }
+    makeLandscape();
 }
 
 function generateSlides() {
     let container = document.getElementById("show");
-    for (i = 0; i < amount; i++) {        
+    for (i = 0; i < amount; i++) {
         let upper_div = document.createElement("DIV");
         upper_div.classList.add("mySlides");
         upper_div.classList.add("fade");
         let img_el = document.createElement("IMG");
-        img_el.src = `pictures/${i}.jpg`
+        img_el.src = `pictures/${i}.jpg`;
+        img_el.loading = "lazy";
         upper_div.appendChild(img_el);
         container.prepend(upper_div);
     }
