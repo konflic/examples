@@ -1,6 +1,6 @@
 let slideIndex = 0;
 let show = document.getElementById("show");
-let amount = 18;
+let amount = 25;
 
 // Next/previous controls
 function plusSlides(n) {
