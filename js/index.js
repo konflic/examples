@@ -2,9 +2,9 @@ var hidden = document.getElementsByClassName("hide")[0];
 
 let table = document.getElementsByClassName("table")[0];
 
-table.addEventListener("click", function(e) {
-    colors = Array("red", "green", "blue", "yello", "gray", "ivory", "lightgreen", "lightblue");
-    e.target.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];;
+table.addEventListener("click", function (e) {
+  colors = Array("red", "green", "blue", "yello", "gray", "ivory", "lightgreen", "lightblue");
+  e.target.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];;
 });
 
 var modal = document.getElementById("myModal");
@@ -14,15 +14,15 @@ var btn = document.getElementById("myBtn");
 var span = document.getElementsByClassName("close")[0];
 
 // When the user clicks the button, open the modal
-btn.onclick = function() {
+btn.onclick = function () {
   modal.style.display = "block";
 }
 // When the user clicks on <span> (x), close the modal
-span.onclick = function() {
+span.onclick = function () {
   modal.style.display = "none";
 }
 // When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
+window.onclick = function (event) {
   if (event.target == modal) {
     modal.style.display = "none";
   }
@@ -30,21 +30,37 @@ window.onclick = function(event) {
 
 // Click on disabled button
 var disabled = document.getElementById("disabled");
-disabled.addEventListener("click", function() {
+disabled.addEventListener("click", function () {
   modal.style.display = "block";
   modal.getElementById("modal-text").innerText = "Hello from disabled!";
 });
 
 // Click on hidden button
 var hidden = document.getElementById("hidden");
-hidden.addEventListener("click", function() {
+hidden.addEventListener("click", function () {
   modal.style.display = "block";
   modal.getElementById("modal-text").innerText = "Hello from hidden button!";
 });
 
 // Click on hidden button
 var opacity = document.getElementById("opacity");
-opacity.addEventListener("click", function() {
+opacity.addEventListener("click", function () {
   modal.style.display = "block";
   document.getElementById("modal-text").innerText = "Hello from opacity button!";
+});
+
+var example_input = document.getElementById("inp");
+example_input.addEventListener("keyup", function () {
+  var disabled_button = document.getElementById("disabled");
+  if (example_input.value == "привет как твои дела сегодня?") {
+    if (confirm("Хотите активировать кнопку?")) {
+      disabled_button.style.animation="spin2 2s linear";
+      alert("Кнопка успешно активирована!");
+      setTimeout(() => disabled_button.removeAttribute("disabled"), 2000);
+      
+    };
+    
+  } else {
+    disabled_button.setAttribute("disabled", null);
+  }
 });
