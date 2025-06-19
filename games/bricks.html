@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Box2D Building Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            display: block;
+        }
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+        select, button, input {
+            margin: 5px;
+            padding: 5px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/box2dweb@2.1.0-b/box2d.min.js"></script>
+</head>
+<body>
+    <div class="controls">
+        <label for="shapeSelect">Shape:</label>
+        <select id="shapeSelect">
+            <option value="box">Rectangle</option>
+            <option value="triangle">Triangle</option>
+            <option value="circle">Circle</option>
+            <option value="trapezoid">Trapezoid</option>
+            <option value="hexagon">Hexagon</option>
+        </select>
+        
+        <label for="colorPicker">Color:</label>
+        <input type="color" id="colorPicker" value="#ff6347">
+        
+        <button id="restartButton">Restart</button>
+    </div>
+    
+    <canvas id="canvas"></canvas>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Box2D aliases
+            const b2Vec2 = Box2D.Common.Math.b2Vec2;
+            const b2BodyDef = Box2D.Dynamics.b2BodyDef;
+            const b2Body = Box2D.Dynamics.b2Body;
+            const b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
+            const b2Fixture = Box2D.Dynamics.b2Fixture;
+            const b2World = Box2D.Dynamics.b2World;
+            const b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
+            const b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
+            const b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
+            const b2AABB = Box2D.Collision.b2AABB;
+
+            // Init variables
+            let world;
+            let canvas, ctx;
+            let SCALE = 30; // pixels per meter
+            let selectedShape = "box";
+            let selectedColor = "#ff6347";
+            let bodies = [];
+            let shapesMap = {};
+
+            // Initialize canvas
+            canvas = document.getElementById("canvas");
+            ctx = canvas.getContext("2d");
+            
+            // Set canvas to full screen
+            resizeCanvas();
+            window.addEventListener("resize", resizeCanvas);
+            
+            // Create Box2D world
+            world = new b2World(
+                new b2Vec2(0, 10),  // gravity
+                true               // allow sleep
+            );
+            
+            // Add event listeners
+            document.getElementById("shapeSelect").addEventListener("change", function(e) {
+                selectedShape = e.target.value;
+            });
+            
+            document.getElementById("colorPicker").addEventListener("change", function(e) {
+                selectedColor = e.target.value;
+            });
+            
+            document.getElementById("restartButton").addEventListener("click", restart);
+            
+            canvas.addEventListener("click", placeBrick);
+            
+            // Create ground
+            createGround();
+            
+            // Start game loop
+            requestAnimationFrame(update);
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            function createGround() {
+                const bodyDef = new b2BodyDef();
+                bodyDef.type = b2Body.b2_staticBody;
+                bodyDef.position.x = canvas.width / 2 / SCALE;
+                bodyDef.position.y = canvas.height / SCALE;
+                
+                const fixDef = new b2FixtureDef();
+                fixDef.density = 1.0;
+                fixDef.friction = 0.8;
+                fixDef.restitution = 0.1;
+                
+                fixDef.shape = new b2PolygonShape();
+                fixDef.shape.SetAsBox(canvas.width / SCALE, 1);
+                
+                const body = world.CreateBody(bodyDef);
+                body.CreateFixture(fixDef);
+                
+                bodies.push({
+                    body: body,
+                    color: "#663300",
+                    isGround: true,
+                    vertices: [
+                        {x: -canvas.width / SCALE, y: -1},
+                        {x: canvas.width / SCALE, y: -1},
+                        {x: canvas.width / SCALE, y: 1},
+                        {x: -canvas.width / SCALE, y: 1}
+                    ]
+                });
+            }
+
+            function createBoxVertices(width, height) {
+                return [
+                    {x: -width, y: -height},
+                    {x: width, y: -height},
+                    {x: width, y: height},
+                    {x: -width, y: height}
+                ];
+            }
+
+            function placeBrick(e) {
+                const mouseX = e.clientX;
+                const mouseY = e.clientY;
+                
+                const bodyDef = new b2BodyDef();
+                bodyDef.type = b2Body.b2_dynamicBody;
+                bodyDef.position.x = mouseX / SCALE;
+                bodyDef.position.y = mouseY / SCALE;
+                
+                const fixDef = new b2FixtureDef();
+                fixDef.density = 1.0;
+                fixDef.friction = 0.8;
+                fixDef.restitution = 0.1;
+                
+                let vertices = [];
+                
+                // Create shape based on selection
+                switch(selectedShape) {
+                    case "box":
+                        fixDef.shape = new b2PolygonShape();
+                        fixDef.shape.SetAsBox(1, 0.5);
+                        vertices = createBoxVertices(1, 0.5);
+                        break;
+                        
+                    case "triangle":
+                        fixDef.shape = new b2PolygonShape();
+                        vertices = [
+                            {x: 0, y: -0.5},
+                            {x: -0.5, y: 0.5},
+                            {x: 0.5, y: 0.5}
+                        ];
+                        const triangleVectors = vertices.map(v => new b2Vec2(v.x, v.y));
+                        fixDef.shape.SetAsArray(triangleVectors, triangleVectors.length);
+                        break;
+                        
+                    case "circle":
+                        fixDef.shape = new b2CircleShape(0.5);
+                        // For circles, we'll handle drawing differently
+                        break;
+                        
+                    case "trapezoid":
+                        fixDef.shape = new b2PolygonShape();
+                        vertices = [
+                            {x: -0.75, y: -0.5},
+                            {x: 0.75, y: -0.5},
+                            {x: 0.5, y: 0.5},
+                            {x: -0.5, y: 0.5}
+                        ];
+                        const trapezoidVectors = vertices.map(v => new b2Vec2(v.x, v.y));
+                        fixDef.shape.SetAsArray(trapezoidVectors, trapezoidVectors.length);
+                        break;
+                        
+                    case "hexagon":
+                        fixDef.shape = new b2PolygonShape();
+                        vertices = [];
+                        const radius = 0.5;
+                        for (let i = 0; i < 6; i++) {
+                            const angle = i * Math.PI / 3;
+                            vertices.push({
+                                x: radius * Math.cos(angle),
+                                y: radius * Math.sin(angle)
+                            });
+                        }
+                        const hexagonVectors = vertices.map(v => new b2Vec2(v.x, v.y));
+                        fixDef.shape.SetAsArray(hexagonVectors, hexagonVectors.length);
+                        break;
+                }
+                
+                const body = world.CreateBody(bodyDef);
+                body.CreateFixture(fixDef);
+                
+                // Add to our array with the selected color
+                bodies.push({
+                    body: body,
+                    color: selectedColor,
+                    shape: selectedShape,
+                    vertices: vertices,
+                    radius: selectedShape === "circle" ? 0.5 : 0
+                });
+            }
+
+            function restart() {
+                // Remove all bodies except the ground
+                for (let i = bodies.length - 1; i >= 0; i--) {
+                    if (!bodies[i].isGround) {
+                        world.DestroyBody(bodies[i].body);
+                        bodies.splice(i, 1);
+                    }
+                }
+            }
+
+            function update() {
+                world.Step(
+                    1 / 60,   // frame-rate
+                    10,       // velocity iterations
+                    10        // position iterations
+                );
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw all bodies
+                for (let i = 0; i < bodies.length; i++) {
+                    const body = bodies[i].body;
+                    const position = body.GetPosition();
+                    const angle = body.GetAngle();
+                    
+                    ctx.save();
+                    ctx.translate(position.x * SCALE, position.y * SCALE);
+                    ctx.rotate(angle);
+                    
+                    ctx.fillStyle = bodies[i].color;
+                    ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 1;
+                    
+                    if (bodies[i].shape === "circle") {
+                        // Draw circle
+                        const radius = bodies[i].radius * SCALE;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        // Draw a line to show rotation
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(0, -radius);
+                        ctx.stroke();
+                    } else {
+                        // Draw polygon using our stored vertices
+                        const vertices = bodies[i].vertices;
+                        
+                        if (vertices && vertices.length > 0) {
+                            ctx.beginPath();
+                            ctx.moveTo(vertices[0].x * SCALE, vertices[0].y * SCALE);
+                            
+                            for (let j = 1; j < vertices.length; j++) {
+                                ctx.lineTo(vertices[j].x * SCALE, vertices[j].y * SCALE);
+                            }
+                            
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+                        }
+                    }
+                    
+                    ctx.restore();
+                }
+                
+                world.ClearForces();
+                requestAnimationFrame(update);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consistent Speed Letters Game</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #bb86fc;
+            text-shadow: 0 0 10px rgba(187, 134, 252, 0.5);
+            margin-bottom: 10px;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background-color: #3700b3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        button:hover {
+            background-color: #6200ee;
+            transform: scale(1.05);
+        }
+        
+        .game-area {
+            position: relative;
+            flex-grow: 1;
+            border: 3px solid #3700b3;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            background-color: #1e1e1e;
+        }
+        
+        .shape {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.2s;
+            z-index: 10;
+            filter: drop-shadow(0 0 8px rgba(0,0,0,0.5));
+        }
+        
+        .shape:hover {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 12px rgba(255,255,255,0.7));
+        }
+        
+        .shape.circle {
+            border-radius: 50%;
+        }
+        
+        .shape.square {
+            border-radius: 5px;
+        }
+        
+        .shape.rhomb {
+            transform: rotate(45deg);
+        }
+        
+        .shape.rhomb .letter {
+            transform: rotate(-45deg);
+        }
+        
+        .shape .letter {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        
+        .shape.caught {
+            animation: pop 0.5s forwards;
+        }
+        
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.7; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        
+        .grid-container {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .letter-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            padding: 10px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            border: 2px solid #3700b3;
+        }
+        
+        .grid-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #bb86fc;
+        }
+        
+        .grid-cell.filled {
+            background-color: #3700b3;
+            animation: cellPop 0.3s;
+        }
+        
+        @keyframes cellPop {
+            0% { transform: scale(0.5); }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .score {
+            font-size: 24px;
+            margin: 10px 0;
+            color: #03dac6;
+        }
+        
+        .alphabet-selector {
+            margin: 15px 0;
+        }
+        
+        .alphabet-selector label {
+            margin-right: 15px;
+            color: #bb86fc;
+        }
+        
+        .alphabet-selector input {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Consistent Speed Letters Game</h1>
+    
+    <div class="alphabet-selector">
+        <label>
+            <input type="radio" name="alphabet" value="english" checked> English
+        </label>
+        <label>
+            <input type="radio" name="alphabet" value="cyrillic"> Cyrillic
+        </label>
+    </div>
+    
+    <div class="controls">
+        <button id="start-btn">Start Game</button>
+        <button id="reset-btn">Reset</button>
+    </div>
+    
+    <div class="score">Letters caught: <span id="score">0</span></div>
+    
+    <div class="game-container">
+        <div class="game-area" id="game-area"></div>
+        <div class="grid-container">
+            <div class="letter-grid" id="letter-grid"></div>
+        </div>
+    </div>
+
+    <audio id="catch-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3" preload="auto"></audio>
+    <audio id="place-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
+    <audio id="collide-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-explosion-2759.mp3" preload="auto"></audio>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const gameArea = document.getElementById('game-area');
+            const letterGrid = document.getElementById('letter-grid');
+            const startBtn = document.getElementById('start-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const scoreElement = document.getElementById('score');
+            const alphabetRadios = document.querySelectorAll('input[name="alphabet"]');
+            const catchSound = document.getElementById('catch-sound');
+            const placeSound = document.getElementById('place-sound');
+            const collideSound = document.getElementById('collide-sound');
+            
+            // Alphabets
+            const alphabets = {
+                english: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                cyrillic: 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
+            };
+            
+            // Shape types
+            const shapeTypes = ['circle', 'square', 'rhomb'];
+            
+            // Vibrant color palette
+            const colors = [
+                '#FF5252', '#FF4081', '#E040FB', '#7C4DFF', '#536DFE',
+                '#448AFF', '#40C4FF', '#18FFFF', '#64FFDA', '#69F0AE',
+                '#B2FF59', '#EEFF41', '#FFFF00', '#FFD740', '#FFAB40',
+                '#FF6E40'
+            ];
+            
+            let currentAlphabet = 'english';
+            let shapes = [];
+            let score = 0;
+            let gameInterval;
+            let gridCells = [];
+            let nextGridIndex = 0;
+            let animationFrameId;
+            let lastCollisionTime = 0;
+            
+            // Initialize grid
+            function initGrid() {
+                letterGrid.innerHTML = '';
+                gridCells = [];
+                nextGridIndex = 0;
+                
+                for (let i = 0; i < 20; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.index = i;
+                    letterGrid.appendChild(cell);
+                    gridCells.push(cell);
+                }
+            }
+            
+            // Check collision between two shapes
+            function checkCollision(shape1, shape2) {
+                const rect1 = shape1.getBoundingClientRect();
+                const rect2 = shape2.getBoundingClientRect();
+                
+                return !(
+                    rect1.right < rect2.left || 
+                    rect1.left > rect2.right || 
+                    rect1.bottom < rect2.top || 
+                    rect1.top > rect2.bottom
+                );
+            }
+            
+            // Handle collision with direction change but maintain speed
+            function handleCollision(shape1, shape2) {
+                // Only play sound if enough time has passed since last collision
+                const now = Date.now();
+                if (now - lastCollisionTime > 200) {
+                    collideSound.currentTime = 0;
+                    collideSound.play();
+                    lastCollisionTime = now;
+                }
+                
+                // Calculate normal vector between shapes
+                const dx = shape2.x - shape1.x;
+                const dy = shape2.y - shape1.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Normalize
+                const nx = dx / distance;
+                const ny = dy / distance;
+                
+                // Calculate relative velocity
+                const vx = shape2.dx - shape1.dx;
+                const vy = shape2.dy - shape1.dy;
+                
+                // Calculate relative velocity in terms of the normal direction
+                const velocityAlongNormal = vx * nx + vy * ny;
+                
+                // Do not resolve if shapes are moving away from each other
+                if (velocityAlongNormal > 0) return;
+                
+                // Calculate original speeds
+                const speed1 = Math.sqrt(shape1.dx * shape1.dx + shape1.dy * shape1.dy);
+                const speed2 = Math.sqrt(shape2.dx * shape2.dx + shape2.dy * shape2.dy);
+                
+                // Simply reverse directions while maintaining speed
+                shape1.dx = -shape1.dx;
+                shape1.dy = -shape1.dy;
+                shape2.dx = -shape2.dx;
+                shape2.dy = -shape2.dy;
+                
+                // Ensure speeds remain exactly the same
+                const newSpeed1 = Math.sqrt(shape1.dx * shape1.dx + shape1.dy * shape1.dy);
+                const newSpeed2 = Math.sqrt(shape2.dx * shape2.dx + shape2.dy * shape2.dy);
+                
+                if (newSpeed1 > 0) {
+                    const ratio1 = speed1 / newSpeed1;
+                    shape1.dx *= ratio1;
+                    shape1.dy *= ratio1;
+                }
+                
+                if (newSpeed2 > 0) {
+                    const ratio2 = speed2 / newSpeed2;
+                    shape2.dx *= ratio2;
+                    shape2.dy *= ratio2;
+                }
+                
+                // Visual feedback
+                shape1.style.filter = 'drop-shadow(0 0 15px white)';
+                shape2.style.filter = 'drop-shadow(0 0 15px white)';
+                
+                setTimeout(() => {
+                    shape1.style.filter = 'drop-shadow(0 0 8px rgba(0,0,0,0.5))';
+                    shape2.style.filter = 'drop-shadow(0 0 8px rgba(0,0,0,0.5))';
+                }, 200);
+            }
+            
+            // Create a flying shape with letter
+            function createShape() {
+                const shapeElement = document.createElement('div');
+                
+                // Get random shape type
+                const shapeType = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+                shapeElement.className = `shape ${shapeType}`;
+                
+                // Set random color
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                shapeElement.style.backgroundColor = color;
+                
+                // Set size
+                const size = 60 + Math.random() * 40;
+                shapeElement.style.width = `${size}px`;
+                shapeElement.style.height = `${size}px`;
+                
+                // Get random letter from current alphabet
+                const randomIndex = Math.floor(Math.random() * alphabets[currentAlphabet].length);
+                const letter = alphabets[currentAlphabet][randomIndex];
+                
+                const letterElement = document.createElement('div');
+                letterElement.className = 'letter';
+                letterElement.textContent = letter;
+                letterElement.dataset.letter = letter;
+                shapeElement.appendChild(letterElement);
+                shapeElement.dataset.letter = letter;
+                
+                // Random starting position (within bounds)
+                const gameRect = gameArea.getBoundingClientRect();
+                const maxX = gameRect.width - size;
+                const maxY = gameRect.height - size;
+                
+                let x = Math.random() * maxX;
+                let y = Math.random() * maxY;
+                
+                // Random direction and speed (store original speed)
+                let dx = (Math.random() - 0.5) * 3;
+                let dy = (Math.random() - 0.5) * 3;
+                
+                // Make sure shapes move at minimum speed
+                const minSpeed = 0.8;
+                const speed = Math.sqrt(dx * dx + dy * dy);
+                if (speed < minSpeed) {
+                    const ratio = minSpeed / speed;
+                    dx *= ratio;
+                    dy *= ratio;
+                }
+                
+                shapeElement.style.left = `${x}px`;
+                shapeElement.style.top = `${y}px`;
+                
+                // Store position, velocity and original speed
+                shapeElement.x = x;
+                shapeElement.y = y;
+                shapeElement.dx = dx;
+                shapeElement.dy = dy;
+                shapeElement.originalSpeed = Math.sqrt(dx * dx + dy * dy);
+                shapeElement.size = size;
+                
+                // Add click handler
+                shapeElement.addEventListener('click', function() {
+                    catchShape(shapeElement);
+                });
+                
+                gameArea.appendChild(shapeElement);
+                
+                shapes.push(shapeElement);
+                return shapeElement;
+            }
+            
+            // Main game animation loop
+            function gameLoop() {
+                // Move all shapes first
+                const gameRect = gameArea.getBoundingClientRect();
+                
+                shapes.forEach(shape => {
+                    // Store previous position for collision response
+                    const prevX = shape.x;
+                    const prevY = shape.y;
+                    
+                    // Move shape
+                    shape.x += shape.dx;
+                    shape.y += shape.dy;
+                    
+                    // Bounce off walls (reverse direction but maintain speed)
+                    let bounced = false;
+                    
+                    if (shape.x <= 0) {
+                        shape.x = 0;
+                        shape.dx = Math.abs(shape.dx);
+                        bounced = true;
+                    } else if (shape.x >= gameRect.width - shape.size) {
+                        shape.x = gameRect.width - shape.size;
+                        shape.dx = -Math.abs(shape.dx);
+                        bounced = true;
+                    }
+                    
+                    if (shape.y <= 0) {
+                        shape.y = 0;
+                        shape.dy = Math.abs(shape.dy);
+                        bounced = true;
+                    } else if (shape.y >= gameRect.height - shape.size) {
+                        shape.y = gameRect.height - shape.size;
+                        shape.dy = -Math.abs(shape.dy);
+                        bounced = true;
+                    }
+                    
+                    // Ensure speed remains exactly the same after wall bounce
+                    if (bounced) {
+                        const currentSpeed = Math.sqrt(shape.dx * shape.dx + shape.dy * shape.dy);
+                        if (currentSpeed > 0) {
+                            const ratio = shape.originalSpeed / currentSpeed;
+                            shape.dx *= ratio;
+                            shape.dy *= ratio;
+                        }
+                        
+                        // Play wall collision sound occasionally
+                        if (Math.random() > 0.7) {
+                            collideSound.currentTime = 0;
+                            collideSound.play();
+                        }
+                    }
+                    
+                    shape.style.left = `${shape.x}px`;
+                    shape.style.top = `${shape.y}px`;
+                });
+                
+                // Check for collisions between all shapes
+                for (let i = 0; i < shapes.length; i++) {
+                    for (let j = i + 1; j < shapes.length; j++) {
+                        if (checkCollision(shapes[i], shapes[j])) {
+                            handleCollision(shapes[i], shapes[j]);
+                        }
+                    }
+                }
+                
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+            
+            // Catch a shape
+            function catchShape(shapeElement) {
+                catchSound.currentTime = 0;
+                catchSound.play();
+                
+                shapeElement.classList.add('caught');
+                score++;
+                scoreElement.textContent = score;
+                
+                // Remove from flying shapes
+                setTimeout(() => {
+                    shapeElement.remove();
+                    shapes = shapes.filter(s => s !== shapeElement);
+                    
+                    // Place in grid
+                    placeInGrid(shapeElement.dataset.letter);
+                }, 500);
+            }
+            
+            // Place letter in grid
+            function placeInGrid(letter) {
+                if (nextGridIndex < gridCells.length) {
+                    placeSound.currentTime = 0;
+                    placeSound.play();
+                    
+                    const cell = gridCells[nextGridIndex];
+                    cell.textContent = letter;
+                    cell.classList.add('filled');
+                    nextGridIndex++;
+                }
+            }
+            
+            // Start game
+            function startGame() {
+                resetGame();
+                
+                // Create initial shapes
+                for (let i = 0; i < 5; i++) {
+                    createShape();
+                }
+                
+                // Start game loop
+                gameLoop();
+                
+                // Add new shapes periodically
+                gameInterval = setInterval(() => {
+                    if (shapes.length < 8) {
+                        createShape();
+                    }
+                }, 2000);
+            }
+            
+            // Reset game
+            function resetGame() {
+                // Clear existing shapes
+                shapes.forEach(shape => shape.remove());
+                shapes = [];
+                score = 0;
+                scoreElement.textContent = score;
+                
+                // Clear intervals and animation frames
+                if (gameInterval) {
+                    clearInterval(gameInterval);
+                }
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+                
+                // Reset grid
+                initGrid();
+            }
+            
+            // Event listeners
+            startBtn.addEventListener('click', startGame);
+            resetBtn.addEventListener('click', resetGame);
+            
+            alphabetRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    currentAlphabet = this.value;
+                });
+            });
+            
+            // Initialize
+            initGrid();
+        });
+    </script>
+</body>
+</html>
