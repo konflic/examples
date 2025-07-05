@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funny Image Reveal</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        h1 {
+            color: #bb86fc;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(187, 134, 252, 0.3);
+            text-align: center;
+        }
+        
+        .upload-container {
+            background-color: #1e1e1e;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid #333;
+        }
+        
+        .game-container {
+            display: none;
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        #image-wrapper {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            border: 2px solid #333;
+        }
+        
+        #target-image {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        
+        #block-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            gap: 1px;
+        }
+        
+        .block {
+            background-color: #3700b3;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            z-index: 2;
+            transition: all 0.2s;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+        
+        .block:hover {
+            background-color: #6200ee;
+            transform: scale(0.98);
+        }
+        
+        .block.removed {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .explosion {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="%23ff4081"/><circle cx="8" cy="10" r="2" fill="%23fff"/><circle cx="16" cy="10" r="2" fill="%23fff"/><path d="M8 16 Q12 20 16 16" stroke="%23fff" fill="none" stroke-width="2"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 10;
+            animation: explode 0.8s forwards;
+            transform-origin: center;
+        }
+        
+        @keyframes explode {
+            0% { transform: scale(0.2); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.8; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        .stats {
+            background-color: #1e1e1e;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+            border: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        button {
+            background-color: #bb86fc;
+            color: #121212;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background-color: #9a67ea;
+            transform: translateY(-2px);
+        }
+        
+        #file-upload {
+            display: none;
+        }
+        
+        .upload-label {
+            display: inline-block;
+            background-color: #3700b3;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        
+        .upload-label:hover {
+            background-color: #6200ee;
+        }
+    </style>
+</head>
+<body>
+    <h1>Funny Image Reveal</h1>
+    
+    <div class="upload-container">
+        <h2>Upload Your Image</h2>
+        <label for="file-upload" class="upload-label">
+            Choose Image
+        </label>
+        <input type="file" id="file-upload" accept="image/*">
+        <button id="start-game">Start Game</button>
+    </div>
+    
+    <div class="game-container">
+        <div id="image-wrapper">
+            <img id="target-image" src="" alt="Hidden image">
+            <div id="block-overlay"></div>
+        </div>
+    </div>
+    
+    <div class="stats">
+        <div>Blocks left: <span id="blocks-left">100</span></div>
+        <button id="new-game">New Game</button>
+    </div>
+
+    <audio id="sound1" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3" preload="auto"></audio>
+    <audio id="sound2" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
+    <audio id="sound3" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3" preload="auto"></audio>
+    <audio id="sound4" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-casino-notification-211.mp3" preload="auto"></audio>
+    <audio id="sound5" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-mechanical-bling-210.mp3" preload="auto"></audio>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadContainer = document.querySelector('.upload-container');
+            const gameContainer = document.querySelector('.game-container');
+            const fileUpload = document.getElementById('file-upload');
+            const targetImage = document.getElementById('target-image');
+            const imageWrapper = document.getElementById('image-wrapper');
+            const blockOverlay = document.getElementById('block-overlay');
+            const startGameBtn = document.getElementById('start-game');
+            const newGameBtn = document.getElementById('new-game');
+            const blocksLeftSpan = document.getElementById('blocks-left');
+            const statsContainer = document.querySelector('.stats');
+            
+            // Sound effects
+            const sounds = [
+                document.getElementById('sound1'),
+                document.getElementById('sound2'),
+                document.getElementById('sound3'),
+                document.getElementById('sound4'),
+                document.getElementById('sound5')
+            ];
+            
+            let totalBlocks = 100;
+            let remainingBlocks = 100;
+            let gridColumns = 10;
+            let gridRows = 10;
+            
+            function playRandomSound() {
+                const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+                randomSound.currentTime = 0;
+                randomSound.play();
+            }
+            
+            function createExplosion(x, y) {
+                const explosion = document.createElement('div');
+                explosion.className = 'explosion';
+                explosion.style.left = `${x - 30}px`;
+                explosion.style.top = `${y - 30}px`;
+                imageWrapper.appendChild(explosion);
+                
+                setTimeout(() => {
+                    explosion.remove();
+                }, 800);
+            }
+            
+            function createBlockGrid() {
+                blockOverlay.innerHTML = '';
+                blockOverlay.style.gridTemplateColumns = `repeat(${gridColumns}, 1fr)`;
+                blockOverlay.style.gridTemplateRows = `repeat(${gridRows}, 1fr)`;
+                
+                for (let i = 0; i < totalBlocks; i++) {
+                    const block = document.createElement('div');
+                    block.className = 'block';
+                    
+                    block.addEventListener('click', function(e) {
+                        if (!block.classList.contains('removed')) {
+                            const rect = block.getBoundingClientRect();
+                            const x = e.clientX - rect.left + imageWrapper.getBoundingClientRect().left;
+                            const y = e.clientY - rect.top + imageWrapper.getBoundingClientRect().top;
+                            
+                            playRandomSound();
+                            createExplosion(x, y);
+                            block.classList.add('removed');
+                            
+                            remainingBlocks--;
+                            blocksLeftSpan.textContent = remainingBlocks;
+                            
+                            if (remainingBlocks === 0) {
+                                setTimeout(() => {
+                                    alert('Congratulations! You revealed the image!');
+                                }, 500);
+                            }
+                        }
+                    });
+                    
+                    blockOverlay.appendChild(block);
+                }
+            }
+            
+            function startGame() {
+                const file = fileUpload.files[0];
+                if (!file) {
+                    alert('Please upload an image first!');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    targetImage.src = e.target.result;
+                    
+                    targetImage.onload = function() {
+                        const aspectRatio = targetImage.naturalWidth / targetImage.naturalHeight;
+                        
+                        if (aspectRatio > 1) {
+                            gridColumns = Math.round(10 * aspectRatio);
+                            gridRows = 10;
+                        } else {
+                            gridColumns = 10;
+                            gridRows = Math.round(10 / aspectRatio);
+                        }
+                        
+                        totalBlocks = gridColumns * gridRows;
+                        remainingBlocks = totalBlocks;
+                        blocksLeftSpan.textContent = remainingBlocks;
+                        
+                        createBlockGrid();
+                        
+                        uploadContainer.style.display = 'none';
+                        gameContainer.style.display = 'block';
+                        statsContainer.style.display = 'flex';
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            function resetGame() {
+                gameContainer.style.display = 'none';
+                statsContainer.style.display = 'none';
+                uploadContainer.style.display = 'block';
+                targetImage.src = '';
+                fileUpload.value = '';
+            }
+            
+            startGameBtn.addEventListener('click', startGame);
+            newGameBtn.addEventListener('click', resetGame);
+            
+            // Initialize with stats hidden
+            statsContainer.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
