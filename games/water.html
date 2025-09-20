@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Physics Puzzles</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #c2f5ff;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            display: block;
+            background-color: #e6fbff;
+        }
+        
+        #toolbox {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .tool {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            background-color: #fff;
+            border: 3px solid #7cd1ff;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s;
+            overflow: hidden;
+        }
+        
+        .tool:hover {
+            transform: scale(1.1);
+            border-color: #0099ff;
+        }
+        
+        .tool.selected {
+            border-color: #ff6b6b;
+            background-color: #ffe6e6;
+            transform: scale(1.1);
+        }
+        
+        .tool img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        button {
+            background-color: #4db8ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:hover {
+            background-color: #0099ff;
+        }
+        
+        #level-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 10px 20px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+        
+        #welcome-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 153, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            color: white;
+            text-align: center;
+        }
+        
+        #welcome-screen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        #welcome-screen p {
+            font-size: 24px;
+            max-width: 600px;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+        
+        #start-button {
+            background-color: #ff6b6b;
+            font-size: 24px;
+            padding: 15px 40px;
+        }
+        
+        #start-button:hover {
+            background-color: #ff4f4f;
+        }
+        
+        #level-complete {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 150;
+            display: none;
+        }
+        
+        #level-complete h2 {
+            color: #00cc44;
+            font-size: 32px;
+            margin-top: 10px;
+        }
+        
+        #next-level-button {
+            background-color: #00cc44;
+            margin-top: 20px;
+        }
+        
+        #next-level-button:hover {
+            background-color: #00aa33;
+        }
+        
+        .splash {
+            position: absolute;
+            background-color: rgba(66, 165, 245, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: splash 0.5s ease-out forwards;
+        }
+        
+        @keyframes splash {
+            0% {
+                transform: scale(0);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+        
+        .rotate-button {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 18px;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            z-index: 101;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+        
+        <div id="toolbox">
+            <div class="tool selected" data-tool="ramp">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTAgODAgTDkwIDgwIEw5MCAyMCBMMTAgODAiIGZpbGw9IiM5OTY2MzMiIHN0cm9rZT0iIzY2MzMwMCIgc3Ryb2tlLXdpZHRoPSIzIi8+PC9zdmc+" alt="Ramp">
+            </div>
+            <div class="tool" data-tool="platform">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB4PSIxMCIgeT0iNDAiIHdpZHRoPSI4MCIgaGVpZ2h0PSIyMCIgZmlsbD0iIzk5NjYzMyIgc3Ryb2tlPSIjNjYzMzAwIiBzdHJva2Utd2lkdGg9IjMiLz48L3N2Zz4=" alt="Platform">
+            </div>
+            <div class="tool" data-tool="funnel">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMzAgMjAgTDcwIDIwIEw2MCA4MCBMNDAgODAgTDMwIDIwIiBmaWxsPSIjNjY5OWNjIiBzdHJva2U9IiMzMzY2OTkiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==" alt="Funnel">
+            </div>
+            <div class="tool" data-tool="sponge">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB4PSIyMCIgeT0iMzAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0MCIgZmlsbD0iI2ZmY2MwMCIgc3Ryb2tlPSIjZmY5OTAwIiBzdHJva2Utd2lkdGg9IjMiIHJ4PSI1IiByeT0iNSIvPjxjaXJjbGUgY3g9IjMwIiBjeT0iNDAiIHI9IjMiIGZpbGw9IiNmZjk5MDAiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSIzIiBmaWxsPSIjZmY5OTAwIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI0MCIgcj0iMyIgZmlsbD0iI2ZmOTkwMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNjAiIHI9IjMiIGZpbGw9IiNmZjk5MDAiLz48Y2lyY2xlIGN4PSI3MCIgY3k9IjUwIiByPSIzIiBmaWxsPSIjZmY5OTAwIi8+PC9zdmc+" alt="Sponge">
+            </div>
+            <div class="tool" data-tool="bucket">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMzAgMjAgTDcwIDIwIEw3NSA4MCBMMjUgODAgTDMwIDIwIiBmaWxsPSIjZTZlNmU2IiBzdHJva2U9IiM5OTk5OTkiIHN0cm9rZS13aWR0aD0iMyIvPjxwYXRoIGQ9Ik0zMCA0MCBMIDI1IDgwIEw3NSA4MCBMNzAgNDAiIGZpbGw9IiM0ZGI4ZmYiLz48L3N2Zz4=" alt="Bucket">
+            </div>
+        </div>
+        
+        <div id="controls">
+            <button id="reset-button">Reset Level</button>
+            <button id="water-button">Toggle Water</button>
+            <button id="delete-button">Delete Objects</button>
+            <button id="random-level-button">Random Level</button>
+        </div>
+        
+        <div id="level-info">
+            <h2>Level <span id="level-number">1</span></h2>
+            <p id="level-objective">Help the water reach the plant!</p>
+        </div>
+        
+        <div id="level-complete">
+            <h2>Level Complete!</h2>
+            <p>You've successfully watered the plant!</p>
+            <button id="next-level-button">Next Level</button>
+        </div>
+        
+        <div id="welcome-screen">
+            <h1>Water Physics Puzzles</h1>
+            <p>Use different objects to direct water from the tap to the plants. Experiment and have fun with water physics!</p>
+            <button id="start-button">Start Playing</button>
+        </div>
+    </div>
+
+    <!-- Directly implement basic 2D physics without external libraries -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game variables
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            let waterParticles = [];
+            let placedObjects = [];
+            let waterTap;
+            let plants = [];
+            let isWaterFlowing = false;
+            let selectedTool = 'ramp';
+            let isDragging = false;
+            let draggedObject = null;
+            let currentLevel = 1;
+            let deleteMode = false;
+            let rotatingObject = null;
+            let rotateButton = null;
+            let waterInterval;
+            let obstacles = [];
+            let lastClickTime = 0; // Track clicks to prevent double-click issues
+            let spatialhash = {}; // For water particle collision optimization
+            const cellSize = 20; // Size of each cell in the spatial hash
+            
+            // Initialize game
+            function initGame() {
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+                
+                // Setup input listeners
+                setupEventListeners();
+                
+                // Start the first level
+                loadLevel(currentLevel);
+                
+                // Start the game loop
+                requestAnimationFrame(gameLoop);
+            }
+            
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            
+            function loadLevel(level) {
+                // Clear any existing level objects
+                clearLevel();
+                
+                let tapX, tapY, plantX, plantY;
+                let levelObjective = "Help the water reach the plant!";
+                
+                if (level === 'random') {
+                    createRandomLevel();
+                    return;
+                }
+                
+                switch(level) {
+                    case 1:
+                        // Basic level - water tap on left, plant on right
+                        tapX = canvas.width * 0.2;
+                        tapY = canvas.height * 0.2;
+                        plantX = canvas.width * 0.8;
+                        plantY = canvas.height * 0.8;
+                        // Add a platform in the middle to make it harder
+                        createPlatform(canvas.width * 0.5, canvas.height * 0.5, 100, 20, 0);
+                        break;
+                    case 2:
+                        // Two levels to navigate
+                        tapX = canvas.width * 0.1;
+                        tapY = canvas.height * 0.2;
+                        plantX = canvas.width * 0.9;
+                        plantY = canvas.height * 0.7;
+                        // Add some obstacles
+                        createPlatform(canvas.width * 0.3, canvas.height * 0.4, 200, 20, 0);
+                        createPlatform(canvas.width * 0.7, canvas.height * 0.6, 200, 20, 0);
+                        break;
+                    case 3:
+                        // Multiple platforms with a gap
+                        tapX = canvas.width * 0.1;
+                        tapY = canvas.height * 0.2;
+                        plantX = canvas.width * 0.9;
+                        plantY = canvas.height * 0.8;
+                        // Add platforms with a gap
+                        createPlatform(canvas.width * 0.3, canvas.height * 0.4, 150, 20, 0);
+                        createPlatform(canvas.width * 0.7, canvas.height * 0.4, 150, 20, 0);
+                        createPlatform(canvas.width * 0.5, canvas.height * 0.6, 150, 20, 0);
+                        levelObjective = "Create a path across the gaps!";
+                        break;
+                    case 4:
+                        // Plant is higher than the water tap
+                        tapX = canvas.width * 0.1;
+                        tapY = canvas.height * 0.6;
+                        plantX = canvas.width * 0.9;
+                        plantY = canvas.height * 0.3;
+                        // Add a platform near the plant
+                        createPlatform(canvas.width * 0.8, canvas.height * 0.4, 150, 20, 0);
+                        levelObjective = "Find a way to get water to the higher platform!";
+                        break;
+                    case 5:
+                        // Multiple plants
+                        tapX = canvas.width * 0.5;
+                        tapY = canvas.height * 0.1;
+                        // Create multiple plants
+                        createPlant(canvas.width * 0.2, canvas.height * 0.8);
+                        createPlant(canvas.width * 0.8, canvas.height * 0.8);
+                        // Add obstacles
+                        createPlatform(canvas.width * 0.5, canvas.height * 0.5, 200, 20, 0);
+                        levelObjective = "Water both plants!";
+                        plantX = plantY = null; // Skip default plant creation
+                        break;
+                    default:
+                        // Completed all levels or invalid level - create random level
+                        createRandomLevel();
+                        return;
+                }
+                
+                // Create water tap
+                createWaterTap(tapX, tapY);
+                
+                // Create plant (unless it's a special level with multiple plants)
+                if (plantX !== null && plantY !== null) {
+                    createPlant(plantX, plantY);
+                }
+                
+                // Update level info
+                document.getElementById('level-number').textContent = level;
+                document.getElementById('level-objective').textContent = levelObjective;
+            }
+            
+            function createRandomLevel() {
+                // Clear previous level
+                clearLevel();
+                
+                // Set objective
+                document.getElementById('level-number').textContent = "Random";
+                document.getElementById('level-objective').textContent = "Water the plants in this random challenge!";
+                
+                // Create tap at random position (upper part of screen)
+                const tapX = Math.random() * (canvas.width * 0.8) + (canvas.width * 0.1);
+                const tapY = Math.random() * (canvas.height * 0.3) + (canvas.height * 0.1);
+                createWaterTap(tapX, tapY);
+                
+                // Create 1-3 plants at random positions
+                const plantCount = Math.floor(Math.random() * 3) + 1;
+                for (let i = 0; i < plantCount; i++) {
+                    const plantX = Math.random() * (canvas.width * 0.8) + (canvas.width * 0.1);
+                    const plantY = Math.random() * (canvas.height * 0.3) + (canvas.height * 0.6);
+                    createPlant(plantX, plantY);
+                }
+                
+                // Create 2-5 random obstacles
+                const obstacleCount = Math.floor(Math.random() * 4) + 2;
+                for (let i = 0; i < obstacleCount; i++) {
+                    const obstacleX = Math.random() * (canvas.width * 0.8) + (canvas.width * 0.1);
+                    const obstacleY = Math.random() * (canvas.height * 0.6) + (canvas.height * 0.2);
+                    const width = Math.random() * 150 + 50;
+                    const height = 20;
+                    const angle = Math.random() * 40 - 20; // -20 to +20 degrees
+                    createPlatform(obstacleX, obstacleY, width, height, angle);
+                }
+            }
+            
+            function clearLevel() {
+                // Stop water flow
+                isWaterFlowing = false;
+                if (waterInterval) {
+                    clearInterval(waterInterval);
+                    waterInterval = null;
+                }
+                
+                // Clear all objects
+                waterParticles = [];
+                placedObjects = [];
+                plants = [];
+                obstacles = [];
+                waterTap = null;
+                
+                // Clear spatial hash
+                spatialhash = {};
+                
+                // Remove rotate button if visible
+                if (rotateButton) {
+                    rotateButton.remove();
+                    rotateButton = null;
+                }
+                
+                rotatingObject = null;
+            }
+            
+            function createWaterTap(x, y) {
+                waterTap = {
+                    x: x,
+                    y: y,
+                    width: 30,
+                    height: 60,
+                    type: 'tap'
+                };
+            }
+            
+            function createPlant(x, y) {
+                const plant = {
+                    x: x,
+                    y: y,
+                    width: 30,
+                    height: 60,
+                    type: 'plant',
+                    waterLevel: 0,
+                    watered: false
+                };
+                
+                plants.push(plant);
+                return plant;
+            }
+            
+            function createPlatform(x, y, width, height, angle) {
+                const platform = {
+                    x: x,
+                    y: y,
+                    width: width,
+                    height: height,
+                    type: 'platform',
+                    angle: angle * (Math.PI / 180), // Convert to radians
+                    // Store vertices for precise collision detection
+                    vertices: calculateRectangleVertices(x, y, width, height, angle * (Math.PI / 180))
+                };
+                
+                obstacles.push(platform);
+                return platform;
+            }
+            
+            // Calculate rectangle vertices for better collision detection
+            function calculateRectangleVertices(x, y, width, height, angle) {
+                const vertices = [];
+                const halfWidth = width / 2;
+                const halfHeight = height / 2;
+                
+                // Calculate the four corner vertices
+                vertices.push(rotatePoint(x, y, x - halfWidth, y - halfHeight, angle));
+                vertices.push(rotatePoint(x, y, x + halfWidth, y - halfHeight, angle));
+                vertices.push(rotatePoint(x, y, x + halfWidth, y + halfHeight, angle));
+                vertices.push(rotatePoint(x, y, x - halfWidth, y + halfHeight, angle));
+                
+                return vertices;
+            }
+            
+            // Rotate a point around center
+            function rotatePoint(cx, cy, px, py, angle) {
+                const s = Math.sin(angle);
+                const c = Math.cos(angle);
+                
+                // Translate point back to origin
+                px -= cx;
+                py -= cy;
+                
+                // Rotate point
+                const xnew = px * c - py * s;
+                const ynew = px * s + py * c;
+                
+                // Translate point back
+                return { x: xnew + cx, y: ynew + cy };
+            }
+            
+            // Get the cell key for spatial hash
+            function getCellKey(x, y) {
+                const cellX = Math.floor(x / cellSize);
+                const cellY = Math.floor(y / cellSize);
+                return `${cellX},${cellY}`;
+            }
+            
+            // Add a particle to the spatial hash
+            function addToSpatialHash(particle) {
+                const key = getCellKey(particle.x, particle.y);
+                if (!spatialhash[key]) {
+                    spatialhash[key] = [];
+                }
+                spatialhash[key].push(particle);
+            }
+            
+            // Clear and rebuild the spatial hash
+            function updateSpatialHash() {
+                spatialhash = {};
+                for (let i = 0; i < waterParticles.length; i++) {
+                    if (!waterParticles[i].absorbed) {
+                        addToSpatialHash(waterParticles[i]);
+                    }
+                }
+            }
+            
+            // Get potential collision candidates from nearby cells
+            function getNearbyParticles(particle) {
+                const nearby = [];
+                const x = particle.x;
+                const y = particle.y;
+                
+                // Check the current cell and its 8 neighbors
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const cellX = Math.floor((x + dx * cellSize) / cellSize);
+                        const cellY = Math.floor((y + dy * cellSize) / cellSize);
+                        const key = `${cellX},${cellY}`;
+                        
+                        if (spatialhash[key]) {
+                            nearby.push(...spatialhash[key]);
+                        }
+                    }
+                }
+                
+                return nearby;
+            }
+            
+            function createWaterParticle(x, y) {
+                const particle = {
+                    x: x + (Math.random() - 0.5) * 6, // Add some horizontal randomness
+                    y: y,
+                    radius: 6,
+                    vx: (Math.random() - 0.5) * 2, // Random X velocity
+                    vy: 1, // Initial Y velocity (downward)
+                    lifeTime: 0,
+                    maxLifeTime: 500,
+                    absorbed: false,
+                    lastCollisionTime: 0 // Track last collision time to prevent constant collisions
+                };
+                
+                waterParticles.push(particle);
+                return particle;
+            }
+            
+            function startWaterFlow() {
+                if (isWaterFlowing) return;
+                
+                isWaterFlowing = true;
+                const tapX = waterTap.x;
+                const tapY = waterTap.y + waterTap.height / 2 + 10; // Just below the tap
+                
+                // Create water particles at interval
+                waterInterval = setInterval(() => {
+                    if (!isWaterFlowing) {
+                        clearInterval(waterInterval);
+                        return;
+                    }
+                    
+                    // Create 3 water particles per interval
+                    for (let i = 0; i < 3; i++) {
+                        createWaterParticle(tapX, tapY);
+                    }
+                    
+                    // Create splash effect
+                    createSplashEffect(tapX, tapY, 20);
+                }, 200);
+            }
+            
+            function stopWaterFlow() {
+                isWaterFlowing = false;
+                if (waterInterval) {
+                    clearInterval(waterInterval);
+                    waterInterval = null;
+                }
+            }
+            
+            function toggleWaterFlow() {
+                if (isWaterFlowing) {
+                    stopWaterFlow();
+                } else {
+                    startWaterFlow();
+                }
+            }
+            
+            function createUserObject(x, y, type) {
+                let width, height, object;
+                
+                switch(type) {
+                    case 'ramp':
+                        width = 100;
+                        height = 20;
+                        object = {
+                            x: x,
+                            y: y,
+                            width: width,
+                            height: height,
+                            type: 'ramp',
+                            angle: 0,
+                            waterAbsorbed: 0,
+                            waterCapacity: 0,
+                            shape: 'ramp',
+                            vertices: [] // Will be calculated when angle is set
+                        };
+                        // Calculate initial vertices
+                        object.vertices = calculateRampVertices(x, y, width, height, 0);
+                        break;
+                        
+                    case 'platform':
+                        width = 100;
+                        height = 20;
+                        object = {
+                            x: x,
+                            y: y,
+                            width: width,
+                            height: height,
+                            type: 'platform',
+                            angle: 0,
+                            waterAbsorbed: 0,
+                            waterCapacity: 0,
+                            shape: 'rectangle',
+                            vertices: calculateRectangleVertices(x, y, width, height, 0)
+                        };
+                        break;
+                        
+                    case 'funnel':
+                        width = 60;
+                        height = 80;
+                        object = {
+                            x: x,
+                            y: y,
+                            width: width,
+                            height: height,
+                            type: 'funnel',
+                            angle: 0,
+                            waterAbsorbed: 0,
+                            waterCapacity: 0,
+                            shape: 'funnel',
+                            vertices: calculateFunnelVertices(x, y, width, height, 0)
+                        };
+                        break;
+                        
+                    case 'sponge':
+                        width = 60;
+                        height = 40;
+                        object = {
+                            x: x,
+                            y: y,
+                            width: width,
+                            height: height,
+                            type: 'sponge',
+                            angle: 0,
+                            waterAbsorbed: 0,
+                            waterCapacity: 20,
+                            shape: 'rectangle',
+                            vertices: calculateRectangleVertices(x, y, width, height, 0)
+                        };
+                        break;
+                        
+                    case 'bucket':
+                        width = 50;
+                        height = 60;
+                        object = {
+                            x: x,
+                            y: y,
+                            width: width,
+                            height: height,
+                            type: 'bucket',
+                            angle: 0,
+                            waterAbsorbed: 0,
+                            waterCapacity: 50,
+                            shape: 'bucket',
+                            vertices: calculateBucketVertices(x, y, width, height, 0)
+                        };
+                        break;
+                }
+                
+                placedObjects.push(object);
+                return object;
+            }
+            
+            // Calculate vertices for different shapes
+            function calculateRampVertices(x, y, width, height, angle) {
+                const vertices = [];
+                const halfWidth = width / 2;
+                const halfHeight = height / 2;
+                
+                // Ramp is a triangle
+                vertices.push(rotatePoint(x, y, x - halfWidth, y + halfHeight, angle)); // Bottom left
+                vertices.push(rotatePoint(x, y, x + halfWidth, y + halfHeight, angle)); // Bottom right
+                vertices.push(rotatePoint(x, y, x + halfWidth, y - halfHeight, angle)); // Top right
+                
+                return vertices;
+            }
+            
+            function calculateFunnelVertices(x, y, width, height, angle) {
+                const vertices = [];
+                const halfWidth = width / 2;
+                const halfHeight = height / 2;
+                const narrowFactor = 0.3; // How much narrower the bottom is
+                
+                vertices.push(rotatePoint(x, y, x - halfWidth, y - halfHeight, angle)); // Top left
+                vertices.push(rotatePoint(x, y, x + halfWidth, y - halfHeight, angle)); // Top right
+                vertices.push(rotatePoint(x, y, x + halfWidth * narrowFactor, y + halfHeight, angle)); // Bottom right
+                vertices.push(rotatePoint(x, y, x - halfWidth * narrowFactor, y + halfHeight, angle)); // Bottom left
+                
+                return vertices;
+            }
+            
+            function calculateBucketVertices(x, y, width, height, angle) {
+                const vertices = [];
+                const halfWidth = width / 2;
+                const halfHeight = height / 2;
+                const narrowFactor = 0.45; // How much narrower the bottom is
+                
+                vertices.push(rotatePoint(x, y, x - halfWidth, y - halfHeight, angle)); // Top left
+                vertices.push(rotatePoint(x, y, x + halfWidth, y - halfHeight, angle)); // Top right
+                vertices.push(rotatePoint(x, y, x + halfWidth * narrowFactor, y + halfHeight, angle)); // Bottom right
+                vertices.push(rotatePoint(x, y, x - halfWidth * narrowFactor, y + halfHeight, angle)); // Bottom left
+                
+                return vertices;
+            }
+            
+            function createSplashEffect(x, y, size) {
+                const splash = document.createElement('div');
+                splash.className = 'splash';
+                splash.style.left = x + 'px';
+                splash.style.top = y + 'px';
+                splash.style.width = size + 'px';
+                splash.style.height = size + 'px';
+                document.getElementById('game-container').appendChild(splash);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    splash.remove();
+                }, 500);
+            }
+            
+            function checkLevelCompletion() {
+                let allPlantsWatered = plants.length > 0;
+                
+                // Check if all plants have been watered
+                for (let i = 0; i < plants.length; i++) {
+                    if (!plants[i].watered) {
+                        allPlantsWatered = false;
+                        break;
+                    }
+                }
+                
+                if (allPlantsWatered) {
+                    // Level complete
+                    stopWaterFlow();
+                    document.getElementById('level-complete').style.display = 'block';
+                }
+            }
+            
+            function setupEventListeners() {
+                // Tool selection
+                const tools = document.querySelectorAll('.tool');
+                tools.forEach(tool => {
+                    tool.addEventListener('click', function() {
+                        tools.forEach(t => t.classList.remove('selected'));
+                        this.classList.add('selected');
+                        selectedTool = this.getAttribute('data-tool');
+                        deleteMode = false;
+                        
+                        // Reset delete button appearance
+                        document.getElementById('delete-button').textContent = 'Delete Objects';
+                        document.getElementById('delete-button').style.backgroundColor = '#4db8ff';
+                    });
+                });
+                
+                // Canvas click/drag events
+                canvas.addEventListener('mousedown', handleMouseDown);
+                canvas.addEventListener('mousemove', handleMouseMove);
+                canvas.addEventListener('mouseup', handleMouseUp);
+                
+                // Button controls
+                document.getElementById('reset-button').addEventListener('click', function() {
+                    loadLevel(currentLevel);
+                });
+                
+                document.getElementById('water-button').addEventListener('click', toggleWaterFlow);
+                
+                document.getElementById('delete-button').addEventListener('click', function() {
+                    deleteMode = !deleteMode;
+                    if (deleteMode) {
+                        this.textContent = 'Cancel Delete';
+                        this.style.backgroundColor = '#ff6b6b';
+                    } else {
+                        this.textContent = 'Delete Objects';
+                        this.style.backgroundColor = '#4db8ff';
+                    }
+                });
+                
+                document.getElementById('random-level-button').addEventListener('click', function() {
+                    loadLevel('random');
+                });
+                
+                document.getElementById('start-button').addEventListener('click', function() {
+                    document.getElementById('welcome-screen').style.display = 'none';
+                });
+                
+                document.getElementById('next-level-button').addEventListener('click', function() {
+                    currentLevel++;
+                    loadLevel(currentLevel);
+                    document.getElementById('level-complete').style.display = 'none';
+                });
+            }
+            
+            // Check if a point is inside a polygon defined by vertices
+            function pointInPolygon(point, vertices) {
+                let inside = false;
+                
+                for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+                    const xi = vertices[i].x, yi = vertices[i].y;
+                    const xj = vertices[j].x, yj = vertices[j].y;
+                    
+                    const intersect = ((yi > point.y) !== (yj > point.y))
+                        && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+                    
+                    if (intersect) inside = !inside;
+                }
+                
+                return inside;
+            }
+            
+            function handleMouseDown(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Prevent double-click issues
+                const now = Date.now();
+                if (now - lastClickTime < 300) {  // 300ms double-click threshold
+                    return; // Ignore rapid clicks
+                }
+                lastClickTime = now;
+                
+                if (deleteMode) {
+                    // Try to find and delete a placed object
+                    for (let i = 0; i < placedObjects.length; i++) {
+                        const obj = placedObjects[i];
+                        
+                        if (pointInPolygon({x, y}, obj.vertices)) {
+                            // Delete the object
+                            placedObjects.splice(i, 1);
+                            
+                            // Hide rotate button if this was the rotating object
+                            if (rotatingObject === obj && rotateButton) {
+                                rotateButton.remove();
+                                rotateButton = null;
+                                rotatingObject = null;
+                            }
+                            
+                            return;
+                        }
+                    }
+                } else {
+                    // Check for existing object to drag
+                    for (let i = 0; i < placedObjects.length; i++) {
+                        const obj = placedObjects[i];
+                        
+                        if (pointInPolygon({x, y}, obj.vertices)) {
+                            isDragging = true;
+                            draggedObject = obj;
+                            
+                            // Show rotation button near the object
+                            showRotationButton(obj.x, obj.y, obj);
+                            
+                            return;
+                        }
+                    }
+                    
+                    // Place a new object if not dragging
+                    const newObj = createUserObject(x, y, selectedTool);
+                    if (newObj) {
+                        isDragging = true;
+                        draggedObject = newObj;
+                        
+                        // Show rotation button for new object
+                        showRotationButton(newObj.x, newObj.y, newObj);
+                    }
+                }
+            }
+            
+            function handleMouseMove(e) {
+                if (isDragging && draggedObject) {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    // Calculate the translation vector
+                    const dx = x - draggedObject.x;
+                    const dy = y - draggedObject.y;
+                    
+                    // Update dragged object position
+                    draggedObject.x = x;
+                    draggedObject.y = y;
+                    
+                    // Update vertices
+                    if (draggedObject.vertices) {
+                        for (let i = 0; i < draggedObject.vertices.length; i++) {
+                            draggedObject.vertices[i].x += dx;
+                            draggedObject.vertices[i].y += dy;
+                        }
+                    }
+                    
+                    // Update rotation button position
+                    if (rotateButton && rotatingObject === draggedObject) {
+                        updateRotationButtonPosition(x, y);
+                    }
+                }
+            }
+            
+            function handleMouseUp(e) {
+                isDragging = false;
+                draggedObject = null;
+            }
+            
+            function showRotationButton(x, y, obj) {
+                // Remove existing button if present
+                if (rotateButton) {
+                    rotateButton.remove();
+                }
+                
+                // Create rotate button
+                rotateButton = document.createElement('div');
+                rotateButton.className = 'rotate-button';
+                rotateButton.innerHTML = '↻';
+                rotateButton.style.left = (x + obj.width/2 + 10) + 'px';
+                rotateButton.style.top = (y - obj.height/2 - 10) + 'px';
+                document.getElementById('game-container').appendChild(rotateButton);
+                
+                // Set rotating object
+                rotatingObject = obj;
+                
+                // Add rotation event handler
+                rotateButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    // Rotate object by 15 degrees
+                    rotatingObject.angle = (rotatingObject.angle + Math.PI/12) % (Math.PI*2);
+                    
+                    // Update vertices based on object type
+                    switch (rotatingObject.type) {
+                        case 'ramp':
+                            rotatingObject.vertices = calculateRampVertices(
+                                rotatingObject.x, rotatingObject.y, 
+                                rotatingObject.width, rotatingObject.height, 
+                                rotatingObject.angle
+                            );
+                            break;
+                        case 'platform':
+                        case 'sponge':
+                            rotatingObject.vertices = calculateRectangleVertices(
+                                rotatingObject.x, rotatingObject.y, 
+                                rotatingObject.width, rotatingObject.height, 
+                                rotatingObject.angle
+                            );
+                            break;
+                        case 'funnel':
+                            rotatingObject.vertices = calculateFunnelVertices(
+                                rotatingObject.x, rotatingObject.y, 
+                                rotatingObject.width, rotatingObject.height, 
+                                rotatingObject.angle
+                            );
+                            break;
+                        case 'bucket':
+                            rotatingObject.vertices = calculateBucketVertices(
+                                rotatingObject.x, rotatingObject.y, 
+                                rotatingObject.width, rotatingObject.height, 
+                                rotatingObject.angle
+                            );
+                            break;
+                    }
+                });
+            }
+            
+            function updateRotationButtonPosition(x, y) {
+                if (rotateButton && rotatingObject) {
+                    rotateButton.style.left = (x + rotatingObject.width/2 + 10) + 'px';
+                    rotateButton.style.top = (y - rotatingObject.height/2 - 10) + 'px';
+                }
+            }
+            
+            // Better line segment intersection check for polygon collision
+            function lineIntersectsCircle(x1, y1, x2, y2, cx, cy, r) {
+                // Find the closest point on the line segment to the circle
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const len = Math.sqrt(dx*dx + dy*dy);
+                
+                // Normalize direction vector
+                const nx = dx / len;
+                const ny = dy / len;
+                
+                // Vector from line start to circle center
+                const vx = cx - x1;
+                const vy = cy - y1;
+                
+                // Project circle center onto the line
+                const projection = vx*nx + vy*ny;
+                
+                // Clamp to line segment
+                const projectionX = x1 + Math.max(0, Math.min(len, projection)) * nx;
+                const projectionY = y1 + Math.max(0, Math.min(len, projection)) * ny;
+                
+                // Distance from closest point to circle center
+                const distance = Math.sqrt((projectionX - cx)**2 + (projectionY - cy)**2);
+                
+                return distance <= r;
+            }
+            
+            // Check if circle collides with polygon
+            function circlePolygonCollision(circle, vertices) {
+                // Check if circle center is inside the polygon
+                if (pointInPolygon({x: circle.x, y: circle.y}, vertices)) {
+                    return true;
+                }
+                
+                // Check each edge of the polygon
+                for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+                    if (lineIntersectsCircle(
+                        vertices[j].x, vertices[j].y,
+                        vertices[i].x, vertices[i].y,
+                        circle.x, circle.y, circle.radius
+                    )) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
+            
+            function updateWaterParticles() {
+                // Array to store particles to keep
+                const remainingParticles = [];
+                
+                // Update spatial hash for more efficient water particle interaction
+                updateSpatialHash();
+                
+                const now = Date.now();
+                
+                for (let i = 0; i < waterParticles.length; i++) {
+                    const particle = waterParticles[i];
+                    
+                    // Skip if absorbed
+                    if (particle.absorbed) continue;
+                    
+                    // Update lifeTime
+                    particle.lifeTime++;
+                    if (particle.lifeTime > particle.maxLifeTime) {
+                        continue; // Skip this particle
+                    }
+                    
+                    // Apply gravity
+                    particle.vy += 0.2;
+                    
+                    // Limit maximum velocity
+                    const maxVel = 10;
+                    if (particle.vy > maxVel) particle.vy = maxVel;
+                    if (particle.vx > maxVel) particle.vx = maxVel;
+                    if (particle.vx < -maxVel) particle.vx = -maxVel;
+                    
+                    // Apply velocity
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    
+                    // Check collisions with obstacles and objects
+                    let collision = false;
+                    
+                    // Check ground collision
+                    if (particle.y + particle.radius > canvas.height) {
+                        particle.y = canvas.height - particle.radius;
+                        particle.vy = -particle.vy * 0.4; // Bounce with loss of energy
+                        particle.vx *= 0.8; // Friction
+                        collision = true;
+                    }
+                    
+                    // Check wall collisions
+                    if (particle.x - particle.radius < 0) {
+                        particle.x = particle.radius;
+                        particle.vx = -particle.vx * 0.8;
+                        collision = true;
+                    } else if (particle.x + particle.radius > canvas.width) {
+                        particle.x = canvas.width - particle.radius;
+                        particle.vx = -particle.vx * 0.8;
+                        collision = true;
+                    }
+                    
+                    // Check ceiling collision
+                    if (particle.y - particle.radius < 0) {
+                        particle.y = particle.radius;
+                        particle.vy = -particle.vy * 0.8;
+                        collision = true;
+                    }
+                    
+                    // Check collisions with obstacles and placed objects
+                    const objectsToCheck = [...obstacles, ...placedObjects];
+                    for (let j = 0; j < objectsToCheck.length; j++) {
+                        const obj = objectsToCheck[j];
+                        
+                        // Skip water-absorbing objects (handled separately)
+                        if ((obj.type === 'sponge' || obj.type === 'bucket') && 
+                            objectsToCheck === placedObjects) {
+                            continue;
+                        }
+                        
+                        // Use polygon-based collision detection
+                        if (circlePolygonCollision(particle, obj.vertices)) {
+                            // Special handling for water-absorbing objects
+                            if ((obj.type === 'sponge' || obj.type === 'bucket') && 
+                                obj.waterAbsorbed < obj.waterCapacity) {
+                                obj.waterAbsorbed++;
+                                particle.absorbed = true;
+                                createSplashEffect(particle.x, particle.y, 10);
+                                break;
+                            }
+                            
+                            // Normal collision response
+                            // Find the closest vertex/edge to determine reflection normal
+                            let closestDistance = Infinity;
+                            let normalX = 0, normalY = 0;
+                            
+                            // Check against each edge
+                            for (let k = 0, l = obj.vertices.length - 1; k < obj.vertices.length; l = k++) {
+                                const v1 = obj.vertices[l];
+                                const v2 = obj.vertices[k];
+                                
+                                // Find closest point on the edge
+                                let edgeX, edgeY, distance;
+                                const result = closestPointOnLineSegment(
+                                    particle.x, particle.y,
+                                    v1.x, v1.y, v2.x, v2.y
+                                );
+                                
+                                edgeX = result.x;
+                                edgeY = result.y;
+                                distance = result.distance;
+                                
+                                if (distance < closestDistance) {
+                                    closestDistance = distance;
+                                    
+                                    // Calculate normal (perpendicular to edge)
+                                    const edgeDX = v2.x - v1.x;
+                                    const edgeDY = v2.y - v1.y;
+                                    
+                                    // Perpendicular
+                                    normalX = -edgeDY;
+                                    normalY = edgeDX;
+                                    
+                                    // Normalize
+                                    const normalLen = Math.sqrt(normalX*normalX + normalY*normalY);
+                                    normalX /= normalLen;
+                                    normalY /= normalLen;
+                                    
+                                    // Make sure normal points outward from polygon
+                                    const dotProduct = (particle.x - edgeX) * normalX + 
+                                                      (particle.y - edgeY) * normalY;
+                                    if (dotProduct < 0) {
+                                        normalX = -normalX;
+                                        normalY = -normalY;
+                                    }
+                                }
+                            }
+                            
+                            // Reflect velocity across the normal
+                            const dot = particle.vx * normalX + particle.vy * normalY;
+                            particle.vx = particle.vx - 2 * dot * normalX;
+                            particle.vy = particle.vy - 2 * dot * normalY;
+                            
+                            // Apply energy loss
+                            particle.vx *= 0.6;
+                            particle.vy *= 0.6;
+                            
+                            // Move particle out of collision
+                            const pushDistance = particle.radius - closestDistance + 1; // +1 to ensure it's out
+                            particle.x += normalX * pushDistance;
+                            particle.y += normalY * pushDistance;
+                            
+                            collision = true;
+                            
+                            // Create small splash effect occasionally
+                            if (Math.random() > 0.9) {
+                                createSplashEffect(particle.x, particle.y, 8);
+                            }
+                            
+                            break;
+                        }
+                    }
+                    
+                    // Check water-water collisions (much more efficient with spatial hash)
+                    if (!collision && now - particle.lastCollisionTime > 100) { // Only check if not recently collided
+                        const nearby = getNearbyParticles(particle);
+                        
+                        for (let j = 0; j < nearby.length; j++) {
+                            const other = nearby[j];
+                            
+                            // Skip self
+                            if (other === particle) continue;
+                            
+                            // Skip absorbed particles
+                            if (other.absorbed) continue;
+                            
+                            const dx = other.x - particle.x;
+                            const dy = other.y - particle.y;
+                            const distSquared = dx*dx + dy*dy;
+                            const minDist = particle.radius + other.radius;
+                            
+                            // Check collision
+                            if (distSquared < minDist * minDist) {
+                                // Simple collision response - push particles apart slightly
+                                const dist = Math.sqrt(distSquared);
+                                const nx = dx / dist;
+                                const ny = dy / dist;
+                                
+                                // Very mild velocity transfer (much less than realistic physics)
+                                const dampingFactor = 0.1; // Reduce effect by 90%
+                                
+                                const p1vx = particle.vx;
+                                const p1vy = particle.vy;
+                                const p2vx = other.vx;
+                                const p2vy = other.vy;
+                                
+                                // Calculate new velocities (reduced effect)
+                                particle.vx = p1vx - dampingFactor * nx * (p1vx - p2vx);
+                                particle.vy = p1vy - dampingFactor * ny * (p1vy - p2vy);
+                                other.vx = p2vx + dampingFactor * nx * (p1vx - p2vx);
+                                other.vy = p2vy + dampingFactor * ny * (p1vy - p2vy);
+                                
+                                // Move apart to prevent sticking
+                                const pushFactor = (minDist - dist) * 0.5; // Half the overlap
+                                particle.x -= nx * pushFactor;
+                                particle.y -= ny * pushFactor;
+                                other.x += nx * pushFactor;
+                                other.y += ny * pushFactor;
+                                
+                                // Record collision time
+                                particle.lastCollisionTime = now;
+                                other.lastCollisionTime = now;
+                                
+                                // Only collide with one particle at a time for better behavior
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Check collisions with plants
+                    for (let j = 0; j < plants.length; j++) {
+                        const plant = plants[j];
+                        
+                        // Check if water is within plant's area
+                        if (pointInRectangle(particle.x, particle.y, plant.x, plant.y, plant.width, plant.height)) {
+                            // Water the plant
+                            plant.waterLevel++;
+                            particle.absorbed = true;
+                            
+                            // Create splash effect
+                            createSplashEffect(particle.x, particle.y, 15);
+                            
+                            // Check if plant is now watered
+                            if (plant.waterLevel >= 30 && !plant.watered) {
+                                plant.watered = true;
+                                checkLevelCompletion();
+                            }
+                            break;
+                        }
+                    }
+                    
+                    // If particle is still active, keep it
+                    if (!particle.absorbed) {
+                        remainingParticles.push(particle);
+                    }
+                }
+                
+                // Update the waterParticles array
+                waterParticles = remainingParticles;
+            }
+            
+            // Helper function to find closest point on line segment
+            function closestPointOnLineSegment(px, py, x1, y1, x2, y2) {
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const lenSquared = dx*dx + dy*dy;
+                
+                if (lenSquared === 0) {
+                    // Line segment is a point
+                    return {
+                        x: x1,
+                        y: y1,
+                        distance: Math.sqrt((px-x1)**2 + (py-y1)**2)
+                    };
+                }
+                
+                // Calculate projection of point onto line segment
+                let t = ((px - x1) * dx + (py - y1) * dy) / lenSquared;
+                t = Math.max(0, Math.min(1, t)); // Clamp to line segment
+                
+                // Find the closest point
+                const closestX = x1 + t * dx;
+                const closestY = y1 + t * dy;
+                const distance = Math.sqrt((px-closestX)**2 + (py-closestY)**2);
+                
+                return {
+                    x: closestX,
+                    y: closestY,
+                    distance: distance
+                };
+            }
+            
+            // Simple helper to check point in non-rotated rectangle
+            function pointInRectangle(px, py, rectX, rectY, rectWidth, rectHeight) {
+                return px >= rectX - rectWidth/2 &&
+                       px <= rectX + rectWidth/2 &&
+                       py >= rectY - rectHeight/2 &&
+                       py <= rectY + rectHeight/2;
+            }
+            
+            function gameLoop() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw background
+                ctx.fillStyle = '#e6fbff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw ground
+                ctx.fillStyle = '#90ee90';
+                ctx.fillRect(0, canvas.height - 25, canvas.width, 25);
+                
+                // Draw obstacles (platforms)
+                obstacles.forEach(obj => {
+                    ctx.save();
+                    ctx.translate(obj.x, obj.y);
+                    ctx.rotate(obj.angle);
+                    
+                    ctx.fillStyle = '#996633';
+                    ctx.fillRect(-obj.width/2, -obj.height/2, obj.width, obj.height);
+                    
+                    // Outline
+                    ctx.strokeStyle = '#663300';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(-obj.width/2, -obj.height/2, obj.width, obj.height);
+                    
+                    ctx.restore();
+                });
+                
+                // Draw water tap
+                if (waterTap) {
+                    ctx.fillStyle = '#666666';
+                    
+                    // Tap body
+                    ctx.fillRect(
+                        waterTap.x - waterTap.width/2,
+                        waterTap.y - waterTap.height/2,
+                        waterTap.width,
+                        waterTap.height
+                    );
+                    
+                    // Tap spout
+                    ctx.fillRect(
+                        waterTap.x - waterTap.width/3,
+                        waterTap.y + waterTap.height/2,
+                        waterTap.width*2/3,
+                        10
+                    );
+                    
+                    // Water flow indicator
+                    if (isWaterFlowing) {
+                        ctx.fillStyle = '#4db8ff';
+                        ctx.beginPath();
+                        ctx.arc(waterTap.x, waterTap.y + waterTap.height/2 + 15, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                
+                // Draw plants
+                plants.forEach(plant => {
+                    // Growth level based on water (0-100%)
+                    const growthLevel = Math.min(1, plant.waterLevel / 30);
+                    
+                    // Pot
+                    ctx.fillStyle = '#cc6633';
+                    ctx.fillRect(
+                        plant.x - 20,
+                        plant.y + 10,
+                        40,
+                        20
+                    );
+                    
+                    // Plant stem
+                    ctx.fillStyle = '#33cc33';
+                    ctx.fillRect(
+                        plant.x - 2,
+                        plant.y - 30 * growthLevel,
+                        4,
+                        40 * growthLevel
+                    );
+                    
+                    // Leaves (grow with water level)
+                    if (growthLevel > 0.3) {
+                        ctx.fillStyle = '#66cc66';
+                        
+                        // Left leaf
+                        ctx.beginPath();
+                        ctx.ellipse(
+                            plant.x - 10, 
+                            plant.y - 15 * growthLevel, 
+                            10 * growthLevel, 
+                            5 * growthLevel, 
+                            Math.PI / 4, 
+                            0, 
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                        
+                        // Right leaf
+                        ctx.beginPath();
+                        ctx.ellipse(
+                            plant.x + 10, 
+                            plant.y - 20 * growthLevel, 
+                            10 * growthLevel, 
+                            5 * growthLevel, 
+                            -Math.PI / 4, 
+                            0, 
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                    }
+                    
+                    // Flower (appears when fully watered)
+                    if (plant.watered) {
+                        ctx.fillStyle = '#ff66cc';
+                        ctx.beginPath();
+                        ctx.arc(
+                            plant.x, 
+                            plant.y - 35 * growthLevel, 
+                            10 * growthLevel, 
+                            0, 
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                        
+                        // Flower center
+                        ctx.fillStyle = '#ffcc00';
+                        ctx.beginPath();
+                        ctx.arc(
+                            plant.x, 
+                            plant.y - 35 * growthLevel, 
+                            3 * growthLevel, 
+                            0, 
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                    }
+                });
+                
+                // Draw placed objects
+                placedObjects.forEach(obj => {
+                    ctx.save();
+                    ctx.translate(obj.x, obj.y);
+                    ctx.rotate(obj.angle);
+                    
+                    switch(obj.type) {
+                        case 'ramp':
+                            ctx.fillStyle = '#996633';
+                            ctx.beginPath();
+                            ctx.moveTo(-obj.width/2, obj.height/2);
+                            ctx.lineTo(obj.width/2, obj.height/2);
+                            ctx.lineTo(obj.width/2, -obj.height/2);
+                            ctx.closePath();
+                            ctx.fill();
+                            
+                            // Outline
+                            ctx.strokeStyle = '#663300';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                            break;
+                            
+                        case 'platform':
+                            ctx.fillStyle = '#996633';
+                            ctx.fillRect(-obj.width/2, -obj.height/2, obj.width, obj.height);
+                            
+                            // Outline
+                            ctx.strokeStyle = '#663300';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(-obj.width/2, -obj.height/2, obj.width, obj.height);
+                            break;
+                            
+                        case 'funnel':
+                            ctx.fillStyle = '#6699cc';
+                            ctx.beginPath();
+                            ctx.moveTo(-obj.width/2, -obj.height/2);
+                            ctx.lineTo(obj.width/2, -obj.height/2);
+                            ctx.lineTo(obj.width*0.3, obj.height/2);
+                            ctx.lineTo(-obj.width*0.3, obj.height/2);
+                            ctx.closePath();
+                            ctx.fill();
+                            
+                            // Outline
+                            ctx.strokeStyle = '#336699';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                            break;
+                            
+                        case 'sponge':
+                            // Base color changes with water absorption
+                            const waterRatio = obj.waterAbsorbed / obj.waterCapacity;
+                            const r = 255 - Math.floor(waterRatio * 150);
+                            const g = 204 - Math.floor(waterRatio * 100);
+                            ctx.fillStyle = `rgb(${r}, ${g}, 0)`;
+                            
+                            ctx.fillRect(-obj.width/2, -obj.height/2, obj.width, obj.height);
+                            
+                            // Draw holes pattern
+                            ctx.fillStyle = '#ff9900';
+                            for (let h = 0; h < 6; h++) {
+                                const hx = (h % 3 - 1) * (obj.width/3);
+                                const hy = (Math.floor(h/3) - 0.5) * (obj.height/2);
+                                ctx.beginPath();
+                                ctx.arc(hx, hy, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                            
+                            // Outline
+                            ctx.strokeStyle = '#ff9900';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(-obj.width/2, -obj.height/2, obj.width, obj.height);
+                            
+                            // Show water level
+                            if (waterRatio > 0) {
+                                ctx.fillStyle = 'rgba(77, 184, 255, 0.7)';
+                                const waterHeight = obj.height * waterRatio;
+                                ctx.fillRect(
+                                    -obj.width/2, 
+                                    obj.height/2 - waterHeight, 
+                                    obj.width, 
+                                    waterHeight
+                                );
+                            }
+                            break;
+                            
+                        case 'bucket':
+                            // Bucket
+                            ctx.fillStyle = '#e6e6e6';
+                            ctx.beginPath();
+                            ctx.moveTo(-obj.width/2, -obj.height/2);
+                            ctx.lineTo(obj.width/2, -obj.height/2);
+                            ctx.lineTo(obj.width*0.45, obj.height/2);
+                            ctx.lineTo(-obj.width*0.45, obj.height/2);
+                            ctx.closePath();
+                            ctx.fill();
+                            
+                            // Outline
+                            ctx.strokeStyle = '#999999';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                            
+                            // Show water level
+                            if (obj.waterAbsorbed > 0) {
+                                const waterRatio = obj.waterAbsorbed / obj.waterCapacity;
+                                const waterHeight = obj.height * 0.8 * waterRatio;
+                                
+                                ctx.fillStyle = '#4db8ff';
+                                ctx.beginPath();
+                                ctx.moveTo(-obj.width*0.4, obj.height/2 - waterHeight);
+                                ctx.lineTo(obj.width*0.4, obj.height/2 - waterHeight);
+                                ctx.lineTo(obj.width*0.4, obj.height/2);
+                                ctx.lineTo(-obj.width*0.4, obj.height/2);
+                                ctx.closePath();
+                                ctx.fill();
+                            }
+                            break;
+                    }
+                    
+                    ctx.restore();
+                });
+                
+                // Update and draw water particles
+                updateWaterParticles();
+                
+                ctx.fillStyle = '#4db8ff';
+                waterParticles.forEach(particle => {
+                    if (!particle.absorbed) {
+                        ctx.beginPath();
+                        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                
+                // Continue the game loop
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // Initialize the game
+            initGame();
+        });
+    </script>
+</body>
+</html>
+
