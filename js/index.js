@@ -73,7 +73,7 @@ setCookie("username", "JohnDoe", 30); // Expires in 30 days
 setCookie("theme", "dark", 365); // Expires in 1 year
 
 function listCookiesAsTable() {
-  document.getElementById("cookies").remove()
+  document.getElementById("cookies").replaceChildren();
 
   var cookies = document.cookie.split(';');
   cookies = cookies.filter(function (entry) { return entry.trim() != ''; });
