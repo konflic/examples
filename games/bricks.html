@@ -11,6 +11,7 @@
         }
         canvas {
             display: block;
+            cursor: crosshair;
         }
         .controls {
             position: absolute;
@@ -20,10 +21,32 @@
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            z-index: 100;
         }
         select, button, input {
             margin: 5px;
             padding: 5px;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+        .overlap-warning {
+            color: red;
+            font-weight: bold;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/box2dweb@2.1.0-b/box2d.min.js"></script>
@@ -38,13 +61,21 @@
             <option value="trapezoid">Trapezoid</option>
             <option value="hexagon">Hexagon</option>
         </select>
-        
+
         <label for="colorPicker">Color:</label>
         <input type="color" id="colorPicker" value="#ff6347">
-        
+
         <button id="restartButton">Restart</button>
     </div>
-    
+
+    <div id="instructions">
+        <p>Click and drag to create shapes. Release to place the shape. You can't place shapes that overlap with existing ones.</p>
+    </div>
+
+    <div id="overlapWarning" class="overlap-warning">
+        Cannot place shape here - overlaps with existing shapes!
+    </div>
+
     <canvas id="canvas"></canvas>
 
     <script>
@@ -58,8 +89,8 @@
             const b2World = Box2D.Dynamics.b2World;
             const b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
             const b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
-            const b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
             const b2AABB = Box2D.Collision.b2AABB;
+            const b2Shape = Box2D.Collision.Shapes.b2Shape;
 
             // Init variables
             let world;
@@ -68,38 +99,48 @@
             let selectedShape = "box";
             let selectedColor = "#ff6347";
             let bodies = [];
-            let shapesMap = {};
+
+            // Mouse interaction variables
+            let isMouseDown = false;
+            let startX, startY;
+            let currentX, currentY;
+            let previewShape = null;
+            let isOverlapping = false;
+            let warningElement = document.getElementById("overlapWarning");
 
             // Initialize canvas
             canvas = document.getElementById("canvas");
             ctx = canvas.getContext("2d");
-            
+
             // Set canvas to full screen
             resizeCanvas();
             window.addEventListener("resize", resizeCanvas);
-            
+
             // Create Box2D world
             world = new b2World(
                 new b2Vec2(0, 10),  // gravity
                 true               // allow sleep
             );
-            
+
             // Add event listeners
             document.getElementById("shapeSelect").addEventListener("change", function(e) {
                 selectedShape = e.target.value;
             });
-            
+
             document.getElementById("colorPicker").addEventListener("change", function(e) {
                 selectedColor = e.target.value;
             });
-            
+
             document.getElementById("restartButton").addEventListener("click", restart);
-            
-            canvas.addEventListener("click", placeBrick);
-            
+
+            // Mouse event listeners for shape creation
+            canvas.addEventListener("mousedown", handleMouseDown);
+            canvas.addEventListener("mousemove", handleMouseMove);
+            canvas.addEventListener("mouseup", handleMouseUp);
+
             // Create ground
             createGround();
-            
+
             // Start game loop
             requestAnimationFrame(update);
 
@@ -113,18 +154,19 @@
                 bodyDef.type = b2Body.b2_staticBody;
                 bodyDef.position.x = canvas.width / 2 / SCALE;
                 bodyDef.position.y = canvas.height / SCALE;
-                
+
                 const fixDef = new b2FixtureDef();
                 fixDef.density = 1.0;
                 fixDef.friction = 0.8;
                 fixDef.restitution = 0.1;
-                
+
                 fixDef.shape = new b2PolygonShape();
                 fixDef.shape.SetAsBox(canvas.width / SCALE, 1);
-                
+
                 const body = world.CreateBody(bodyDef);
+                body.SetUserData("ground"); // Mark as ground
                 body.CreateFixture(fixDef);
-                
+
                 bodies.push({
                     body: body,
                     color: "#663300",
@@ -138,71 +180,245 @@
                 });
             }
 
-            function createBoxVertices(width, height) {
-                return [
-                    {x: -width, y: -height},
-                    {x: width, y: -height},
-                    {x: width, y: height},
-                    {x: -width, y: height}
-                ];
+            function handleMouseDown(e) {
+                isMouseDown = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                currentX = startX;
+                currentY = startY;
+                isOverlapping = false;
+                warningElement.style.display = "none";
             }
 
-            function placeBrick(e) {
-                const mouseX = e.clientX;
-                const mouseY = e.clientY;
-                
+            function handleMouseMove(e) {
+                if (isMouseDown) {
+                    currentX = e.clientX;
+                    currentY = e.clientY;
+
+                    // Update the preview shape
+                    previewShape = {
+                        startX: startX,
+                        startY: startY,
+                        currentX: currentX,
+                        currentY: currentY,
+                        shape: selectedShape,
+                        color: selectedColor
+                    };
+
+                    // Check if the preview shape would overlap with any existing shapes
+                    isOverlapping = checkForOverlap(startX, startY, currentX, currentY, selectedShape);
+
+                    if (isOverlapping) {
+                        warningElement.style.display = "block";
+                    } else {
+                        warningElement.style.display = "none";
+                    }
+                }
+            }
+
+            function handleMouseUp(e) {
+                if (isMouseDown) {
+                    currentX = e.clientX;
+                    currentY = e.clientY;
+
+                    // Only create shape if mouse has moved and there's no overlap
+                    if ((Math.abs(startX - currentX) > 5 || Math.abs(startY - currentY) > 5) && !isOverlapping) {
+                        createShape(startX, startY, currentX, currentY);
+                    }
+                }
+
+                isMouseDown = false;
+                previewShape = null;
+                warningElement.style.display = "none";
+            }
+
+            function checkForOverlap(startX, startY, endX, endY, shapeType) {
+                // Calculate dimensions
+                const centerX = (startX + endX) / 2;
+                const centerY = (startY + endY) / 2;
+
+                const width = Math.abs(endX - startX) / (2 * SCALE);
+                const height = Math.abs(endY - startY) / (2 * SCALE);
+
+                // Skip if shape is too small
+                if (width < 0.1 || height < 0.1) {
+                    return false;
+                }
+
+                // Create a temporary body for collision detection
+                const tempBodyDef = new b2BodyDef();
+                tempBodyDef.position.Set(centerX / SCALE, centerY / SCALE);
+
+                const tempBody = world.CreateBody(tempBodyDef);
+                tempBody.SetUserData("temp");
+
+                // Create a fixture for our shape
+                const fixDef = new b2FixtureDef();
+                fixDef.density = 1.0;
+                let radius = Math.min(width, height);
+
+                // Create the appropriate shape fixture
+                switch(shapeType) {
+                    case "box":
+                        fixDef.shape = new b2PolygonShape();
+                        fixDef.shape.SetAsBox(width, height);
+                        break;
+
+                    case "triangle":
+                        fixDef.shape = new b2PolygonShape();
+                        // Create vertices in clockwise order for proper physics
+                        const triangleVerts = [
+                            new b2Vec2(0, -height),
+                            new b2Vec2(width, height),
+                            new b2Vec2(-width, height)
+                        ];
+                        fixDef.shape.SetAsArray(triangleVerts, triangleVerts.length);
+                        break;
+
+                    case "circle":
+                        fixDef.shape = new b2CircleShape(radius);
+                        break;
+
+                    case "trapezoid":
+                        fixDef.shape = new b2PolygonShape();
+                        const trapVerts = [
+                            new b2Vec2(-width * 0.8, -height),
+                            new b2Vec2(width * 0.8, -height),
+                            new b2Vec2(width, height),
+                            new b2Vec2(-width, height)
+                        ];
+                        fixDef.shape.SetAsArray(trapVerts, trapVerts.length);
+                        break;
+
+                    case "hexagon":
+                        fixDef.shape = new b2PolygonShape();
+                        const hexVerts = [];
+                        for (let i = 0; i < 6; i++) {
+                            const angle = i * Math.PI / 3;
+                            hexVerts.push(new b2Vec2(radius * Math.cos(angle), radius * Math.sin(angle)));
+                        }
+                        fixDef.shape.SetAsArray(hexVerts, hexVerts.length);
+                        break;
+                }
+
+                tempBody.CreateFixture(fixDef);
+
+                // Use the contact list to check for overlaps
+                let isColliding = false;
+
+                // Check collisions with all existing bodies
+                for (let i = 0; i < bodies.length; i++) {
+                    // Skip ground for overlap tests
+                    if (bodies[i].isGround) continue;
+
+                    // Get all fixtures from this body
+                    let bodyFixture = bodies[i].body.GetFixtureList();
+                    let tempFixture = tempBody.GetFixtureList();
+
+                    // Create AABB for both bodies
+                    let aabb1 = new b2AABB();
+                    let aabb2 = new b2AABB();
+
+                    // Get the shape's AABB
+                    let shape1 = bodyFixture.GetShape();
+                    let shape2 = tempFixture.GetShape();
+
+                    // Transform for the body
+                    let transform1 = bodies[i].body.GetTransform();
+                    let transform2 = tempBody.GetTransform();
+
+                    // Get the AABBs
+                    shape1.ComputeAABB(aabb1, transform1, 0);
+                    shape2.ComputeAABB(aabb2, transform2, 0);
+
+                    // Check for AABB intersection
+                    if (aabb1.TestOverlap(aabb2)) {
+                        isColliding = true;
+                        break;
+                    }
+                }
+
+                // Clean up the temporary body
+                world.DestroyBody(tempBody);
+
+                return isColliding;
+            }
+
+            function createShape(startX, startY, endX, endY) {
+                // Final overlap check before creating
+                if (checkForOverlap(startX, startY, endX, endY, selectedShape)) {
+                    return; // Don't create if overlapping
+                }
+
+                // Calculate center position and dimensions
+                const centerX = (startX + endX) / 2;
+                const centerY = (startY + endY) / 2;
+
+                const width = Math.abs(endX - startX) / (2 * SCALE);
+                const height = Math.abs(endY - startY) / (2 * SCALE);
+
+                // Skip if shape is too small
+                if (width < 0.1 || height < 0.1) {
+                    return;
+                }
+
                 const bodyDef = new b2BodyDef();
                 bodyDef.type = b2Body.b2_dynamicBody;
-                bodyDef.position.x = mouseX / SCALE;
-                bodyDef.position.y = mouseY / SCALE;
-                
+                bodyDef.position.x = centerX / SCALE;
+                bodyDef.position.y = centerY / SCALE;
+
                 const fixDef = new b2FixtureDef();
                 fixDef.density = 1.0;
                 fixDef.friction = 0.8;
                 fixDef.restitution = 0.1;
-                
+
                 let vertices = [];
-                
+                let radius = Math.min(width, height);
+
                 // Create shape based on selection
                 switch(selectedShape) {
                     case "box":
                         fixDef.shape = new b2PolygonShape();
-                        fixDef.shape.SetAsBox(1, 0.5);
-                        vertices = createBoxVertices(1, 0.5);
+                        fixDef.shape.SetAsBox(width, height);
+                        vertices = [
+                            {x: -width, y: -height},
+                            {x: width, y: -height},
+                            {x: width, y: height},
+                            {x: -width, y: height}
+                        ];
                         break;
-                        
+
                     case "triangle":
                         fixDef.shape = new b2PolygonShape();
+                        // Correctly define triangle in clockwise order
                         vertices = [
-                            {x: 0, y: -0.5},
-                            {x: -0.5, y: 0.5},
-                            {x: 0.5, y: 0.5}
+                            {x: 0, y: -height},
+                            {x: width, y: height},
+                            {x: -width, y: height}
                         ];
                         const triangleVectors = vertices.map(v => new b2Vec2(v.x, v.y));
                         fixDef.shape.SetAsArray(triangleVectors, triangleVectors.length);
                         break;
-                        
+
                     case "circle":
-                        fixDef.shape = new b2CircleShape(0.5);
-                        // For circles, we'll handle drawing differently
+                        fixDef.shape = new b2CircleShape(radius);
                         break;
-                        
+
                     case "trapezoid":
                         fixDef.shape = new b2PolygonShape();
                         vertices = [
-                            {x: -0.75, y: -0.5},
-                            {x: 0.75, y: -0.5},
-                            {x: 0.5, y: 0.5},
-                            {x: -0.5, y: 0.5}
+                            {x: -width * 0.8, y: -height},
+                            {x: width * 0.8, y: -height},
+                            {x: width, y: height},
+                            {x: -width, y: height}
                         ];
                         const trapezoidVectors = vertices.map(v => new b2Vec2(v.x, v.y));
                         fixDef.shape.SetAsArray(trapezoidVectors, trapezoidVectors.length);
                         break;
-                        
+
                     case "hexagon":
                         fixDef.shape = new b2PolygonShape();
                         vertices = [];
-                        const radius = 0.5;
                         for (let i = 0; i < 6; i++) {
                             const angle = i * Math.PI / 3;
                             vertices.push({
@@ -214,18 +430,105 @@
                         fixDef.shape.SetAsArray(hexagonVectors, hexagonVectors.length);
                         break;
                 }
-                
+
                 const body = world.CreateBody(bodyDef);
                 body.CreateFixture(fixDef);
-                
+
                 // Add to our array with the selected color
                 bodies.push({
                     body: body,
                     color: selectedColor,
                     shape: selectedShape,
                     vertices: vertices,
-                    radius: selectedShape === "circle" ? 0.5 : 0
+                    radius: selectedShape === "circle" ? radius : 0
                 });
+            }
+
+            function drawPreviewShape() {
+                if (previewShape === null) return;
+
+                const startX = previewShape.startX;
+                const startY = previewShape.startY;
+                const currentX = previewShape.currentX;
+                const currentY = previewShape.currentY;
+
+                const centerX = (startX + currentX) / 2;
+                const centerY = (startY + currentY) / 2;
+
+                const width = Math.abs(currentX - startX) / 2;
+                const height = Math.abs(currentY - startY) / 2;
+                const radius = Math.min(width, height);
+
+                // Skip if shape is too small
+                if (width < 3 || height < 3) return;
+
+                ctx.save();
+                ctx.translate(centerX, centerY);
+
+                // Change color based on overlap status
+                if (isOverlapping) {
+                    ctx.fillStyle = "rgba(255, 0, 0, 0.5)"; // Red with transparency
+                    ctx.strokeStyle = "rgba(255, 0, 0, 0.8)";
+                } else {
+                    ctx.fillStyle = previewShape.color + "80"; // Add transparency
+                    ctx.strokeStyle = "#000000";
+                }
+
+                ctx.lineWidth = 2;
+
+                switch(previewShape.shape) {
+                    case "box":
+                        ctx.beginPath();
+                        ctx.rect(-width, -height, width * 2, height * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                        break;
+
+                    case "triangle":
+                        ctx.beginPath();
+                        ctx.moveTo(0, -height);
+                        ctx.lineTo(width, height);
+                        ctx.lineTo(-width, height);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                        break;
+
+                    case "circle":
+                        ctx.beginPath();
+                        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                        break;
+
+                    case "trapezoid":
+                        ctx.beginPath();
+                        ctx.moveTo(-width * 0.8, -height);
+                        ctx.lineTo(width * 0.8, -height);
+                        ctx.lineTo(width, height);
+                        ctx.lineTo(-width, height);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                        break;
+
+                    case "hexagon":
+                        ctx.beginPath();
+                        for (let i = 0; i < 6; i++) {
+                            const angle = i * Math.PI / 3;
+                            if (i === 0) {
+                                ctx.moveTo(radius * Math.cos(angle), radius * Math.sin(angle));
+                            } else {
+                                ctx.lineTo(radius * Math.cos(angle), radius * Math.sin(angle));
+                            }
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                        break;
+                }
+
+                ctx.restore();
             }
 
             function restart() {
@@ -244,24 +547,24 @@
                     10,       // velocity iterations
                     10        // position iterations
                 );
-                
+
                 // Clear canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
+
                 // Draw all bodies
                 for (let i = 0; i < bodies.length; i++) {
                     const body = bodies[i].body;
                     const position = body.GetPosition();
                     const angle = body.GetAngle();
-                    
+
                     ctx.save();
                     ctx.translate(position.x * SCALE, position.y * SCALE);
                     ctx.rotate(angle);
-                    
+
                     ctx.fillStyle = bodies[i].color;
                     ctx.strokeStyle = "#000000";
                     ctx.lineWidth = 1;
-                    
+
                     if (bodies[i].shape === "circle") {
                         // Draw circle
                         const radius = bodies[i].radius * SCALE;
@@ -269,7 +572,7 @@
                         ctx.arc(0, 0, radius, 0, Math.PI * 2);
                         ctx.fill();
                         ctx.stroke();
-                        
+
                         // Draw a line to show rotation
                         ctx.beginPath();
                         ctx.moveTo(0, 0);
@@ -278,24 +581,29 @@
                     } else {
                         // Draw polygon using our stored vertices
                         const vertices = bodies[i].vertices;
-                        
+
                         if (vertices && vertices.length > 0) {
                             ctx.beginPath();
                             ctx.moveTo(vertices[0].x * SCALE, vertices[0].y * SCALE);
-                            
+
                             for (let j = 1; j < vertices.length; j++) {
                                 ctx.lineTo(vertices[j].x * SCALE, vertices[j].y * SCALE);
                             }
-                            
+
                             ctx.closePath();
                             ctx.fill();
                             ctx.stroke();
                         }
                     }
-                    
+
                     ctx.restore();
                 }
-                
+
+                // Draw preview shape if mouse is down
+                if (isMouseDown) {
+                    drawPreviewShape();
+                }
+
                 world.ClearForces();
                 requestAnimationFrame(update);
             }
