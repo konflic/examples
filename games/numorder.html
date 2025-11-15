@@ -13,7 +13,7 @@
             padding: 20px;
             overflow: hidden;
         }
-        
+
         #game-container {
             position: relative;
             width: 100%;
@@ -24,7 +24,7 @@
             background-color: #e6f7ff;
             overflow: hidden;
         }
-        
+
         /* Overlay styles */
         #overlay {
             position: fixed;
@@ -38,7 +38,7 @@
             align-items: center;
             z-index: 1000;
         }
-        
+
         #setup-panel {
             margin: 0 auto;
             padding: 25px;
@@ -49,12 +49,12 @@
             animation: popIn 0.5s ease-out;
             border: 3px solid #ff6b6b;
         }
-        
+
         @keyframes popIn {
             0% { transform: scale(0.8); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
-        
+
         button {
             background-color: #ff6b6b;
             color: white;
@@ -68,12 +68,12 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             transition: transform 0.2s, background-color 0.2s;
         }
-        
+
         button:hover {
             transform: scale(1.05);
             background-color: #ff5252;
         }
-        
+
         .number-item {
             position: absolute;
             display: flex;
@@ -82,7 +82,6 @@
             width: 150px;
             height: 150px;
             border-radius: 50%;
-            font-size: 95px;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
@@ -90,7 +89,7 @@
             user-select: none;
             z-index: 5;
         }
-        
+
         #fireworks {
             position: fixed;
             top: 0;
@@ -102,7 +101,7 @@
             display: none;
             background-color: rgba(0, 0, 0, 0.3);
         }
-        
+
         #celebration-text {
             position: fixed;
             top: 50%;
@@ -118,7 +117,7 @@
             display: none;
             pointer-events: none;
         }
-        
+
         label {
             font-size: 18px;
             font-weight: bold;
@@ -126,7 +125,7 @@
             display: block;
             margin: 10px 0 5px;
         }
-        
+
         input[type="number"] {
             width: 80px;
             font-size: 18px;
@@ -137,7 +136,7 @@
             text-align: center;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
-        
+
         #next-number {
             margin: 15px auto;
             font-size: 22px;
@@ -149,32 +148,32 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             border: 2px dashed #ff6b6b;
         }
-        
+
         h1 {
             color: #4b0082;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
             font-size: 36px;
             margin-bottom: 10px;
         }
-        
+
         h2 {
             color: #ff5252;
             margin-top: 5px;
             text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
         }
-        
+
         .setup-row {
             margin: 15px 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
-        
+
         .firework-particle {
             position: absolute;
             pointer-events: none;
         }
-        
+
         .trail-particle {
             position: absolute;
             width: 5px;
@@ -189,7 +188,7 @@
 <body>
     <h1>Number Blast 🚀</h1>
     <p>Click on the numbers in increasing order!</p>
-    
+
     <div id="overlay">
         <div id="setup-panel">
             <h2>Game Setup</h2>
@@ -208,26 +207,26 @@
             <button id="start-game">Start Game!</button>
         </div>
     </div>
-    
+
     <div id="game-container"></div>
     <div id="next-number" style="display: none;">Find: <span id="target-number"></span></div>
     <button id="restart-game" style="display: none;">Play Again</button>
-    
+
     <div id="fireworks"></div>
     <div id="celebration-text">AWESOME JOB!</div>
-    
+
     <script>
         // Game state
         let numbers = [];
         let currentIndex = 0;
         let gameActive = false;
         const shapes = ['circle', 'square', 'triangle', 'pentagon', 'hexagon', 'diamond', 'star', 'heart'];
-        
+
         // Animation types for disappearing numbers
         const animationTypes = [
             'explode', 'spin', 'bounce', 'fade', 'spiral', 'split', 'shrink', 'expand'
         ];
-        
+
         // DOM elements
         const gameContainer = document.getElementById('game-container');
         const startButton = document.getElementById('start-game');
@@ -238,7 +237,7 @@
         const setupPanel = document.getElementById('setup-panel');
         const fireworksContainer = document.getElementById('fireworks');
         const celebrationText = document.getElementById('celebration-text');
-        
+
         // Start game when button is clicked
         startButton.addEventListener('click', startGame);
         restartButton.addEventListener('click', () => {
@@ -247,119 +246,162 @@
             nextNumberDisplay.style.display = 'none';
             gameContainer.innerHTML = '';
         });
-        
+
         function startGame() {
             // Get user settings
             const minNumber = parseInt(document.getElementById('min-number').value);
             const maxNumber = parseInt(document.getElementById('max-number').value);
             const count = parseInt(document.getElementById('count-number').value);
-            
+
             // Validation
             if (minNumber >= maxNumber) {
                 alert('Maximum number must be greater than minimum number!');
                 return;
             }
-            
+
             if (maxNumber - minNumber + 1 < count) {
                 alert('Range is too small for the number of items requested!');
                 return;
             }
-            
+
             // Hide setup, show game
             overlay.style.display = 'none';
             restartButton.style.display = 'block';
             nextNumberDisplay.style.display = 'inline-block';
             gameContainer.innerHTML = '';
-            
+
             // Generate random numbers within the range
             const allNumbers = Array.from(
-                {length: maxNumber - minNumber + 1}, 
+                {length: maxNumber - minNumber + 1},
                 (_, i) => i + minNumber
             );
-            
+
             // Shuffle and take 'count' numbers
             shuffle(allNumbers);
             numbers = allNumbers.slice(0, count);
             numbers.sort((a, b) => a - b); // Sort for checking sequence later
-            
+
             // Place numbers on screen
             placeNumbersOnScreen(numbers);
-            
+
             // Set up game state
             currentIndex = 0;
             gameActive = true;
-            
+
             // Update UI to show which number to find first
             targetNumberSpan.textContent = numbers[0];
         }
-        
+
+        function calculateFontSize(number) {
+            // Convert number to string to count characters
+            const numStr = String(number);
+            const charCount = numStr.length;
+
+            // Base font size for single digit
+            const baseFontSize = 95;
+
+            // Scale down based on character count
+            // 1 char: 95px
+            // 2 chars: 85px
+            // 3 chars: 70px
+            // 4 chars: 55px
+            // 5 chars (4 digits + minus): 45px
+            if (charCount === 1) {
+                return baseFontSize;
+            } else if (charCount === 2) {
+                return 85;
+            } else if (charCount === 3) {
+                return 70;
+            } else if (charCount === 4) {
+                return 55;
+            } else {
+                // 5 or more characters
+                return 45;
+            }
+        }
+
         function placeNumbersOnScreen(numbers) {
             const containerWidth = gameContainer.offsetWidth;
             const containerHeight = gameContainer.offsetHeight;
-            const itemSize = 70; // Size of the number items
+            const itemSize = 150; // Size of the number items (matches .number-item width/height)
             const padding = 20; // Padding from edges
-            
+
             // Create a shuffled copy for random placement
             const shuffledNumbers = [...numbers];
             shuffle(shuffledNumbers);
-            
+
             // Keep track of placed items to prevent overlap
             const placedItems = [];
-            
+
             // Create and place each number
             shuffledNumbers.forEach(number => {
                 let left, top, overlapping;
-                
+                let attempts = 0;
+                const maxAttempts = 100; // Prevent infinite loops
+
+                // Allow slight overlap for many cards - reduce minimum distance based on card count
+                const minDistance = numbers.length > 30 ? itemSize * 0.6 :
+                                   numbers.length > 20 ? itemSize * 0.7 :
+                                   itemSize * 0.8;
+
                 // Try to find a non-overlapping position (simple collision detection)
                 do {
                     overlapping = false;
                     left = padding + Math.random() * (containerWidth - itemSize - 2 * padding);
                     top = padding + Math.random() * (containerHeight - itemSize - 2 * padding);
-                    
+
                     // Check against all previously placed items
                     for (const item of placedItems) {
                         const distance = Math.sqrt(
-                            Math.pow(left - item.left, 2) + 
+                            Math.pow(left - item.left, 2) +
                             Math.pow(top - item.top, 2)
                         );
-                        if (distance < itemSize + 10) { // Add some margin
+                        if (distance < minDistance) {
                             overlapping = true;
                             break;
                         }
                     }
-                } while (overlapping && placedItems.length < numbers.length);
-                
+
+                    attempts++;
+                } while (overlapping && attempts < maxAttempts);
+
                 // Record this position
                 placedItems.push({ left, top });
-                
+
                 // Create the number element
                 const element = document.createElement('div');
                 element.className = 'number-item';
                 element.textContent = number;
                 element.dataset.number = number;
-                
+
+                // Calculate and apply dynamic font size
+                const fontSize = calculateFontSize(number);
+                element.style.fontSize = `${fontSize}px`;
+
                 // Random shape
                 const shapeIndex = Math.floor(Math.random() * shapes.length);
                 const shape = shapes[shapeIndex];
-                
+
                 // Random background color (bright and child-friendly)
                 const backgroundColor = getRandomColor();
-                
+
                 // Apply styles based on shape
                 applyShape(element, shape);
                 element.style.backgroundColor = backgroundColor;
                 element.style.left = `${left}px`;
                 element.style.top = `${top}px`;
-                
+
                 // Add click event
                 element.addEventListener('click', handleNumberClick);
-                
+
                 // Add to game container
                 gameContainer.appendChild(element);
             });
         }
-        
+
         function applyShape(element, shape) {
+            const fontSize = element.style.fontSize; // Preserve the font size
+
             switch(shape) {
                 case 'circle':
                     element.style.borderRadius = '50%';
@@ -370,7 +412,7 @@
                 case 'triangle':
                     element.style.borderRadius = '10px';
                     element.style.transform = 'rotate(45deg)';
-                    element.innerHTML = `<span style="transform: rotate(-45deg); display: block;">${element.textContent}</span>`;
+                    element.innerHTML = `<span style="transform: rotate(-45deg); display: block; font-size: ${fontSize};">${element.textContent}</span>`;
                     break;
                 case 'pentagon':
                     element.style.borderRadius = '25% 75%';
@@ -380,7 +422,7 @@
                     break;
                 case 'diamond':
                     element.style.transform = 'rotate(45deg)';
-                    element.innerHTML = `<span style="transform: rotate(-45deg); display: block;">${element.textContent}</span>`;
+                    element.innerHTML = `<span style="transform: rotate(-45deg); display: block; font-size: ${fontSize};">${element.textContent}</span>`;
                     break;
                 case 'star':
                     element.style.borderRadius = '30% 70% 70% 30% / 30% 30% 70% 70%';
@@ -388,25 +430,25 @@
                 case 'heart':
                     element.style.borderRadius = '50% 50% 0 0';
                     element.style.transform = 'rotate(45deg)';
-                    element.innerHTML = `<span style="transform: rotate(-45deg); display: block;">${element.textContent}</span>`;
+                    element.innerHTML = `<span style="transform: rotate(-45deg); display: block; font-size: ${fontSize};">${element.textContent}</span>`;
                     break;
             }
         }
-        
+
         function handleNumberClick(event) {
             if (!gameActive) return;
-            
+
             const clickedNumber = parseInt(event.currentTarget.dataset.number);
             const targetNumber = numbers[currentIndex];
-            
+
             if (clickedNumber === targetNumber) {
                 // Correct number clicked
                 const randomAnimation = animationTypes[Math.floor(Math.random() * animationTypes.length)];
                 correctNumberAnimation(event.currentTarget, randomAnimation);
-                
+
                 // Advance to next number
                 currentIndex++;
-                
+
                 // Check if game is complete
                 if (currentIndex >= numbers.length) {
                     gameActive = false;
@@ -421,49 +463,49 @@
                 wrongNumberAnimation(event.currentTarget);
             }
         }
-        
+
         function correctNumberAnimation(element, animationType) {
             // Base explosion particles
             createExplosion(element);
-            
+
             // Apply the selected animation type
             switch(animationType) {
                 case 'explode':
                     element.style.transform = 'scale(1.5)';
                     element.style.opacity = '0';
                     break;
-                    
+
                 case 'spin':
                     element.style.transform = 'rotate(720deg) scale(0)';
                     element.style.opacity = '0';
                     break;
-                    
+
                 case 'bounce':
                     element.style.transform = 'translateY(-100px)';
                     element.style.opacity = '0';
-                    
+
                     // Add a bounce effect
                     element.style.transition = 'transform 0.5s cubic-bezier(0.5, -0.5, 0.5, 1.5), opacity 0.5s ease-out';
                     break;
-                    
+
                 case 'fade':
                     element.style.transform = 'scale(1.2)';
                     element.style.opacity = '0';
                     element.style.transition = 'transform 0.5s ease-out, opacity 0.8s ease-out';
                     break;
-                    
+
                 case 'spiral':
                     element.style.transform = 'rotate(1080deg) scale(0)';
                     element.style.opacity = '0';
                     element.style.transition = 'transform 0.8s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.8s ease-out';
                     break;
-                    
+
                 case 'split':
                     // Create two copies that split apart
                     const rect = element.getBoundingClientRect();
                     const leftHalf = element.cloneNode(true);
                     const rightHalf = element.cloneNode(true);
-                    
+
                     leftHalf.style.position = 'absolute';
                     rightHalf.style.position = 'absolute';
                     leftHalf.style.left = `${rect.left}px`;
@@ -474,56 +516,56 @@
                     rightHalf.style.transition = 'all 0.5s ease-out';
                     leftHalf.style.pointerEvents = 'none';
                     rightHalf.style.pointerEvents = 'none';
-                    
+
                     document.body.appendChild(leftHalf);
                     document.body.appendChild(rightHalf);
-                    
+
                     setTimeout(() => {
                         leftHalf.style.transform = 'translateX(-50px) rotate(-90deg)';
                         rightHalf.style.transform = 'translateX(50px) rotate(90deg)';
                         leftHalf.style.opacity = '0';
                         rightHalf.style.opacity = '0';
                     }, 10);
-                    
+
                     setTimeout(() => {
                         leftHalf.remove();
                         rightHalf.remove();
                     }, 510);
-                    
+
                     element.style.opacity = '0';
                     break;
-                    
+
                 case 'shrink':
                     element.style.transform = 'scale(0)';
                     element.style.opacity = '0';
                     element.style.transition = 'transform 0.5s cubic-bezier(0.6, -0.3, 0.7, 0.3), opacity 0.5s ease-out';
                     break;
-                    
+
                 case 'expand':
                     element.style.transform = 'scale(2)';
                     element.style.opacity = '0';
                     element.style.transition = 'transform 0.5s cubic-bezier(0.2, 1.5, 0.3, 1), opacity 0.5s ease-out';
                     break;
             }
-            
+
             // Remove after animation
             setTimeout(() => {
                 element.remove();
             }, 800);
         }
-        
+
         function createExplosion(element) {
             const rect = element.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            
+
             const colors = getParticleColors();
-            
+
             for (let i = 0; i < 20; i++) {
                 const particle = document.createElement('div');
                 const angle = Math.random() * Math.PI * 2;
                 const distance = Math.random() * 100 + 50;
-                
+
                 particle.style.position = 'fixed';
                 particle.style.width = `${Math.random() * 8 + 4}px`;
                 particle.style.height = `${Math.random() * 8 + 4}px`;
@@ -533,11 +575,11 @@
                 particle.style.top = `${centerY}px`;
                 particle.style.pointerEvents = 'none';
                 particle.style.zIndex = '100';
-                
+
                 document.body.appendChild(particle);
-                
+
                 const animationDuration = Math.random() * 500 + 500;
-                
+
                 // Animate particle
                 setTimeout(() => {
                     particle.style.transition = `all ${animationDuration/1000}s cubic-bezier(0.2, 0.8, 0.3, 1)`;
@@ -545,14 +587,14 @@
                     particle.style.top = `${centerY + Math.sin(angle) * distance}px`;
                     particle.style.opacity = '0';
                 }, 10);
-                
+
                 // Remove particle after animation
                 setTimeout(() => {
                     particle.remove();
                 }, animationDuration);
             }
         }
-        
+
         function getParticleColors() {
             // Return colors that match the clicked element's color for cohesive effect
             return [
@@ -561,12 +603,12 @@
                 '#A0CED9', '#FFC6FF', '#FFEFEF'
             ];
         }
-        
+
         function wrongNumberAnimation(element) {
             // Add shake effect with red border
             element.style.border = '4px solid red';
             element.style.animation = 'shake 0.5s';
-            
+
             // Define shake animation
             if (!document.querySelector('#shake-animation')) {
                 const style = document.createElement('style');
@@ -580,36 +622,36 @@
                 `;
                 document.head.appendChild(style);
             }
-            
+
             // Remove effects after animation
             setTimeout(() => {
                 element.style.border = 'none';
                 element.style.animation = '';
             }, 500);
         }
-        
+
         function showSpectacularFireworks() {
             // Show fireworks container with semi-transparent background
             fireworksContainer.style.display = 'block';
             fireworksContainer.innerHTML = '';
-            
+
             // Show celebration text
             celebrationText.style.display = 'block';
             setTimeout(() => {
                 celebrationText.style.opacity = '1';
             }, 500);
-            
+
             // Schedule multiple fireworks launches
             const totalDuration = 10000; // 10 seconds of fireworks
             const fireworksCount = 40; // Total number of fireworks to launch
-            
+
             // Launch initial set of fireworks
             for (let i = 0; i < 5; i++) {
                 setTimeout(() => {
                     launchRandomFirework();
                 }, i * 200);
             }
-            
+
             // Launch the rest with varying timing
             for (let i = 5; i < fireworksCount; i++) {
                 const delay = Math.random() * (totalDuration - 1000);
@@ -617,7 +659,7 @@
                     launchRandomFirework();
                 }, delay);
             }
-            
+
             // Hide fireworks and clean up after celebration
             setTimeout(() => {
                 fireworksContainer.style.display = 'none';
@@ -628,27 +670,27 @@
                 }, 1000);
             }, totalDuration + 1000);
         }
-        
+
         function launchRandomFirework() {
             // Pick a random firework type
             const fireworkTypes = [
                 'standard', 'circle', 'double', 'trail', 'multi-color',
                 'spiral', 'star', 'heart', 'crackle', 'cascade'
             ];
-            
+
             const type = fireworkTypes[Math.floor(Math.random() * fireworkTypes.length)];
-            
+
             // Random position for the launch
             const x = Math.random() * window.innerWidth;
             const y = window.innerHeight + 20; // Start below the window
-            
+
             // Random target height (where the firework will explode)
             const targetY = window.innerHeight * (Math.random() * 0.5 + 0.1);
-            
+
             // Create and launch the firework
             createFireworkWithTrail(x, y, targetY, type);
         }
-        
+
         function createFireworkWithTrail(x, y, targetY, type) {
             // Create rocket with trail
             const rocket = document.createElement('div');
@@ -659,12 +701,12 @@
             rocket.style.height = '6px';
             rocket.style.backgroundColor = '#ffff99';
             rocket.style.boxShadow = '0 0 10px 2px #ffff00';
-            
+
             fireworksContainer.appendChild(rocket);
-            
+
             // Animate the trail
             const trailDuration = 700 + Math.random() * 400;
-            
+
             // Create trail particles as it moves up
             let trailInterval = setInterval(() => {
                 const trailParticle = document.createElement('div');
@@ -675,9 +717,9 @@
                 trailParticle.style.height = `${Math.random() * 3 + 2}px`;
                 trailParticle.style.opacity = '0.7';
                 trailParticle.style.backgroundColor = '#ffdd99';
-                
+
                 fireworksContainer.appendChild(trailParticle);
-                
+
                 // Fade out trail particles
                 setTimeout(() => {
                     trailParticle.style.transition = 'opacity 0.3s ease-out';
@@ -685,13 +727,13 @@
                     setTimeout(() => trailParticle.remove(), 300);
                 }, 100);
             }, 20);
-            
+
             // Animate rocket upwards
             rocket.style.transition = `top ${trailDuration/1000}s cubic-bezier(0.1, 0.8, 0.2, 1)`;
             setTimeout(() => {
                 rocket.style.top = `${targetY}px`;
             }, 10);
-            
+
             // Explode at the target height
             setTimeout(() => {
                 clearInterval(trailInterval);
@@ -699,7 +741,7 @@
                 explodeFirework(x, targetY, type);
             }, trailDuration);
         }
-        
+
         function explodeFirework(x, y, type) {
             // Create the explosion effect based on type
             switch(type) {
@@ -736,24 +778,24 @@
                 default:
                     createStandardExplosion(x, y);
             }
-            
+
             // Play explosion sound (if wanted)
             // playExplosionSound();
         }
-        
+
         function createStandardExplosion(x, y) {
             // Standard explosion with particles in all directions
             const particleCount = 80 + Math.floor(Math.random() * 50);
             const color = getRandomFireworkColor();
-            
+
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'firework-particle';
-                
+
                 const angle = Math.random() * Math.PI * 2;
                 const distance = Math.random() * 150 + 50;
                 const duration = Math.random() * 1000 + 1000;
-                
+
                 particle.style.width = `${Math.random() * 6 + 2}px`;
                 particle.style.height = `${Math.random() * 6 + 2}px`;
                 particle.style.backgroundColor = color;
@@ -762,9 +804,9 @@
                 particle.style.left = `${x}px`;
                 particle.style.top = `${y}px`;
                 particle.style.boxShadow = `0 0 ${Math.random() * 5 + 3}px ${color}`;
-                
+
                 fireworksContainer.appendChild(particle);
-                
+
                 // Animate the particle
                 setTimeout(() => {
                     particle.style.transition = `all ${duration/1000}s cubic-bezier(0.2, 0.8, 0.3, 1)`;
@@ -772,28 +814,28 @@
                     particle.style.top = `${y + Math.sin(angle) * distance}px`;
                     particle.style.opacity = '0';
                 }, 10);
-                
+
                 // Remove particle after animation
                 setTimeout(() => {
                     particle.remove();
                 }, duration);
             }
         }
-        
+
         function createCircleExplosion(x, y) {
             // Circle explosion with particles in a perfect circle
             const particleCount = 60;
             const color = getRandomFireworkColor();
             const radius = Math.random() * 50 + 100; // Fixed radius for circle
-            
+
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'firework-particle';
-                
+
                 // Calculate position in a circle
                 const angle = (i / particleCount) * Math.PI * 2;
                 const duration = Math.random() * 800 + 1200;
-                
+
                 particle.style.width = `${Math.random() * 5 + 3}px`;
                 particle.style.height = `${Math.random() * 5 + 3}px`;
                 particle.style.backgroundColor = color;
@@ -802,9 +844,9 @@
                 particle.style.left = `${x}px`;
                 particle.style.top = `${y}px`;
                 particle.style.boxShadow = `0 0 ${Math.random() * 5 + 3}px ${color}`;
-                
+
                 fireworksContainer.appendChild(particle);
-                
+
                 // Animate the particle
                 setTimeout(() => {
                     particle.style.transition = `all ${duration/1000}s cubic-bezier(0.1, 0.5, 0.1, 1)`;
@@ -812,18 +854,18 @@
                     particle.style.top = `${y + Math.sin(angle) * radius}px`;
                     particle.style.opacity = '0';
                 }, 10);
-                
+
                 // Remove particle after animation
                 setTimeout(() => {
                     particle.remove();
                 }, duration);
             }
         }
-        
+
         function createDoubleExplosion(x, y) {
             // Double explosion - one inner, one outer
             createStandardExplosion(x, y); // First explosion
-            
+
             // Second explosion after a short delay
             setTimeout(() => {
                 const offsetX = x + (Math.random() * 40 - 20);
@@ -831,20 +873,20 @@
                 createStandardExplosion(offsetX, offsetY);
             }, 200);
         }
-        
+
         function createTrailExplosion(x, y) {
             // Explosion with trailing particles
             const particleCount = 40;
             const color = getRandomFireworkColor();
-            
+
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'firework-particle';
-                
+
                 const angle = Math.random() * Math.PI * 2;
                 const distance = Math.random() * 150 + 50;
                 const duration = Math.random() * 1000 + 1200;
-                
+
                 particle.style.width = `${Math.random() * 5 + 3}px`;
                 particle.style.height = `${Math.random() * 5 + 3}px`;
                 particle.style.backgroundColor = color;
@@ -853,9 +895,9 @@
                 particle.style.left = `${x}px`;
                 particle.style.top = `${y}px`;
                 particle.style.boxShadow = `0 0 ${Math.random() * 5 + 3}px ${color}`;
-                
+
                 fireworksContainer.appendChild(particle);
-                
+
                 // Create trailing effect
                 const trailInterval = setInterval(() => {
                     const trail = document.createElement('div');
@@ -868,9 +910,9 @@
                     trail.style.opacity = '0.5';
                     trail.style.left = particle.style.left;
                     trail.style.top = particle.style.top;
-                    
+
                     fireworksContainer.appendChild(trail);
-                    
+
                     // Fade out the trail
                     setTimeout(() => {
                         trail.style.transition = 'opacity 0.3s ease-out';
@@ -878,7 +920,7 @@
                         setTimeout(() => trail.remove(), 300);
                     }, 50);
                 }, 50);
-                
+
                 // Animate the particle
                 setTimeout(() => {
                     particle.style.transition = `all ${duration/1000}s cubic-bezier(0.2, 0.8, 0.3, 1)`;
@@ -886,7 +928,7 @@
                     particle.style.top = `${y + Math.sin(angle) * distance}px`;
                     particle.style.opacity = '0';
                 }, 10);
-                
+
                 // Clear trail interval and remove particle after animation
                 setTimeout(() => {
                     clearInterval(trailInterval);
@@ -894,23 +936,23 @@
                 }, duration);
             }
         }
-        
+
         function createMultiColorExplosion(x, y) {
             // Explosion with multiple colors
             const particleCount = 100;
             const colors = getMultipleFireworkColors(5);
-            
+
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'firework-particle';
-                
+
                 const angle = Math.random() * Math.PI * 2;
                 const distance = Math.random() * 180 + 30;
                 const duration = Math.random() * 1000 + 1000;
-                
+
                 // Pick one of the colors randomly
                 const color = colors[Math.floor(Math.random() * colors.length)];
-                
+
                 particle.style.width = `${Math.random() * 5 + 3}px`;
                 particle.style.height = `${Math.random() * 5 + 3}px`;
                 particle.style.backgroundColor = color;
@@ -919,9 +961,9 @@
                 particle.style.left = `${x}px`;
                 particle.style.top = `${y}px`;
                 particle.style.boxShadow = `0 0 ${Math.random() * 5 + 3}px ${color}`;
-                
+
                 fireworksContainer.appendChild(particle);
-                
+
                 // Animate the particle
                 setTimeout(() => {
                     particle.style.transition = `all ${duration/1000}s cubic-bezier(0.2, 0.8, 0.3, 1)`;
@@ -929,31 +971,31 @@
                     particle.style.top = `${y + Math.sin(angle) * distance}px`;
                     particle.style.opacity = '0';
                 }, 10);
-                
+
                 // Remove particle after animation
                 setTimeout(() => {
                     particle.remove();
                 }, duration);
             }
         }
-        
+
         function createSpiralExplosion(x, y) {
             // Spiral explosion with particles in a spiral pattern
             const particleCount = 100;
             const color = getRandomFireworkColor();
             const spirals = 3; // Number of spiral arms
-            
+
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'firework-particle';
-                
+
                 // Calculate position in a spiral
                 const spiralIndex = i % spirals; // Which spiral this particle belongs to
                 const angleOffset = (2 * Math.PI / spirals) * spiralIndex;
                 const angle = (i / particleCount) * Math.PI * 10 + angleOffset;
                 const distance = (i / particleCount) * 200;
                 const duration = Math.random() * 800 + 1200;
-                
+
                 particle.style.width = `${Math.random() * 4 + 2}px`;
                 particle.style.height = `${Math.random() * 4 + 2}px`;
                 particle.style.backgroundColor = color;
@@ -962,9 +1004,9 @@
                 particle.style.left = `${x}px`;
                 particle.style.top = `${y}px`;
                 particle.style.boxShadow = `0 0 ${Math.random() * 4 + 2}px ${color}`;
-                
+
                 fireworksContainer.appendChild(particle);
-                
+
                 // Animate the particle
                 setTimeout(() => {
                     particle.style.transition = `all ${duration/1000}s cubic-bezier(0.3, 0.4, 0.1, 1)`;
@@ -972,35 +1014,35 @@
                     particle.style.top = `${y + Math.sin(angle) * distance}px`;
                     particle.style.opacity = '0';
                 }, 10);
-                
+
                 // Remove particle after animation
                 setTimeout(() => {
                     particle.remove();
                 }, duration);
             }
         }
-        
+
         function createStarExplosion(x, y) {
             // Star-shaped explosion
             const pointCount = 5; // 5-pointed star
             const particlesPerPoint = 20;
             const color = getRandomFireworkColor();
-            
+
             for (let point = 0; point < pointCount; point++) {
                 const baseAngle = (point / pointCount) * Math.PI * 2;
-                
+
                 for (let i = 0; i < particlesPerPoint; i++) {
                     const particle = document.createElement('div');
                     particle.className = 'firework-particle';
-                    
+
                     // Add some randomness to the angle within the point's range
                     const angleVariance = (Math.random() * 0.2) - 0.1;
                     const angle = baseAngle + angleVariance;
-                    
+
                     // Long distance for points, shorter for in-between
                     const distance = Math.random() * 50 + 150;
                     const duration = Math.random() * 800 + 1200;
-                    
+
                     particle.style.width = `${Math.random() * 5 + 2}px`;
                     particle.style.height = `${Math.random() * 5 + 2}px`;
                     particle.style.backgroundColor = color;
@@ -1009,9 +1051,9 @@
                     particle.style.left = `${x}px`;
                     particle.style.top = `${y}px`;
                     particle.style.boxShadow = `0 0 ${Math.random() * 5 + 2}px ${color}`;
-                    
+
                     fireworksContainer.appendChild(particle);
-                    
+
                     // Animate the particle
                     setTimeout(() => {
                         particle.style.transition = `all ${duration/1000}s cubic-bezier(0.2, 0.8, 0.3, 1)`;
@@ -1019,7 +1061,7 @@
                         particle.style.top = `${y + Math.sin(angle) * distance}px`;
                         particle.style.opacity = '0';
                     }, 10);
-                    
+
                     // Remove particle after animation
                     setTimeout(() => {
                         particle.remove();
@@ -1027,29 +1069,29 @@
                 }
             }
         }
-        
+
         function createHeartExplosion(x, y) {
             // Heart-shaped explosion
             const particleCount = 80;
             const color = '#ff3366'; // Pink/red for heart
-            
+
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'firework-particle';
-                
+
                 // Use heart shape formula
                 const t = (i / particleCount) * Math.PI * 2;
                 // Heart shape parametric equation
                 const heartX = 16 * Math.pow(Math.sin(t), 3);
                 const heartY = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-                
+
                 // Scale and position
                 const scale = 5 + Math.random() * 3;
                 const finalX = x + heartX * scale;
                 const finalY = y - heartY * scale; // Flip Y to make heart right-side up
-                
+
                 const duration = Math.random() * 1000 + 1200;
-                
+
                 particle.style.width = `${Math.random() * 5 + 3}px`;
                 particle.style.height = `${Math.random() * 5 + 3}px`;
                 particle.style.backgroundColor = color;
@@ -1058,9 +1100,9 @@
                 particle.style.left = `${x}px`;
                 particle.style.top = `${y}px`;
                 particle.style.boxShadow = `0 0 ${Math.random() * 5 + 3}px ${color}`;
-                
+
                 fireworksContainer.appendChild(particle);
-                
+
                 // Animate the particle
                 setTimeout(() => {
                     particle.style.transition = `all ${duration/1000}s cubic-bezier(0.2, 0.8, 0.3, 1)`;
@@ -1068,36 +1110,36 @@
                     particle.style.top = `${finalY}px`;
                     particle.style.opacity = '0';
                 }, 10);
-                
+
                 // Remove particle after animation
                 setTimeout(() => {
                     particle.remove();
                 }, duration);
             }
         }
-        
+
         function createCrackleExplosion(x, y) {
             // Initial explosion
             createStandardExplosion(x, y);
-            
+
             // Secondary "crackle" explosions
             for (let i = 0; i < 10; i++) {
                 setTimeout(() => {
                     const offsetX = x + (Math.random() * 200 - 100);
                     const offsetY = y + (Math.random() * 200 - 100);
-                    
+
                     // Create mini explosions
                     const miniParticleCount = 20 + Math.floor(Math.random() * 20);
                     const color = getRandomFireworkColor();
-                    
+
                     for (let j = 0; j < miniParticleCount; j++) {
                         const particle = document.createElement('div');
                         particle.className = 'firework-particle';
-                        
+
                         const angle = Math.random() * Math.PI * 2;
                         const distance = Math.random() * 50 + 20;
                         const duration = Math.random() * 500 + 500;
-                        
+
                         particle.style.width = `${Math.random() * 4 + 2}px`;
                         particle.style.height = `${Math.random() * 4 + 2}px`;
                         particle.style.backgroundColor = color;
@@ -1106,9 +1148,9 @@
                         particle.style.left = `${offsetX}px`;
                         particle.style.top = `${offsetY}px`;
                         particle.style.boxShadow = `0 0 ${Math.random() * 4 + 2}px ${color}`;
-                        
+
                         fireworksContainer.appendChild(particle);
-                        
+
                         // Animate the particle
                         setTimeout(() => {
                             particle.style.transition = `all ${duration/1000}s cubic-bezier(0.2, 0.8, 0.3, 1)`;
@@ -1116,7 +1158,7 @@
                             particle.style.top = `${offsetY + Math.sin(angle) * distance}px`;
                             particle.style.opacity = '0';
                         }, 10);
-                        
+
                         // Remove particle after animation
                         setTimeout(() => {
                             particle.remove();
@@ -1125,29 +1167,29 @@
                 }, i * 100 + Math.random() * 300);
             }
         }
-        
+
         function createCascadeExplosion(x, y) {
             // Cascade explosion - starts at the top and "falls" down with multiple bursts
             const burstCount = 5;
             const burstSpacing = 50; // Vertical spacing between bursts
-            
+
             for (let i = 0; i < burstCount; i++) {
                 setTimeout(() => {
                     const burstY = y - (burstCount * burstSpacing / 2) + (i * burstSpacing);
-                    
+
                     // Create particles for this burst
                     const particleCount = 30 + Math.floor(Math.random() * 20);
                     const color = getRandomFireworkColor();
-                    
+
                     for (let j = 0; j < particleCount; j++) {
                         const particle = document.createElement('div');
                         particle.className = 'firework-particle';
-                        
+
                         // More horizontal spread, less vertical
                         const angle = (Math.random() - 0.5) * Math.PI + (Math.PI / 2); // Mostly sideways
                         const distance = Math.random() * 100 + 30;
                         const duration = Math.random() * 800 + 800;
-                        
+
                         particle.style.width = `${Math.random() * 5 + 2}px`;
                         particle.style.height = `${Math.random() * 5 + 2}px`;
                         particle.style.backgroundColor = color;
@@ -1156,9 +1198,9 @@
                         particle.style.left = `${x}px`;
                         particle.style.top = `${burstY}px`;
                         particle.style.boxShadow = `0 0 ${Math.random() * 5 + 2}px ${color}`;
-                        
+
                         fireworksContainer.appendChild(particle);
-                        
+
                         // Animate the particle
                         setTimeout(() => {
                             particle.style.transition = `all ${duration/1000}s cubic-bezier(0.2, 0.8, 0.3, 1)`;
@@ -1166,7 +1208,7 @@
                             particle.style.top = `${burstY + Math.sin(angle) * distance}px`;
                             particle.style.opacity = '0';
                         }, 10);
-                        
+
                         // Remove particle after animation
                         setTimeout(() => {
                             particle.remove();
@@ -1175,10 +1217,10 @@
                 }, i * 200);
             }
         }
-        
+
         function getRandomFireworkColor() {
             const colors = [
-                '#ff0000', '#00ff00', '#0000ff', '#ffff00', 
+                '#ff0000', '#00ff00', '#0000ff', '#ffff00',
                 '#ff00ff', '#00ffff', '#ffa500', '#ff4500',
                 '#ff1493', '#9400d3', '#00fa9a', '#1e90ff',
                 '#ffd700', '#ff6347', '#00ff7f', '#4169e1',
@@ -1186,20 +1228,20 @@
             ];
             return colors[Math.floor(Math.random() * colors.length)];
         }
-        
+
         function getMultipleFireworkColors(count) {
             const allColors = [
-                '#ff0000', '#00ff00', '#0000ff', '#ffff00', 
+                '#ff0000', '#00ff00', '#0000ff', '#ffff00',
                 '#ff00ff', '#00ffff', '#ffa500', '#ff4500',
                 '#ff1493', '#9400d3', '#00fa9a', '#1e90ff',
                 '#ffd700', '#ff6347', '#00ff7f', '#4169e1',
                 '#ff69b4', '#7cfc00', '#ff7f50'
             ];
-            
+
             // Shuffle array and take 'count' elements
             return shuffle([...allColors]).slice(0, count);
         }
-        
+
         function getParticleColors() {
             // Return colors that match the clicked element's color for cohesive effect
             return [
@@ -1208,7 +1250,7 @@
                 '#A0CED9', '#FFC6FF', '#FFEFEF'
             ];
         }
-        
+
         // Utility functions
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -1217,7 +1259,7 @@
             }
             return array;
         }
-        
+
         function getRandomColor() {
             const brightColors = [
                 '#FF9AA2', '#FFB7B2', '#FFDAC1', '#E2F0CB', '#B5EAD7',
