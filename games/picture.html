@@ -18,14 +18,14 @@
             padding: 20px;
             overflow-x: hidden;
         }
-        
+
         h1 {
             color: #bb86fc;
             margin-bottom: 20px;
             text-shadow: 0 0 10px rgba(187, 134, 252, 0.3);
             text-align: center;
         }
-        
+
         .upload-container {
             background-color: #1e1e1e;
             padding: 25px;
@@ -37,30 +37,38 @@
             max-width: 500px;
             border: 1px solid #333;
         }
-        
+
         .game-container {
             display: none;
-            width: 90%;
-            max-width: 800px;
+            width: 95%;
+            max-width: min(1400px, 95vw);
+            max-height: 85vh;
             position: relative;
             margin-bottom: 30px;
         }
-        
+
         #image-wrapper {
             position: relative;
             width: 100%;
+            max-height: 85vh;
             overflow: hidden;
             border-radius: 10px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.6);
             border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        
+
         #target-image {
             display: block;
-            width: 100%;
+            max-width: 100%;
+            max-height: 85vh;
+            width: auto;
             height: auto;
+            object-fit: contain;
         }
-        
+
         #block-overlay {
             position: absolute;
             top: 0;
@@ -70,7 +78,7 @@
             display: grid;
             gap: 1px;
         }
-        
+
         .block {
             background-color: #3700b3;
             cursor: pointer;
@@ -80,17 +88,17 @@
             transition: all 0.2s;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
         }
-        
+
         .block:hover {
             background-color: #6200ee;
             transform: scale(0.98);
         }
-        
+
         .block.removed {
             opacity: 0;
             pointer-events: none;
         }
-        
+
         .explosion {
             position: absolute;
             width: 60px;
@@ -102,27 +110,27 @@
             animation: explode 0.8s forwards;
             transform-origin: center;
         }
-        
+
         @keyframes explode {
             0% { transform: scale(0.2); opacity: 1; }
             50% { transform: scale(1.5); opacity: 0.8; }
             100% { transform: scale(2); opacity: 0; }
         }
-        
+
         .stats {
             background-color: #1e1e1e;
             padding: 15px 25px;
             border-radius: 10px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.4);
-            width: 90%;
-            max-width: 800px;
+            width: 95%;
+            max-width: min(1400px, 95vw);
             text-align: center;
             border: 1px solid #333;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
+
         button {
             background-color: #bb86fc;
             color: #121212;
@@ -134,16 +142,16 @@
             font-weight: bold;
             transition: all 0.3s;
         }
-        
+
         button:hover {
             background-color: #9a67ea;
             transform: translateY(-2px);
         }
-        
+
         #file-upload {
             display: none;
         }
-        
+
         .upload-label {
             display: inline-block;
             background-color: #3700b3;
@@ -154,7 +162,7 @@
             margin-bottom: 15px;
             transition: all 0.3s;
         }
-        
+
         .upload-label:hover {
             background-color: #6200ee;
         }
@@ -162,23 +170,25 @@
 </head>
 <body>
     <h1>Funny Image Reveal</h1>
-    
+
     <div class="upload-container">
-        <h2>Upload Your Image</h2>
+        <h2>Choose Image Source</h2>
+        <button id="fetch-spacex" style="margin-bottom: 15px;">Get Random SpaceX Image</button>
+        <p style="margin: 10px 0;">OR</p>
         <label for="file-upload" class="upload-label">
-            Choose Image
+            Upload Your Own Image
         </label>
         <input type="file" id="file-upload" accept="image/*">
-        <button id="start-game">Start Game</button>
+        <div id="loading" style="display: none; margin-top: 15px; color: #bb86fc;">Loading SpaceX image...</div>
     </div>
-    
+
     <div class="game-container">
         <div id="image-wrapper">
             <img id="target-image" src="" alt="Hidden image">
             <div id="block-overlay"></div>
         </div>
     </div>
-    
+
     <div class="stats">
         <div>Blocks left: <span id="blocks-left">100</span></div>
         <button id="new-game">New Game</button>
@@ -189,7 +199,7 @@
     <audio id="sound3" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3" preload="auto"></audio>
     <audio id="sound4" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-casino-notification-211.mp3" preload="auto"></audio>
     <audio id="sound5" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-mechanical-bling-210.mp3" preload="auto"></audio>
-    
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const uploadContainer = document.querySelector('.upload-container');
@@ -198,11 +208,14 @@
             const targetImage = document.getElementById('target-image');
             const imageWrapper = document.getElementById('image-wrapper');
             const blockOverlay = document.getElementById('block-overlay');
-            const startGameBtn = document.getElementById('start-game');
             const newGameBtn = document.getElementById('new-game');
             const blocksLeftSpan = document.getElementById('blocks-left');
             const statsContainer = document.querySelector('.stats');
-            
+            const fetchSpaceXBtn = document.getElementById('fetch-spacex');
+            const loadingDiv = document.getElementById('loading');
+
+            let currentImageSource = null; // 'file' or 'spacex'
+
             // Sound effects
             const sounds = [
                 document.getElementById('sound1'),
@@ -211,52 +224,52 @@
                 document.getElementById('sound4'),
                 document.getElementById('sound5')
             ];
-            
+
             let totalBlocks = 100;
             let remainingBlocks = 100;
             let gridColumns = 10;
             let gridRows = 10;
-            
+
             function playRandomSound() {
                 const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
                 randomSound.currentTime = 0;
                 randomSound.play();
             }
-            
+
             function createExplosion(x, y) {
                 const explosion = document.createElement('div');
                 explosion.className = 'explosion';
                 explosion.style.left = `${x - 30}px`;
                 explosion.style.top = `${y - 30}px`;
                 imageWrapper.appendChild(explosion);
-                
+
                 setTimeout(() => {
                     explosion.remove();
                 }, 800);
             }
-            
+
             function createBlockGrid() {
                 blockOverlay.innerHTML = '';
                 blockOverlay.style.gridTemplateColumns = `repeat(${gridColumns}, 1fr)`;
                 blockOverlay.style.gridTemplateRows = `repeat(${gridRows}, 1fr)`;
-                
+
                 for (let i = 0; i < totalBlocks; i++) {
                     const block = document.createElement('div');
                     block.className = 'block';
-                    
+
                     block.addEventListener('click', function(e) {
                         if (!block.classList.contains('removed')) {
                             const rect = block.getBoundingClientRect();
                             const x = e.clientX - rect.left + imageWrapper.getBoundingClientRect().left;
                             const y = e.clientY - rect.top + imageWrapper.getBoundingClientRect().top;
-                            
+
                             playRandomSound();
                             createExplosion(x, y);
                             block.classList.add('removed');
-                            
+
                             remainingBlocks--;
                             blocksLeftSpan.textContent = remainingBlocks;
-                            
+
                             if (remainingBlocks === 0) {
                                 setTimeout(() => {
                                     alert('Congratulations! You revealed the image!');
@@ -264,58 +277,105 @@
                             }
                         }
                     });
-                    
+
                     blockOverlay.appendChild(block);
                 }
             }
-            
-            function startGame() {
-                const file = fileUpload.files[0];
-                if (!file) {
-                    alert('Please upload an image first!');
-                    return;
+
+            async function fetchSpaceXImage() {
+                try {
+                    loadingDiv.style.display = 'block';
+                    fetchSpaceXBtn.disabled = true;
+
+                    // Fetch launches with images
+                    const response = await fetch('https://api.spacexdata.com/v4/launches');
+                    const launches = await response.json();
+
+                    // Filter launches that have images
+                    const launchesWithImages = launches.filter(launch =>
+                        launch.links && launch.links.flickr && launch.links.flickr.original && launch.links.flickr.original.length > 0
+                    );
+
+                    if (launchesWithImages.length === 0) {
+                        alert('No SpaceX images available at the moment.');
+                        loadingDiv.style.display = 'none';
+                        fetchSpaceXBtn.disabled = false;
+                        return;
+                    }
+
+                    // Get random launch with images
+                    const randomLaunch = launchesWithImages[Math.floor(Math.random() * launchesWithImages.length)];
+                    const images = randomLaunch.links.flickr.original;
+                    const randomImage = images[Math.floor(Math.random() * images.length)];
+
+                    // Set the image and start game automatically
+                    targetImage.src = randomImage;
+                    currentImageSource = 'spacex';
+
+                    targetImage.onload = function() {
+                        loadingDiv.style.display = 'none';
+                        fetchSpaceXBtn.disabled = false;
+                        initializeGame();
+                    };
+                } catch (error) {
+                    console.error('Error fetching SpaceX image:', error);
+                    alert('Failed to fetch SpaceX image. Please try again or upload your own image.');
+                    loadingDiv.style.display = 'none';
+                    fetchSpaceXBtn.disabled = false;
                 }
-                
+            }
+
+            function handleFileUpload() {
+                const file = fileUpload.files[0];
+                if (!file) return;
+
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     targetImage.src = e.target.result;
-                    
+                    currentImageSource = 'file';
+
                     targetImage.onload = function() {
-                        const aspectRatio = targetImage.naturalWidth / targetImage.naturalHeight;
-                        
-                        if (aspectRatio > 1) {
-                            gridColumns = Math.round(10 * aspectRatio);
-                            gridRows = 10;
-                        } else {
-                            gridColumns = 10;
-                            gridRows = Math.round(10 / aspectRatio);
-                        }
-                        
-                        totalBlocks = gridColumns * gridRows;
-                        remainingBlocks = totalBlocks;
-                        blocksLeftSpan.textContent = remainingBlocks;
-                        
-                        createBlockGrid();
-                        
-                        uploadContainer.style.display = 'none';
-                        gameContainer.style.display = 'block';
-                        statsContainer.style.display = 'flex';
+                        initializeGame();
                     };
                 };
                 reader.readAsDataURL(file);
             }
-            
+
+            function initializeGame() {
+                const aspectRatio = targetImage.naturalWidth / targetImage.naturalHeight;
+
+                if (aspectRatio > 1) {
+                    gridColumns = Math.round(10 * aspectRatio);
+                    gridRows = 10;
+                } else {
+                    gridColumns = 10;
+                    gridRows = Math.round(10 / aspectRatio);
+                }
+
+                totalBlocks = gridColumns * gridRows;
+                remainingBlocks = totalBlocks;
+                blocksLeftSpan.textContent = remainingBlocks;
+
+                createBlockGrid();
+
+                uploadContainer.style.display = 'none';
+                gameContainer.style.display = 'block';
+                statsContainer.style.display = 'flex';
+            }
+
             function resetGame() {
                 gameContainer.style.display = 'none';
                 statsContainer.style.display = 'none';
                 uploadContainer.style.display = 'block';
                 targetImage.src = '';
                 fileUpload.value = '';
+                currentImageSource = null;
             }
-            
-            startGameBtn.addEventListener('click', startGame);
+
             newGameBtn.addEventListener('click', resetGame);
-            
+            fetchSpaceXBtn.addEventListener('click', fetchSpaceXImage);
+            fileUpload.addEventListener('change', handleFileUpload);
+
             // Initialize with stats hidden
             statsContainer.style.display = 'none';
         });
