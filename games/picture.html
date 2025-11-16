@@ -103,18 +103,46 @@
             position: absolute;
             width: 60px;
             height: 60px;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="%23ff4081"/><circle cx="8" cy="10" r="2" fill="%23fff"/><circle cx="16" cy="10" r="2" fill="%23fff"/><path d="M8 16 Q12 20 16 16" stroke="%23fff" fill="none" stroke-width="2"/></svg>');
-            background-size: contain;
-            background-repeat: no-repeat;
             z-index: 10;
-            animation: explode 0.8s forwards;
             transform-origin: center;
+            pointer-events: none;
+        }
+
+        .firework {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            z-index: 10;
+            pointer-events: none;
         }
 
         @keyframes explode {
-            0% { transform: scale(0.2); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.8; }
-            100% { transform: scale(2); opacity: 0; }
+            0% { transform: scale(0.2) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.5) rotate(180deg); opacity: 0.8; }
+            100% { transform: scale(2.5) rotate(360deg); opacity: 0; }
+        }
+
+        @keyframes firework {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        @keyframes spin {
+            0% { transform: scale(0.5) rotate(0deg); opacity: 1; }
+            100% { transform: scale(2) rotate(720deg); opacity: 0; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+            50% { transform: translateY(-50px) scale(1.5); opacity: 0.8; }
+            100% { transform: translateY(0) scale(0); opacity: 0; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.5); opacity: 1; }
+            50% { transform: scale(2); opacity: 0.5; }
+            100% { transform: scale(3); opacity: 0; }
         }
 
         .stats {
@@ -191,6 +219,7 @@
 
     <div class="stats">
         <div>Blocks left: <span id="blocks-left">100</span></div>
+        <a id="download-link" href="#" download="spacex-image.jpg" style="display: none; color: #bb86fc; text-decoration: none; font-size: 14px;">📥 Download Image</a>
         <button id="new-game">New Game</button>
     </div>
 
@@ -213,6 +242,7 @@
             const statsContainer = document.querySelector('.stats');
             const fetchSpaceXBtn = document.getElementById('fetch-spacex');
             const loadingDiv = document.getElementById('loading');
+            const downloadLink = document.getElementById('download-link');
 
             let currentImageSource = null; // 'file' or 'spacex'
 
@@ -237,15 +267,133 @@
             }
 
             function createExplosion(x, y) {
-                const explosion = document.createElement('div');
-                explosion.className = 'explosion';
-                explosion.style.left = `${x - 30}px`;
-                explosion.style.top = `${y - 30}px`;
-                imageWrapper.appendChild(explosion);
+                const animationType = Math.floor(Math.random() * 5);
 
-                setTimeout(() => {
-                    explosion.remove();
-                }, 800);
+                switch(animationType) {
+                    case 0:
+                        createFireworks(x, y);
+                        break;
+                    case 1:
+                        createStarBurst(x, y);
+                        break;
+                    case 2:
+                        createSpiral(x, y);
+                        break;
+                    case 3:
+                        createConfetti(x, y);
+                        break;
+                    case 4:
+                        createRipple(x, y);
+                        break;
+                }
+            }
+
+            function createFireworks(x, y) {
+                const colors = ['#ff4081', '#bb86fc', '#03dac6', '#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1'];
+                const particleCount = 20;
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'firework';
+                    particle.style.left = `${x}px`;
+                    particle.style.top = `${y}px`;
+                    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+                    const angle = (Math.PI * 2 * i) / particleCount;
+                    const velocity = 50 + Math.random() * 50;
+                    const tx = Math.cos(angle) * velocity;
+                    const ty = Math.sin(angle) * velocity;
+
+                    particle.style.setProperty('--tx', `${tx}px`);
+                    particle.style.setProperty('--ty', `${ty}px`);
+                    particle.style.animation = `firework ${0.6 + Math.random() * 0.4}s ease-out forwards`;
+
+                    imageWrapper.appendChild(particle);
+                    setTimeout(() => particle.remove(), 1000);
+                }
+            }
+
+            function createStarBurst(x, y) {
+                const star = document.createElement('div');
+                star.className = 'explosion';
+                star.style.left = `${x - 30}px`;
+                star.style.top = `${y - 30}px`;
+                star.style.fontSize = '60px';
+                star.textContent = ['⭐', '✨', '💫', '🌟'][Math.floor(Math.random() * 4)];
+                star.style.animation = 'spin 0.8s ease-out forwards';
+
+                imageWrapper.appendChild(star);
+                setTimeout(() => star.remove(), 800);
+            }
+
+            function createSpiral(x, y) {
+                const colors = ['#ff4081', '#bb86fc', '#03dac6', '#ffd700'];
+                const particleCount = 15;
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'firework';
+                    particle.style.left = `${x}px`;
+                    particle.style.top = `${y}px`;
+                    particle.style.backgroundColor = colors[i % colors.length];
+                    particle.style.width = '6px';
+                    particle.style.height = '6px';
+
+                    const angle = (Math.PI * 2 * i) / particleCount + Math.PI * 4;
+                    const radius = 30 + i * 3;
+                    const tx = Math.cos(angle) * radius;
+                    const ty = Math.sin(angle) * radius;
+
+                    particle.style.setProperty('--tx', `${tx}px`);
+                    particle.style.setProperty('--ty', `${ty}px`);
+                    particle.style.animation = `firework ${0.8 + i * 0.05}s ease-out forwards`;
+
+                    imageWrapper.appendChild(particle);
+                    setTimeout(() => particle.remove(), 1200);
+                }
+            }
+
+            function createConfetti(x, y) {
+                const emojis = ['🎉', '🎊', '🎈', '🎁', '🌈', '⚡', '💥', '🔥'];
+                const count = 10;
+
+                for (let i = 0; i < count; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'explosion';
+                    confetti.style.left = `${x - 15}px`;
+                    confetti.style.top = `${y - 15}px`;
+                    confetti.style.fontSize = '30px';
+                    confetti.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+                    const tx = (Math.random() - 0.5) * 100;
+                    const ty = (Math.random() - 0.5) * 100;
+                    confetti.style.setProperty('--tx', `${tx}px`);
+                    confetti.style.setProperty('--ty', `${ty}px`);
+                    confetti.style.animation = `firework ${0.6 + Math.random() * 0.4}s ease-out forwards`;
+
+                    imageWrapper.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 1000);
+                }
+            }
+
+            function createRipple(x, y) {
+                const colors = ['#ff4081', '#bb86fc', '#03dac6'];
+
+                for (let i = 0; i < 3; i++) {
+                    const ripple = document.createElement('div');
+                    ripple.className = 'explosion';
+                    ripple.style.left = `${x - 30}px`;
+                    ripple.style.top = `${y - 30}px`;
+                    ripple.style.width = '60px';
+                    ripple.style.height = '60px';
+                    ripple.style.border = `3px solid ${colors[i]}`;
+                    ripple.style.borderRadius = '50%';
+                    ripple.style.animation = `pulse ${0.8 + i * 0.2}s ease-out forwards`;
+                    ripple.style.animationDelay = `${i * 0.1}s`;
+
+                    imageWrapper.appendChild(ripple);
+                    setTimeout(() => ripple.remove(), 1200);
+                }
             }
 
             function createBlockGrid() {
@@ -259,9 +407,12 @@
 
                     block.addEventListener('click', function(e) {
                         if (!block.classList.contains('removed')) {
-                            const rect = block.getBoundingClientRect();
-                            const x = e.clientX - rect.left + imageWrapper.getBoundingClientRect().left;
-                            const y = e.clientY - rect.top + imageWrapper.getBoundingClientRect().top;
+                            const blockRect = block.getBoundingClientRect();
+                            const wrapperRect = imageWrapper.getBoundingClientRect();
+
+                            // Calculate position relative to imageWrapper
+                            const x = blockRect.left + blockRect.width / 2 - wrapperRect.left;
+                            const y = blockRect.top + blockRect.height / 2 - wrapperRect.top;
 
                             playRandomSound();
                             createExplosion(x, y);
@@ -315,6 +466,12 @@
                     targetImage.onload = function() {
                         loadingDiv.style.display = 'none';
                         fetchSpaceXBtn.disabled = false;
+
+                        // Set up download link
+                        downloadLink.href = randomImage;
+                        downloadLink.download = `spacex-${Date.now()}.jpg`;
+                        downloadLink.style.display = 'inline-block';
+
                         initializeGame();
                     };
                 } catch (error) {
@@ -335,6 +492,11 @@
                     currentImageSource = 'file';
 
                     targetImage.onload = function() {
+                        // Set up download link for uploaded file
+                        downloadLink.href = e.target.result;
+                        downloadLink.download = file.name;
+                        downloadLink.style.display = 'inline-block';
+
                         initializeGame();
                     };
                 };
@@ -370,6 +532,7 @@
                 targetImage.src = '';
                 fileUpload.value = '';
                 currentImageSource = null;
+                downloadLink.style.display = 'none';
             }
 
             newGameBtn.addEventListener('click', resetGame);
