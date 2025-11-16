@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counting Game for Kids</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            background-image:
+                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(187, 134, 252, 0.03) 35px, rgba(187, 134, 252, 0.03) 70px),
+                repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(3, 218, 198, 0.03) 35px, rgba(3, 218, 198, 0.03) 70px);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '🎯 🎨 🎪 🎮 🎲 🧩 ⭐ 🌟 ✨ 🎈';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-size: 3rem;
+            opacity: 0.03;
+            z-index: -1;
+            word-wrap: break-word;
+            line-height: 4rem;
+            padding: 2rem;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #bb86fc;
+            margin-bottom: 10px;
+        }
+
+        .setup-container {
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 20px;
+            background-color: #1e1e1e;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 1.1em;
+        }
+
+        .emoji-area {
+            background-color: #1e1e1e;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            min-height: 600px;
+            width: 100%;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .emoji {
+            font-size: 8rem;
+            position: absolute;
+            animation: popIn 0.5s ease-out;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.3) rotate(180deg);
+            }
+            100% {
+                transform: scale(1) rotate(360deg);
+                opacity: 1;
+            }
+        }
+
+        .options-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            background-color: #bb86fc;
+            color: #ffffff;
+            border: none;
+            padding: 20px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 10em;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            min-width: 120px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background-color: #9a67ea;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .option-btn.correct {
+            background-color: #03dac6;
+            animation: pulse 0.5s ease;
+        }
+
+        .option-btn.wrong {
+            background-color: #cf6679;
+            animation: shake 0.5s ease;
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        button {
+            background-color: #bb86fc;
+            color: #121212;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: background-color 0.3s;
+            font-size: 1em;
+        }
+
+        button:hover {
+            background-color: #9a67ea;
+        }
+
+        input, select {
+            background-color: #2d2d2d;
+            color: white;
+            border: 1px solid #444;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            width: 100%;
+            font-size: 1em;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .firework {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .firework-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: explode 1s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
+        }
+
+        .message {
+            font-size: 1.5em;
+            color: #03dac6;
+            margin: 10px 0;
+            min-height: 40px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Counting Game for Kids</h1>
+
+    <div class="setup-container" id="setup">
+        <h2>Game Setup</h2>
+        <p>Choose the maximum number to count:</p>
+
+        <label for="max-count">Maximum Count:</label>
+        <input type="number" id="max-count" min="5" max="100" value="10">
+
+        <p style="margin-top: 20px; font-size: 0.9em; color: #aaa;">
+            The game will show random emojis and you need to count them!
+        </p>
+        <button id="start-game">Start Game</button>
+    </div>
+
+    <div class="game-container" id="game">
+        <div class="stats">
+            <div>Score: <span id="score">0</span></div>
+            <div>Round: <span id="round">1</span></div>
+        </div>
+
+        <div class="emoji-area" id="emoji-area"></div>
+
+        <div class="message" id="message"></div>
+
+        <div class="options-container" id="options"></div>
+
+        <button id="next-round" style="display: none;">Next Round</button>
+        <button id="new-game">New Game</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const setupContainer = document.getElementById('setup');
+            const gameContainer = document.getElementById('game');
+            const emojiArea = document.getElementById('emoji-area');
+            const optionsContainer = document.getElementById('options');
+            const scoreElement = document.getElementById('score');
+            const roundElement = document.getElementById('round');
+            const messageElement = document.getElementById('message');
+            const startGameBtn = document.getElementById('start-game');
+            const newGameBtn = document.getElementById('new-game');
+            const nextRoundBtn = document.getElementById('next-round');
+
+            let maxCount = 10;
+            let score = 0;
+            let round = 1;
+            let correctAnswer = 0;
+            let answered = false;
+
+            const emojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯',
+                           '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆',
+                           '🦉', '🦋', '🐝', '🐞', '🐌', '🦄', '🐴', '🐙', '🐠', '🐡',
+                           '🌟', '⭐', '✨', '🎈', '🎁', '🎀', '🎨', '🎭', '🎪',
+                           '⚽', '🏀', '🎾', '🎯', '🎲', '🧩', '🎮', '🚗', '🚕', '🚙'];
+
+            startGameBtn.addEventListener('click', startGame);
+            newGameBtn.addEventListener('click', resetGame);
+            nextRoundBtn.addEventListener('click', nextRound);
+
+            function startGame() {
+                const maxCountInput = parseInt(document.getElementById('max-count').value);
+
+                if (maxCountInput < 5 || maxCountInput > 100) {
+                    alert('Please enter a value between 5 and 100.');
+                    return;
+                }
+
+                maxCount = maxCountInput;
+                setupContainer.style.display = 'none';
+                gameContainer.style.display = 'flex';
+
+                initializeRound();
+            }
+
+            function resetGame() {
+                score = 0;
+                round = 1;
+                gameContainer.style.display = 'none';
+                setupContainer.style.display = 'block';
+                scoreElement.textContent = score;
+                roundElement.textContent = round;
+                messageElement.textContent = '';
+            }
+
+            function initializeRound() {
+                answered = false;
+                messageElement.textContent = '';
+                nextRoundBtn.style.display = 'none';
+
+                // Generate random count (at least 1, up to maxCount)
+                correctAnswer = Math.floor(Math.random() * maxCount) + 1;
+
+                // Select random emoji
+                const selectedEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+                // Display emojis with random positions
+                emojiArea.innerHTML = '';
+                const areaWidth = emojiArea.offsetWidth - 100;
+                const areaHeight = emojiArea.offsetHeight - 100;
+
+                for (let i = 0; i < correctAnswer; i++) {
+                    const emojiSpan = document.createElement('span');
+                    emojiSpan.className = 'emoji';
+                    emojiSpan.textContent = selectedEmoji;
+                    emojiSpan.style.animationDelay = `${i * 0.05}s`;
+
+                    // Random position within the area
+                    const randomX = Math.random() * areaWidth;
+                    const randomY = Math.random() * areaHeight;
+                    emojiSpan.style.left = randomX + 'px';
+                    emojiSpan.style.top = randomY + 'px';
+
+                    emojiArea.appendChild(emojiSpan);
+                }
+
+                // Generate answer options
+                generateOptions();
+            }
+
+            function generateOptions() {
+                optionsContainer.innerHTML = '';
+
+                // Create array with correct answer and 3 wrong answers
+                const options = [correctAnswer];
+
+                while (options.length < 4) {
+                    let wrongAnswer;
+                    const range = Math.max(3, Math.floor(maxCount / 5));
+
+                    // Generate wrong answer within reasonable range
+                    do {
+                        const offset = Math.floor(Math.random() * range * 2) - range;
+                        wrongAnswer = correctAnswer + offset;
+                    } while (wrongAnswer < 1 || wrongAnswer > maxCount || options.includes(wrongAnswer));
+
+                    options.push(wrongAnswer);
+                }
+
+                // Shuffle options
+                shuffleArray(options);
+
+                // Create option buttons
+                options.forEach(option => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.textContent = option;
+                    btn.addEventListener('click', () => checkAnswer(option, btn));
+                    optionsContainer.appendChild(btn);
+                });
+            }
+
+            function checkAnswer(selectedAnswer, button) {
+                if (answered) return;
+
+                answered = true;
+                const allButtons = optionsContainer.querySelectorAll('.option-btn');
+
+                if (selectedAnswer === correctAnswer) {
+                    // Correct answer
+                    button.classList.add('correct');
+                    score++;
+                    scoreElement.textContent = score;
+                    messageElement.textContent = '🎉 Correct! Well done!';
+                    messageElement.style.color = '#03dac6';
+
+                    // Create fireworks
+                    createFireworks();
+
+                    // Disable all buttons
+                    allButtons.forEach(btn => btn.disabled = true);
+
+                    // Automatically continue to next round after 5 seconds
+                    setTimeout(() => {
+                        nextRound();
+                    }, 5000);
+                } else {
+                    // Wrong answer
+                    button.classList.add('wrong');
+                    messageElement.textContent = '❌ Try again!';
+                    messageElement.style.color = '#cf6679';
+
+                    // Allow another try - just disable the wrong button
+                    button.disabled = true;
+                    answered = false;
+                }
+            }
+
+            function nextRound() {
+                round++;
+                roundElement.textContent = round;
+                initializeRound();
+            }
+
+            function createFireworks() {
+                const colors = ['#bb86fc', '#03dac6', '#cf6679', '#ffd700', '#ff69b4', '#00ff00'];
+
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        const x = Math.random() * window.innerWidth;
+                        const y = Math.random() * (window.innerHeight / 2);
+                        createFirework(x, y, colors[Math.floor(Math.random() * colors.length)]);
+                    }, i * 200);
+                }
+            }
+
+            function createFirework(x, y, color) {
+                const firework = document.createElement('div');
+                firework.className = 'firework';
+                firework.style.left = x + 'px';
+                firework.style.top = y + 'px';
+                document.body.appendChild(firework);
+
+                // Create particles
+                for (let i = 0; i < 30; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'firework-particle';
+                    particle.style.backgroundColor = color;
+
+                    const angle = (Math.PI * 2 * i) / 30;
+                    const velocity = 50 + Math.random() * 100;
+                    const tx = Math.cos(angle) * velocity;
+                    const ty = Math.sin(angle) * velocity;
+
+                    particle.style.setProperty('--tx', tx + 'px');
+                    particle.style.setProperty('--ty', ty + 'px');
+
+                    firework.appendChild(particle);
+                }
+
+                // Remove firework after animation
+                setTimeout(() => {
+                    document.body.removeChild(firework);
+                }, 1000);
+            }
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+        });
+    </script>
+</body>
+</html>

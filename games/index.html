@@ -13,27 +13,27 @@
             --light: #e2e2e2;
             --accent: #00cec9;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         body {
             background: linear-gradient(135deg, var(--dark), var(--darker));
             color: var(--light);
             min-height: 100vh;
             padding: 2rem;
         }
-        
+
         .container {
             max-width: 800px;
             margin: 0 auto;
             text-align: center;
         }
-        
+
         h1 {
             font-size: 2.5rem;
             margin-bottom: 2rem;
@@ -43,14 +43,14 @@
             color: transparent;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
-        
+
         .games-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
             margin-top: 2rem;
         }
-        
+
         .game-card {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
@@ -60,13 +60,13 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
-        
+
         .game-card:hover {
             transform: translateY(-5px);
             background: rgba(255, 255, 255, 0.1);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
-        
+
         .game-card a {
             text-decoration: none;
             color: var(--light);
@@ -77,20 +77,20 @@
             align-items: center;
             gap: 0.5rem;
         }
-        
+
         .game-card i {
             font-size: 2rem;
             margin-bottom: 0.5rem;
             color: var(--secondary);
         }
-        
+
         footer {
             margin-top: 3rem;
             text-align: center;
             color: rgba(255, 255, 255, 0.6);
             font-size: 0.9rem;
         }
-        
+
         @media (max-width: 600px) {
             .games-grid {
                 grid-template-columns: 1fr;
@@ -102,7 +102,7 @@
 <body>
     <div class="container">
         <h1>Game Hub</h1>
-        
+
         <div class="games-grid">
             <div class="game-card">
                 <a href="cars_slides/index.html">
@@ -110,28 +110,28 @@
                     <span>Cars Game</span>
                 </a>
             </div>
-            
+
             <div class="game-card">
                 <a href="memory.html">
                     <i class="fas fa-brain"></i>
                     <span>Memory Game</span>
                 </a>
             </div>
-            
+
             <div class="game-card">
                 <a href="picture.html">
                     <i class="fas fa-image"></i>
                     <span>Picture Puzzle</span>
                 </a>
             </div>
-            
+
             <div class="game-card">
                 <a href="flyletters.html">
                     <i class="fas fa-font"></i>
                     <span>Fly Letters</span>
                 </a>
             </div>
-            
+
             <div class="game-card">
                 <a href="numorder.html">
                     <i class="fas fa-sort-numeric-up"></i>
@@ -152,8 +152,15 @@
                     <span>Water</span>
                 </a>
             </div>
+
+            <div class="game-card">
+                <a href="counting.html">
+                    <i class="fas fa-calculator"></i>
+                    <span>Counting Game</span>
+                </a>
+            </div>
         </div>
-        
+
         <footer>
             © Game Hub | All games are property of their respective owners
         </footer>
