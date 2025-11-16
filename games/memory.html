@@ -15,12 +15,12 @@
             padding: 20px;
             margin: 0;
         }
-        
+
         h1 {
             color: #bb86fc;
             margin-bottom: 10px;
         }
-        
+
         .setup-container {
             background-color: #1e1e1e;
             padding: 20px;
@@ -30,13 +30,13 @@
             text-align: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-        
+
         .game-container {
             display: none;
             flex-direction: column;
             align-items: center;
         }
-        
+
         .stats {
             display: flex;
             justify-content: space-between;
@@ -48,23 +48,21 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
-        
+
         .game-board {
             display: grid;
             grid-gap: 10px;
             max-width: 100%;
             margin: 0 auto;
         }
-        
+
         .card {
-            width: 60px;
-            height: 60px;
+            aspect-ratio: 1;
             background-color: #bb86fc;
             border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
             cursor: pointer;
             transition: all 0.3s ease;
             transform-style: preserve-3d;
@@ -72,26 +70,26 @@
             perspective: 1000px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        
+
         .card.flipped {
             background-color: #3700b3;
             transform: rotateY(0deg);
         }
-        
+
         .card.matched {
             background-color: #03dac6;
             cursor: default;
             transform: rotateY(0deg);
         }
-        
+
         .card-content {
             display: none;
         }
-        
+
         .flipped .card-content, .matched .card-content {
             display: block;
         }
-        
+
         button {
             background-color: #bb86fc;
             color: #121212;
@@ -103,11 +101,11 @@
             margin: 5px;
             transition: background-color 0.3s;
         }
-        
+
         button:hover {
             background-color: #9a67ea;
         }
-        
+
         select, input {
             background-color: #2d2d2d;
             color: white;
@@ -116,51 +114,58 @@
             border-radius: 5px;
             margin: 5px 0;
         }
-        
+
         .size-inputs {
             display: flex;
             justify-content: center;
             gap: 10px;
             margin: 15px 0;
         }
-        
+
         .size-input {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        
-        @media (max-width: 768px) {
-            .card {
-                width: 40px;
-                height: 40px;
-                font-size: 16px;
-            }
+
+        .card-content {
+            font-size: clamp(5.5rem, 5vw, 5.5rem);
+            font-weight: bold;
+            line-height: 1;
         }
     </style>
 </head>
 <body>
     <h1>Memory Card Game</h1>
-    
+
     <div class="setup-container" id="setup">
         <h2>Game Setup</h2>
         <p>Select the size of the game board:</p>
-        
+
         <div class="size-inputs">
             <div class="size-input">
                 <label for="rows">Rows:</label>
-                <input type="number" id="rows" min="4" max="20" value="4">
+                <input type="number" id="rows" min="2" max="20" value="4">
             </div>
             <div class="size-input">
                 <label for="cols">Columns:</label>
-                <input type="number" id="cols" min="4" max="20" value="4">
+                <input type="number" id="cols" min="2" max="20" value="4">
             </div>
         </div>
-        
+
+        <div style="margin: 15px 0;">
+            <label for="symbol-type">Symbol Type:</label>
+            <select id="symbol-type">
+                <option value="ru">Russian Letters (А-Я)</option>
+                <option value="numbers">Numbers (0-9)</option>
+                <option value="shapes">Shapes (●■▲◆)</option>
+            </select>
+        </div>
+
         <p>Note: The product of rows and columns must be even.</p>
         <button id="start-game">Start Game</button>
     </div>
-    
+
     <div class="game-container" id="game">
         <div class="stats">
             <div>Turns: <span id="turns">0</span></div>
@@ -169,7 +174,7 @@
         <div class="game-board" id="board"></div>
         <button id="new-game">New Game</button>
     </div>
-    
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const setupContainer = document.getElementById('setup');
@@ -180,44 +185,65 @@
             const totalPairsElement = document.getElementById('total-pairs');
             const startGameBtn = document.getElementById('start-game');
             const newGameBtn = document.getElementById('new-game');
-            
+
             let cards = [];
             let flippedCards = [];
             let matchedPairs = 0;
             let turns = 0;
             let totalPairs = 0;
             let canFlip = true;
-            
+
             startGameBtn.addEventListener('click', startGame);
             newGameBtn.addEventListener('click', resetGame);
-            
+
             function startGame() {
                 const rows = parseInt(document.getElementById('rows').value);
                 const cols = parseInt(document.getElementById('cols').value);
-                
+                const symbolType = document.getElementById('symbol-type').value;
+
                 // Validate input
-                if (rows < 4 || rows > 20 || cols < 4 || cols > 20) {
-                    alert('Please enter values between 4 and 20 for both rows and columns.');
+                if (rows < 2 || rows > 20 || cols < 2 || cols > 20) {
+                    alert('Please enter values between 2 and 20 for both rows and columns.');
                     return;
                 }
-                
+
                 if ((rows * cols) % 2 !== 0) {
                     alert('The product of rows and columns must be even to have matching pairs.');
                     return;
                 }
-                
+
                 setupContainer.style.display = 'none';
                 gameContainer.style.display = 'flex';
-                
-                initializeGame(rows, cols);
+
+                initializeGame(rows, cols, symbolType);
             }
-            
+
             function resetGame() {
                 gameContainer.style.display = 'none';
                 setupContainer.style.display = 'block';
             }
-            
-            function initializeGame(rows, cols) {
+
+            function getSymbolSet(symbolType) {
+                switch(symbolType) {
+                    case 'ru':
+                        // Russian alphabet А-Я
+                        return 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
+                    case 'numbers':
+                        // Numbers 0-99
+                        const numbers = [];
+                        for (let i = 0; i <= 99; i++) {
+                            numbers.push(i.toString());
+                        }
+                        return numbers;
+                    case 'shapes':
+                        // Various shapes
+                        return ['●', '■', '▲', '◆', '★', '♠', '♣', '♥', '♦', '○', '□', '△', '◇', '☆', '▼', '►', '◄', '▪', '▫', '◘'];
+                    default:
+                        return 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
+                }
+            }
+
+            function initializeGame(rows, cols, symbolType) {
                 // Reset game state
                 boardElement.innerHTML = '';
                 cards = [];
@@ -226,43 +252,52 @@
                 turns = 0;
                 totalPairs = (rows * cols) / 2;
                 canFlip = true;
-                
+
                 // Update stats
                 turnsElement.textContent = turns;
                 pairsFoundElement.textContent = matchedPairs;
                 totalPairsElement.textContent = totalPairs;
-                
-                // Set up game board grid
-                boardElement.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-                boardElement.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-                
+
+                // Calculate responsive card size based on screen and grid
+                const maxBoardWidth = Math.min(window.innerWidth - 40, 1200);
+                const maxBoardHeight = Math.min(window.innerHeight - 200, 800);
+                const cardSize = Math.min(
+                    Math.floor(maxBoardWidth / cols) - 10,
+                    Math.floor(maxBoardHeight / rows) - 10,
+                    120
+                );
+
+                // Set up game board grid with calculated size
+                boardElement.style.gridTemplateColumns = `repeat(${cols}, ${cardSize}px)`;
+                boardElement.style.gridTemplateRows = `repeat(${rows}, ${cardSize}px)`;
+
                 // Create card pairs
                 const symbols = [];
                 const totalCards = rows * cols;
-                
-                // Generate symbols (using letters for simplicity)
+                const symbolSet = getSymbolSet(symbolType);
+
+                // Generate symbols based on selected type
                 for (let i = 0; i < totalCards / 2; i++) {
-                    // Use emoji or letters as symbols
-                    const symbol = String.fromCodePoint(0x1F600 + i % 50); // Using emoji
+                    const symbol = symbolSet[i % symbolSet.length];
                     symbols.push(symbol, symbol);
                 }
-                
+
                 // Shuffle symbols
                 shuffleArray(symbols);
-                
+
                 // Create cards
                 for (let i = 0; i < totalCards; i++) {
                     const card = document.createElement('div');
                     card.className = 'card';
                     card.dataset.index = i;
-                    
+
                     const cardContent = document.createElement('div');
                     cardContent.className = 'card-content';
                     cardContent.textContent = symbols[i];
-                    
+
                     card.appendChild(cardContent);
                     card.addEventListener('click', () => flipCard(card));
-                    
+
                     boardElement.appendChild(card);
                     cards.push({
                         element: card,
@@ -271,39 +306,39 @@
                     });
                 }
             }
-            
+
             function flipCard(cardElement) {
                 if (!canFlip) return;
-                
+
                 const index = parseInt(cardElement.dataset.index);
                 const card = cards[index];
-                
+
                 // Don't allow flipping already matched or flipped cards
                 if (card.matched || flippedCards.length === 2 || cardElement === flippedCards[0]?.element) {
                     return;
                 }
-                
+
                 // Flip the card
                 cardElement.classList.add('flipped');
                 flippedCards.push(card);
-                
+
                 // Check for match when two cards are flipped
                 if (flippedCards.length === 2) {
                     turns++;
                     turnsElement.textContent = turns;
-                    
+
                     if (flippedCards[0].symbol === flippedCards[1].symbol) {
                         // Match found
                         flippedCards[0].matched = true;
                         flippedCards[1].matched = true;
                         flippedCards[0].element.classList.add('matched');
                         flippedCards[1].element.classList.add('matched');
-                        
+
                         matchedPairs++;
                         pairsFoundElement.textContent = matchedPairs;
-                        
+
                         flippedCards = [];
-                        
+
                         // Check for game completion
                         if (matchedPairs === totalPairs) {
                             setTimeout(() => {
@@ -322,7 +357,7 @@
                     }
                 }
             }
-            
+
             function shuffleArray(array) {
                 for (let i = array.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
