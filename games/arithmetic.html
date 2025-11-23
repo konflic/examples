@@ -100,6 +100,9 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             width: 100%;
             margin: 0 auto;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.15;
         }
         .options {
             margin: 24px auto 0;
@@ -177,6 +180,31 @@
             font-size: 14px;
         }
         .hidden { display: none; }
+
+/* Mobile/tablet responsive adjustments */
+@media (max-width: 900px) {
+    .content { width: min(94vw, 900px); }
+    .expression { padding: 3vw 4vw; font-size: clamp(28px, 9vw, 80px); }
+    .options { padding: 3vw 4vw; gap: max(var(--gap), 6px); }
+    .stats { gap: 10px; }
+}
+@media (max-width: 600px) {
+    h1 { font-size: 1.6rem; margin: 15px 0 8px; }
+    .controls .panel { width: 94vw; padding: 12px; }
+    select, button { font-size: 14px; padding: 8px 12px; }
+    .content { width: 96vw; }
+    .expression { font-size: clamp(22px, 11vw, 64px); padding: 3.5vw 4.5vw; }
+    .options { grid-template-columns: repeat(2, 1fr); padding: 3.5vw 4.5vw; }
+    .option { font-size: clamp(18px, 8.5vw, 44px); }
+    .stats { flex-direction: column; align-items: center; }
+    .stat { min-width: 0; width: 90%; }
+    .note { font-size: 12px; }
+}
+@media (max-width: 380px) {
+    .expression { font-size: clamp(18px, 12.5vw, 52px); }
+    .options { grid-template-columns: 1fr; }
+    .option { font-size: clamp(16px, 10vw, 40px); }
+}
     </style>
 </head>
 <body>
@@ -197,7 +225,6 @@
                 <option value="10">10 - 1..999, X equations</option>
             </select>
             <button id="start-btn">Start</button>
-            <button id="reset-btn">Reset</button>
         </div>
     </div>
 
@@ -223,7 +250,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         const levelSelect = document.getElementById('level-select');
         const startBtn = document.getElementById('start-btn');
-        const resetBtn = document.getElementById('reset-btn');
         const nextBtn = document.getElementById('next-btn');
         const expressionEl = document.getElementById('expression');
         const optionsEl = document.getElementById('options');
@@ -262,15 +288,6 @@
             nextQuestion();
         });
 
-        resetBtn.addEventListener('click', () => {
-            gameActive = false;
-            score = 0; solved = 0; totalTime = 0;
-            updateStats();
-            expressionEl.textContent = 'Press Start';
-            optionsEl.innerHTML = '';
-            messageEl.textContent = '';
-            nextBtn.classList.add('hidden');
-        });
 
         nextBtn.addEventListener('click', () => {
             if (!gameActive) return;
