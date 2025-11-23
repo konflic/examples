@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arithmetic Trainer</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --panel: #1e1e1e;
+            --accent: #bb86fc;
+            --accent2: #03dac6;
+            --danger: #cf6679;
+            --text: #ffffff;
+            --border: #3700b3;
+            --gap: 5px;
+            --opt-w: clamp(200px, 26vw, 360px);
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; overflow-x: hidden; }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        h1 {
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(187,134,252,0.4);
+            margin: 25px 0 10px 0;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 10px 0 20px 0;
+            flex-wrap: wrap;
+        }
+        .panel {
+            background-color: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        select, button {
+            background-color: #2d2d2d;
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 10px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+        button {
+            background-color: var(--border);
+        }
+        button:hover {
+            transform: scale(1.05);
+            background-color: #6200ee;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 10px 0 20px 0;
+        }
+        .stat {
+            background: var(--panel);
+            border: 2px dashed var(--border);
+            padding: 10px 16px;
+            border-radius: 10px;
+            min-width: 150px;
+        }
+        .game-area {
+            width: 100%;
+            max-width: 100vw;
+            margin: 0 auto;
+            padding: 0 2vw;
+        }
+        .content {
+            width: min(92vw, 1200px);
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .expression {
+            background: var(--panel);
+            border: 3px solid var(--border);
+            border-radius: 14px;
+            padding: 2.5vw 3vw;
+            font-size: clamp(32px, 8vw, 96px);
+            font-weight: bold;
+            color: var(--accent2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            width: 100%;
+            margin: 0 auto;
+        }
+        .options {
+            margin: 24px auto 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--gap);
+            width: 100%;
+            background: var(--panel);
+            border: 3px solid var(--border);
+            border-radius: 14px;
+            padding: 2.5vw 3vw;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .option {
+            background: #2d2d2d;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 0.6em 1em;
+            font-size: clamp(28px, 5vw, 80px);
+            font-weight: bold;
+            color: var(--text);
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            aspect-ratio: 3 / 1;
+        }
+        .option:hover {
+            transform: translateY(-3px);
+            background: #3a3a3a;
+        }
+        .option.correct {
+            background: var(--accent2);
+            color: #000;
+            border-color: #00a896;
+            animation: pop 0.4s ease;
+        }
+        .option.wrong {
+            background: var(--danger);
+            border-color: #ff1744;
+            animation: shake 0.4s ease;
+        }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        @keyframes pop {
+            0% { transform: scale(0.9); }
+            50% { transform: scale(1.07); }
+            100% { transform: scale(1); }
+        }
+        .message {
+            min-height: 24px;
+            margin-top: 8px;
+            color: var(--accent);
+            font-weight: bold;
+        }
+        .footer-controls {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .note {
+            margin-top: 10px;
+            color: #aaaaaa;
+            font-size: 14px;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🧮 Arithmetic Trainer</h1>
+    <div class="controls">
+        <div class="panel">
+            <label for="level-select">Level:</label>
+            <select id="level-select">
+                <option value="1">1 - +/- with 1..9</option>
+                <option value="2">2 - +/- with 1..20</option>
+                <option value="3">3 - +,-,* with 1..30</option>
+                <option value="4">4 - +,-,*,/ (integer) 1..50</option>
+                <option value="5">5 - combos, () 1..70</option>
+                <option value="6">6 - combos 1..99, sometimes X</option>
+                <option value="7">7 - harder, X appears</option>
+                <option value="8">8 - up to 999, many X</option>
+                <option value="9">9 - tough combos, X</option>
+                <option value="10">10 - 1..999, X equations</option>
+            </select>
+            <button id="start-btn">Start</button>
+            <button id="reset-btn">Reset</button>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat">Score: <span id="score">0</span></div>
+        <div class="stat">Average time: <span id="avg-time">0.00</span>s</div>
+        <div class="stat">Solved: <span id="solved">0</span></div>
+    </div>
+
+    <div class="game-area">
+        <div class="content">
+            <div id="expression" class="expression">Press Start</div>
+            <div id="options" class="options"></div>
+            <div id="message" class="message"></div>
+            <div class="footer-controls">
+                <button id="next-btn" class="hidden">Next</button>
+            </div>
+            <div class="note">-1 for wrong pick, +2 for correct. Choose until you find the right answer.</div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const levelSelect = document.getElementById('level-select');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const expressionEl = document.getElementById('expression');
+        const optionsEl = document.getElementById('options');
+        const messageEl = document.getElementById('message');
+        const scoreEl = document.getElementById('score');
+        const avgTimeEl = document.getElementById('avg-time');
+        const solvedEl = document.getElementById('solved');
+
+        // Audio
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(freq = 700, dur = 0.1, vol = 0.25) {
+            const o = audioContext.createOscillator();
+            const g = audioContext.createGain();
+            o.connect(g); g.connect(audioContext.destination);
+            o.type = 'sine'; o.frequency.value = freq;
+            g.gain.setValueAtTime(vol, audioContext.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
+            o.start(); o.stop(audioContext.currentTime + dur);
+        }
+        function successSound(){ beep(500,0.07,0.25); setTimeout(()=>beep(800,0.07,0.2),80); }
+        function errorSound(){ beep(200,0.12,0.18); }
+
+        let gameActive = false;
+        let score = 0;
+        let solved = 0;
+        let totalTime = 0;
+        let startTime = 0;
+        let currentAnswer = null;
+        let currentQuestion = '';
+
+        startBtn.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            gameActive = true;
+            score = 0; solved = 0; totalTime = 0;
+            updateStats();
+            nextQuestion();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            gameActive = false;
+            score = 0; solved = 0; totalTime = 0;
+            updateStats();
+            expressionEl.textContent = 'Press Start';
+            optionsEl.innerHTML = '';
+            messageEl.textContent = '';
+            nextBtn.classList.add('hidden');
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (!gameActive) return;
+            nextQuestion();
+        });
+
+        function updateStats() {
+            scoreEl.textContent = String(score);
+            solvedEl.textContent = String(solved);
+            const avg = solved > 0 ? (totalTime / solved) : 0;
+            avgTimeEl.textContent = avg.toFixed(2);
+        }
+
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+        function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a||1; }
+
+        function prettify(text){
+            return String(text).replaceAll('*','×').replaceAll('/','÷');
+        }
+
+        function getLevelConfig(level) {
+            const L = Number(level);
+            if (L === 1) return {max:9, ops:['+','-'], terms:[2,2], par:false, xChance:0};
+            if (L === 2) return {max:20, ops:['+','-'], terms:[2,3], par:false, xChance:0};
+            if (L === 3) return {max:30, ops:['+','-','*'], terms:[2,3], par:false, xChance:0};
+            if (L === 4) return {max:50, ops:['+','-','*','/'], terms:[2,3], par:false, xChance:0};
+            if (L === 5) return {max:70, ops:['+','-','*','/'], terms:[3,4], par:true, xChance:0};
+            if (L === 6) return {max:99, ops:['+','-','*','/'], terms:[3,4], par:true, xChance:0.25};
+            if (L === 7) return {max:150, ops:['+','-','*','/'], terms:[3,4], par:true, xChance:0.4};
+            if (L === 8) return {max:300, ops:['+','-','*','/'], terms:[3,4], par:true, xChance:0.6};
+            if (L === 9) return {max:600, ops:['+','-','*','/'], terms:[3,4], par:true, xChance:0.7};
+            return {max:999, ops:['+','-','*','/'], terms:[3,4], par:true, xChance:0.8};
+        }
+
+        function nextQuestion() {
+            const level = Number(levelSelect.value);
+            const cfg = getLevelConfig(level);
+
+            const makeX = Math.random() < cfg.xChance;
+            let q, answer;
+            if (makeX) {
+                ({question: q, correct: answer} = generateXEquation(cfg));
+            } else {
+                ({expression: q, value: answer} = generateExpression(cfg));
+            }
+
+            currentQuestion = q;
+            currentAnswer = answer;
+            expressionEl.textContent = prettify(q);
+            buildOptions(answer, level);
+            messageEl.textContent = '';
+            nextBtn.classList.add('hidden');
+            startTime = performance.now();
+        }
+
+        function generateExpression(cfg) {
+            // Try until integer value and within safe range
+            for (let tries=0; tries<100; tries++) {
+                const termCount = randInt(cfg.terms[0], cfg.terms[1]);
+                const nums = Array.from({length: termCount}, ()=>randInt(1, cfg.max));
+                const ops = Array.from({length: termCount-1}, ()=>choice(cfg.ops));
+
+                // Fix divisions to be integer: when op is '/', set left as product
+                for (let i=0;i<ops.length;i++){
+                    if (ops[i] === '/') {
+                        const b = nums[i+1] || 1;
+                        const k = randInt(1, Math.max(2, Math.floor(cfg.max / b)));
+                        nums[i] = b * k;
+                    }
+                }
+
+                // Assemble expression string
+                let parts = [];
+                for (let i=0;i<nums.length;i++){
+                    parts.push(String(nums[i]));
+                    if (i<ops.length) parts.push(ops[i]);
+                }
+                // Optionally add parentheses around a random sub-sequence
+                if (cfg.par && parts.length >= 5 && Math.random() < 0.6) {
+                    // choose a start index at a number position (even indices)
+                    const numberPositions = [];
+                    for (let i=0;i<parts.length;i+=2){ numberPositions.push(i); }
+                    const startIdx = choice(numberPositions.slice(0, -1));
+                    const endIdx = choice(numberPositions.filter(i=>i>startIdx));
+                    parts[startIdx] = '(' + parts[startIdx];
+                    parts[endIdx] = parts[endIdx] + ')';
+                }
+                const expr = parts.join(' ');
+                try {
+                    const val = Function('return (' + expr + ')')();
+                    if (Number.isFinite(val) && Math.abs(val) <= 9999 && Number.isInteger(val)) {
+                        return {expression: expr + ' = ?', value: val};
+                    }
+                } catch(e){ /* retry */ }
+            }
+            // fallback
+            return {expression: '1 + 1 = ?', value: 2};
+        }
+
+        function generateXEquation(cfg) {
+            // Equation forms: x ± a = b, a ± x = b, x * a = b, a * x = b, x / a = b, a / x = b
+            const forms = ['x+a=b','a+x=b','x-a=b','a-x=b','x*a=b','a*x=b','x/a=b','a/x=b'];
+            for (let tries=0; tries<200; tries++){
+                const form = choice(forms);
+                const a = randInt(1, cfg.max);
+                const b = randInt(1, cfg.max);
+                let x = null, question = '';
+                switch(form){
+                    case 'x+a=b': x = b - a; question = `x + ${a} = ${b}`; break;
+                    case 'a+x=b': x = b - a; question = `${a} + x = ${b}`; break;
+                    case 'x-a=b': x = b + a; question = `x - ${a} = ${b}`; break;
+                    case 'a-x=b': x = a - b; question = `${a} - x = ${b}`; break;
+                    case 'x*a=b': if (b % a === 0){ x = Math.floor(b / a); question = `x × ${a} = ${b}`; } break;
+                    case 'a*x=b': if (b % a === 0){ x = Math.floor(b / a); question = `${a} × x = ${b}`; } break;
+                    case 'x/a=b': x = a * b; question = `x ÷ ${a} = ${b}`; break;
+                    case 'a/x=b': if (a % b === 0){ x = Math.floor(a / b); question = `${a} ÷ x = ${b}`; } break;
+                }
+                if (x !== null && Number.isInteger(x) && Math.abs(x) <= 9999) {
+                    return {question, correct: x};
+                }
+            }
+            // fallback to normal expression
+            const {expression, value} = generateExpression(cfg);
+            return {question: expression, correct: value};
+        }
+
+        function buildOptions(correct, level) {
+            optionsEl.innerHTML = '';
+            const opts = new Set();
+            opts.add(correct);
+
+            const cfg = getLevelConfig(level);
+            const variance = Math.max(3, Math.floor(cfg.max / 6));
+
+            while (opts.size < 6) {
+                let delta = randInt(-variance, variance);
+                if (delta === 0) delta = 1;
+                let candidate = correct + delta;
+                if (Math.random() < 0.2) candidate = -candidate; // sign flip sometimes
+                // small random tweaks
+                if (Math.random() < 0.2) candidate += randInt(-3,3);
+                if (!opts.has(candidate)) opts.add(candidate);
+            }
+
+            const shuffled = Array.from(opts);
+            // ensure correct is included exactly once
+            // shuffle
+            for (let i=shuffled.length-1; i>0; i--){
+                const j = Math.floor(Math.random()*(i+1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+
+            shuffled.forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = 'option';
+                btn.textContent = String(val);
+                btn.addEventListener('click', () => onPick(btn, val));
+                optionsEl.appendChild(btn);
+            });
+        }
+
+        function onPick(btn, val) {
+            if (!gameActive) return;
+            if (val === currentAnswer) {
+                btn.classList.remove('wrong');
+                btn.classList.add('correct');
+                successSound();
+                const dt = (performance.now() - startTime) / 1000;
+                solved += 1;
+                totalTime += dt;
+                score += 2;
+                updateStats();
+                messageEl.textContent = 'Great!';
+                // disable all buttons
+                optionsEl.querySelectorAll('.option').forEach(b => b.disabled = true);
+                // auto next after short delay
+                nextBtn.classList.remove('hidden');
+                setTimeout(() => { if (gameActive) nextQuestion(); }, 1200);
+            } else {
+                if (!btn.disabled) {
+                    btn.classList.add('wrong');
+                    errorSound();
+                    score -= 1;
+                    updateStats();
+                    messageEl.textContent = 'Try again…';
+                    btn.disabled = true;
+                }
+            }
+        }
+    });
+    </script>
+</body>
+</html>
