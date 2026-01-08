@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,7 +31,7 @@
             background-color: #1e1e1e;
             padding: 25px;
             border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
             margin-bottom: 30px;
             text-align: center;
             width: 90%;
@@ -53,7 +54,7 @@
             max-height: 85vh;
             overflow: hidden;
             border-radius: 10px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
             border: 2px solid #333;
             display: flex;
             align-items: center;
@@ -86,7 +87,7 @@
             overflow: hidden;
             z-index: 2;
             transition: all 0.2s;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
         }
 
         .block:hover {
@@ -118,38 +119,87 @@
         }
 
         @keyframes explode {
-            0% { transform: scale(0.2) rotate(0deg); opacity: 1; }
-            50% { transform: scale(1.5) rotate(180deg); opacity: 0.8; }
-            100% { transform: scale(2.5) rotate(360deg); opacity: 0; }
+            0% {
+                transform: scale(0.2) rotate(0deg);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.5) rotate(180deg);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(2.5) rotate(360deg);
+                opacity: 0;
+            }
         }
 
         @keyframes firework {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
         }
 
         @keyframes spin {
-            0% { transform: scale(0.5) rotate(0deg); opacity: 1; }
-            100% { transform: scale(2) rotate(720deg); opacity: 0; }
+            0% {
+                transform: scale(0.5) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(2) rotate(720deg);
+                opacity: 0;
+            }
         }
 
         @keyframes bounce {
-            0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
-            50% { transform: translateY(-50px) scale(1.5); opacity: 0.8; }
-            100% { transform: translateY(0) scale(0); opacity: 0; }
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: translateY(-50px) scale(1.5);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: translateY(0) scale(0);
+                opacity: 0;
+            }
         }
 
         @keyframes pulse {
-            0% { transform: scale(0.5); opacity: 1; }
-            50% { transform: scale(2); opacity: 0.5; }
-            100% { transform: scale(3); opacity: 0; }
+            0% {
+                transform: scale(0.5);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(2);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
         }
 
         .stats {
             background-color: #1e1e1e;
             padding: 15px 25px;
             border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
             width: 95%;
             max-width: min(1400px, 95vw);
             text-align: center;
@@ -196,6 +246,7 @@
         }
     </style>
 </head>
+
 <body>
     <h1>Funny Image Reveal</h1>
 
@@ -219,18 +270,24 @@
 
     <div class="stats">
         <div>Blocks left: <span id="blocks-left">100</span></div>
-        <a id="download-link" href="#" download="spacex-image.jpg" style="display: none; color: #bb86fc; text-decoration: none; font-size: 14px;">📥 Download Image</a>
+        <a id="download-link" href="#" download="spacex-image.jpg"
+            style="display: none; color: #bb86fc; text-decoration: none; font-size: 14px;">📥 Download Image</a>
         <button id="new-game">New Game</button>
     </div>
 
-    <audio id="sound1" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3" preload="auto"></audio>
-    <audio id="sound2" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
-    <audio id="sound3" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3" preload="auto"></audio>
-    <audio id="sound4" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-casino-notification-211.mp3" preload="auto"></audio>
-    <audio id="sound5" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-mechanical-bling-210.mp3" preload="auto"></audio>
+    <audio id="sound1" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3"
+        preload="auto"></audio>
+    <audio id="sound2" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3"
+        preload="auto"></audio>
+    <audio id="sound3" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3"
+        preload="auto"></audio>
+    <audio id="sound4" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-casino-notification-211.mp3"
+        preload="auto"></audio>
+    <audio id="sound5" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-mechanical-bling-210.mp3"
+        preload="auto"></audio>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const uploadContainer = document.querySelector('.upload-container');
             const gameContainer = document.querySelector('.game-container');
             const fileUpload = document.getElementById('file-upload');
@@ -269,7 +326,7 @@
             function createExplosion(x, y) {
                 const animationType = Math.floor(Math.random() * 5);
 
-                switch(animationType) {
+                switch (animationType) {
                     case 0:
                         createFireworks(x, y);
                         break;
@@ -405,7 +462,7 @@
                     const block = document.createElement('div');
                     block.className = 'block';
 
-                    block.addEventListener('click', function(e) {
+                    block.addEventListener('click', function (e) {
                         if (!block.classList.contains('removed')) {
                             const blockRect = block.getBoundingClientRect();
                             const wrapperRect = imageWrapper.getBoundingClientRect();
@@ -439,7 +496,7 @@
                     fetchSpaceXBtn.disabled = true;
 
                     // Fetch launches with images
-                    const response = await fetch('https://api.spacexdata.com/v4/launches');
+                    const response = await fetch('https://api.spacexdata.com/v3/launches');
                     const launches = await response.json();
 
                     // Filter launches that have images
@@ -463,7 +520,7 @@
                     targetImage.src = randomImage;
                     currentImageSource = 'spacex';
 
-                    targetImage.onload = function() {
+                    targetImage.onload = function () {
                         loadingDiv.style.display = 'none';
                         fetchSpaceXBtn.disabled = false;
 
@@ -487,11 +544,11 @@
                 if (!file) return;
 
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     targetImage.src = e.target.result;
                     currentImageSource = 'file';
 
-                    targetImage.onload = function() {
+                    targetImage.onload = function () {
                         // Set up download link for uploaded file
                         downloadLink.href = e.target.result;
                         downloadLink.download = file.name;
@@ -544,4 +601,5 @@
         });
     </script>
 </body>
+
 </html>
