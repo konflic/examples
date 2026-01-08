@@ -494,18 +494,32 @@
                 try {
                     loadingDiv.style.display = 'block';
                     fetchSpaceXBtn.disabled = true;
+                    loadingDiv.textContent = 'Loading SpaceX image...';
 
-                    // Fetch launches with images
-                    const response = await fetch('https://api.spacexdata.com/v3/launches');
+                    // Add timeout to fetch request
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+                    // Fetch launches with images using v4 API
+                    const response = await fetch('https://api.spacexdata.com/v4/launches', {
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
                     const launches = await response.json();
 
-                    // Filter launches that have images
+                    // Filter launches that have images (v4 API uses links.flickr.original)
                     const launchesWithImages = launches.filter(launch =>
                         launch.links && launch.links.flickr && launch.links.flickr.original && launch.links.flickr.original.length > 0
                     );
 
                     if (launchesWithImages.length === 0) {
-                        alert('No SpaceX images available at the moment.');
+                        alert('No SpaceX images available at the moment. Please try uploading your own image.');
                         loadingDiv.style.display = 'none';
                         fetchSpaceXBtn.disabled = false;
                         return;
@@ -531,9 +545,22 @@
 
                         initializeGame();
                     };
+
+                    targetImage.onerror = function () {
+                        console.error('Error loading SpaceX image:', randomImage);
+                        alert('Failed to load the SpaceX image. The image URL might be invalid. Please try again or upload your own image.');
+                        loadingDiv.style.display = 'none';
+                        fetchSpaceXBtn.disabled = false;
+                        targetImage.src = '';
+                    };
+
                 } catch (error) {
                     console.error('Error fetching SpaceX image:', error);
-                    alert('Failed to fetch SpaceX image. Please try again or upload your own image.');
+                    if (error.name === 'AbortError') {
+                        alert('Request timed out. Please check your internet connection and try again.');
+                    } else {
+                        alert('Failed to fetch SpaceX image. Please check your internet connection and try again, or upload your own image.');
+                    }
                     loadingDiv.style.display = 'none';
                     fetchSpaceXBtn.disabled = false;
                 }
