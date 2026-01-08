@@ -259,6 +259,34 @@
         </label>
         <input type="file" id="file-upload" accept="image/*">
         <div id="loading" style="display: none; margin-top: 15px; color: #bb86fc;">Loading SpaceX image...</div>
+
+        <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 15px;">
+            <h3 style="margin-bottom: 10px; color: #bb86fc;">Grid Settings</h3>
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <div>
+                    <label for="grid-size" style="display: block; margin-bottom: 5px; font-size: 14px;">Grid Size:</label>
+                    <select id="grid-size" style="background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+                        <option value="5x5">5x5 (Easy)</option>
+                        <option value="10x10" selected>10x10 (Medium)</option>
+                        <option value="15x15">15x15 (Hard)</option>
+                        <option value="20x20">20x20 (Expert)</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div id="custom-grid-container" style="display: none;">
+                    <div style="display: flex; gap: 10px;">
+                        <div>
+                            <label for="custom-cols" style="display: block; margin-bottom: 5px; font-size: 14px;">Columns:</label>
+                            <input type="number" id="custom-cols" min="3" max="30" value="10" style="width: 60px; background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label for="custom-rows" style="display: block; margin-bottom: 5px; font-size: 14px;">Rows:</label>
+                            <input type="number" id="custom-rows" min="3" max="30" value="10" style="width: 60px; background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="game-container">
@@ -300,6 +328,10 @@
             const fetchSpaceXBtn = document.getElementById('fetch-spacex');
             const loadingDiv = document.getElementById('loading');
             const downloadLink = document.getElementById('download-link');
+            const gridSizeSelect = document.getElementById('grid-size');
+            const customGridContainer = document.getElementById('custom-grid-container');
+            const customColsInput = document.getElementById('custom-cols');
+            const customRowsInput = document.getElementById('custom-rows');
 
             let currentImageSource = null; // 'file' or 'spacex'
 
@@ -316,6 +348,30 @@
             let remainingBlocks = 100;
             let gridColumns = 10;
             let gridRows = 10;
+
+            function getGridDimensions() {
+                const gridSize = gridSizeSelect.value;
+
+                switch (gridSize) {
+                    case '5x5':
+                        return { columns: 5, rows: 5 };
+                    case '10x10':
+                        return { columns: 10, rows: 10 };
+                    case '15x15':
+                        return { columns: 15, rows: 15 };
+                    case '20x20':
+                        return { columns: 20, rows: 20 };
+                    case 'custom':
+                        const cols = parseInt(customColsInput.value) || 10;
+                        const rows = parseInt(customRowsInput.value) || 10;
+                        return {
+                            columns: Math.max(3, Math.min(30, cols)),
+                            rows: Math.max(3, Math.min(30, rows))
+                        };
+                    default:
+                        return { columns: 10, rows: 10 };
+                }
+            }
 
             function playRandomSound() {
                 const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
@@ -589,14 +645,20 @@
 
             function initializeGame() {
                 const aspectRatio = targetImage.naturalWidth / targetImage.naturalHeight;
+                const dimensions = getGridDimensions();
 
+                // Adjust grid dimensions based on aspect ratio
                 if (aspectRatio > 1) {
-                    gridColumns = Math.round(10 * aspectRatio);
-                    gridRows = 10;
+                    gridColumns = Math.round(dimensions.columns * aspectRatio);
+                    gridRows = dimensions.rows;
                 } else {
-                    gridColumns = 10;
-                    gridRows = Math.round(10 / aspectRatio);
+                    gridColumns = dimensions.columns;
+                    gridRows = Math.round(dimensions.rows / aspectRatio);
                 }
+
+                // Ensure minimum and maximum grid sizes
+                gridColumns = Math.max(3, Math.min(50, gridColumns));
+                gridRows = Math.max(3, Math.min(50, gridRows));
 
                 totalBlocks = gridColumns * gridRows;
                 remainingBlocks = totalBlocks;
@@ -618,6 +680,23 @@
                 currentImageSource = null;
                 downloadLink.style.display = 'none';
             }
+
+            // Grid size controls event listeners
+            gridSizeSelect.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    customGridContainer.style.display = 'block';
+                } else {
+                    customGridContainer.style.display = 'none';
+                }
+            });
+
+            customColsInput.addEventListener('change', function() {
+                this.value = Math.max(3, Math.min(30, parseInt(this.value) || 10));
+            });
+
+            customRowsInput.addEventListener('change', function() {
+                this.value = Math.max(3, Math.min(30, parseInt(this.value) || 10));
+            });
 
             newGameBtn.addEventListener('click', resetGame);
             fetchSpaceXBtn.addEventListener('click', fetchSpaceXImage);
