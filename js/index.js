@@ -24,9 +24,15 @@ window.onclick = function (event) {
 }
 
 var disabled = document.getElementById("disabled");
-disabled.addEventListener("click", function () {
-  modal.style.display = "block";
-  modal.getElementById("modal-text").innerText = "Hello from disabled!";
+var disabledWrapper = document.getElementById("disabled-wrapper");
+
+disabledWrapper.addEventListener("click", function () {
+  if (disabled.hasAttribute("disabled")) {
+    console.log("button clicked");
+  } else {
+    modal.style.display = "block";
+    document.getElementById("modal-text").innerText = "Hello from disabled!";
+  }
 });
 
 var hidden = document.getElementById("hidden");
