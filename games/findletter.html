@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Letter Game</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --panel: #1e1e1e;
+            --accent: #bb86fc;
+            --accent2: #03dac6;
+            --text: #ffffff;
+            --border: #3700b3;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(187, 134, 252, 0.4);
+            margin: 20px 0;
+        }
+
+        .setup-container {
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            margin: 20px auto;
+            min-width: 400px;
+        }
+
+        .setup-container h2 {
+            color: var(--accent2);
+            margin-bottom: 20px;
+        }
+
+        .setup-container p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+        }
+
+        .alphabet-select {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .alphabet-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 20px;
+            background: #2d2d2d;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .alphabet-option:hover {
+            background: #3d3d3d;
+        }
+
+        .alphabet-option.selected {
+            border-color: var(--accent);
+            background: rgba(187, 134, 252, 0.2);
+        }
+
+        .alphabet-option input {
+            display: none;
+        }
+
+        .alphabet-option .radio {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .alphabet-option.selected .radio {
+            border-color: var(--accent);
+        }
+
+        .alphabet-option.selected .radio::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        .start-btn {
+            background: var(--border);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .start-btn:hover {
+            background: #6200ee;
+            transform: scale(1.05);
+        }
+
+        .game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .target-letter {
+            background: var(--panel);
+            border: 3px solid var(--accent);
+            border-radius: 12px;
+            padding: 20px 50px;
+            font-size: 96px;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: var(--panel);
+            border: 2px dashed var(--border);
+            padding: 10px 20px;
+            border-radius: 10px;
+            min-width: 140px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--accent2);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+            background: var(--panel);
+            border: 3px solid var(--accent);
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 840px;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .letter-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(32px, 8vw, 56px);
+            font-weight: bold;
+            background: #2d2d2d;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .letter-cell:hover {
+            transform: scale(1.08);
+            background: #3d3d3d;
+        }
+
+        .letter-cell.found {
+            background: var(--accent2);
+            color: var(--bg);
+            cursor: default;
+            animation: pulse 0.3s ease;
+        }
+
+        .letter-cell.falling {
+            animation: fall 0.8s ease-in forwards;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(400px) rotate(180deg);
+                opacity: 0;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--panel);
+            border: 3px solid var(--accent);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.4s ease;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal h2 {
+            color: var(--accent2);
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .modal p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 25px;
+            font-size: 20px;
+        }
+
+        .modal button {
+            background: var(--border);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .modal button:hover {
+            background: #6200ee;
+            transform: scale(1.05);
+        }
+
+        button.restart-btn {
+            background: var(--border);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        button.restart-btn:hover {
+            background: #6200ee;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 700px) {
+            .game-board {
+                padding: 12px;
+                gap: 4px;
+            }
+
+            .letter-cell {
+                border-radius: 6px;
+            }
+
+            .setup-container {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .target-letter {
+                font-size: 48px;
+                padding: 12px 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Find the Letter!</h1>
+
+    <div class="setup-container" id="setupPanel">
+        <h2>How to Play</h2>
+        <p>
+            Find all instances of the target letter<br>
+            as fast as you can!
+        </p>
+
+        <div class="alphabet-select">
+            <label class="alphabet-option selected" id="optionEn">
+                <input type="radio" name="alphabet" value="en" checked>
+                <span class="radio"></span>
+                <span>English (A-Z)</span>
+            </label>
+            <label class="alphabet-option" id="optionRu">
+                <input type="radio" name="alphabet" value="ru">
+                <span class="radio"></span>
+                <span>Русский (А-Я)</span>
+            </label>
+        </div>
+
+        <button class="start-btn" id="startBtn">Start Game</button>
+    </div>
+
+    <div class="game-container" id="gameContainer">
+        <div class="target-letter" id="targetLetter">A</div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Found</div>
+                <div class="stat-value"><span id="foundCount">0</span> / <span id="totalCount">7</span></div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Time</div>
+                <div class="stat-value" id="timer">0.0s</div>
+            </div>
+        </div>
+
+        <div class="game-board" id="gameBoard"></div>
+
+        <button class="restart-btn" id="restartBtn">Restart</button>
+    </div>
+
+    <div class="modal" id="gameModal">
+        <div class="modal-content">
+            <h2>🎉 Congratulations! 🎉</h2>
+            <p>You found all letters in <span id="finalTime">0.0</span> seconds!</p>
+            <button id="playAgainBtn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const ALPHABETS = {
+            en: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            ru: 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
+        };
+
+        const GRID_SIZE = 10;
+        const MIN_TARGET_COUNT = 7;
+        const MAX_TARGET_COUNT = 10;
+
+        let currentAlphabet = 'en';
+        let targetLetter = '';
+        let targetCount = 0;
+        let foundCount = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let gameActive = false;
+
+        const setupPanel = document.getElementById('setupPanel');
+        const gameContainer = document.getElementById('gameContainer');
+        const gameBoard = document.getElementById('gameBoard');
+        const targetLetterEl = document.getElementById('targetLetter');
+        const foundCountEl = document.getElementById('foundCount');
+        const totalCountEl = document.getElementById('totalCount');
+        const timerEl = document.getElementById('timer');
+        const gameModal = document.getElementById('gameModal');
+        const finalTimeEl = document.getElementById('finalTime');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const optionEn = document.getElementById('optionEn');
+        const optionRu = document.getElementById('optionRu');
+
+        function getAlphabet() {
+            return ALPHABETS[currentAlphabet];
+        }
+
+        function getRandomLetter(exclude = '') {
+            const alphabet = getAlphabet();
+            let letter;
+            do {
+                letter = alphabet[Math.floor(Math.random() * alphabet.length)];
+            } while (letter === exclude);
+            return letter;
+        }
+
+        function selectAlphabet(alphabet) {
+            currentAlphabet = alphabet;
+            if (alphabet === 'en') {
+                optionEn.classList.add('selected');
+                optionRu.classList.remove('selected');
+            } else {
+                optionEn.classList.remove('selected');
+                optionRu.classList.add('selected');
+            }
+        }
+
+        function startGame() {
+            setupPanel.style.display = 'none';
+            gameContainer.style.display = 'flex';
+            gameModal.classList.remove('show');
+            initGame();
+        }
+
+        function initGame() {
+            // Reset state
+            foundCount = 0;
+            targetCount = MIN_TARGET_COUNT + Math.floor(Math.random() * (MAX_TARGET_COUNT - MIN_TARGET_COUNT + 1));
+            gameActive = true;
+
+            // Pick random target letter
+            targetLetter = getRandomLetter();
+            targetLetterEl.textContent = targetLetter;
+
+            // Update stats display
+            foundCountEl.textContent = '0';
+            totalCountEl.textContent = targetCount;
+
+            // Generate grid
+            generateGrid();
+
+            // Start timer
+            startTime = Date.now();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        function generateGrid() {
+            gameBoard.innerHTML = '';
+            const totalCells = GRID_SIZE * GRID_SIZE;
+            const positions = [];
+
+            // Select random positions for target letters
+            while (positions.length < targetCount) {
+                const pos = Math.floor(Math.random() * totalCells);
+                if (!positions.includes(pos)) {
+                    positions.push(pos);
+                }
+            }
+
+            // Fill grid
+            for (let i = 0; i < totalCells; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'letter-cell';
+
+                if (positions.includes(i)) {
+                    cell.textContent = targetLetter;
+                    cell.dataset.isTarget = 'true';
+                } else {
+                    cell.textContent = getRandomLetter(targetLetter);
+                    cell.dataset.isTarget = 'false';
+                }
+
+                cell.addEventListener('click', handleCellClick);
+                gameBoard.appendChild(cell);
+            }
+        }
+
+        function handleCellClick(e) {
+            if (!gameActive) return;
+
+            const cell = e.currentTarget;
+            if (cell.dataset.isTarget === 'true' && !cell.classList.contains('found')) {
+                cell.classList.add('found');
+                foundCount++;
+                foundCountEl.textContent = foundCount;
+
+                if (foundCount === targetCount) {
+                    endGame();
+                }
+            }
+        }
+
+        function updateTimer() {
+            if (!gameActive) return;
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            timerEl.textContent = elapsed + 's';
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            const finalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+            finalTimeEl.textContent = finalTime;
+
+            // Trigger falling animation
+            const cells = document.querySelectorAll('.letter-cell');
+            cells.forEach((cell, index) => {
+                setTimeout(() => {
+                    cell.classList.add('falling');
+                }, index * 15);
+            });
+
+            // Show modal after animation
+            setTimeout(() => {
+                gameModal.classList.add('show');
+            }, cells.length * 15 + 800);
+        }
+
+        function resetGame() {
+            gameModal.classList.remove('show');
+            initGame();
+        }
+
+        // Event listeners
+        optionEn.addEventListener('click', () => selectAlphabet('en'));
+        optionRu.addEventListener('click', () => selectAlphabet('ru'));
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', () => {
+            gameContainer.style.display = 'none';
+            setupPanel.style.display = 'inline-block';
+            if (timerInterval) clearInterval(timerInterval);
+            gameActive = false;
+        });
+        playAgainBtn.addEventListener('click', resetGame);
+    </script>
+</body>
+
+</html>
