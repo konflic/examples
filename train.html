@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>План на 24 недели v2</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 8mm;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      color: #111;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+    }
+
+    .wrap {
+      padding: 10px;
+    }
+
+    h1 {
+      margin: 0 0 6px 0;
+      font-size: 20px;
+    }
+
+    h2 {
+      margin: 12px 0 6px 0;
+      font-size: 14px;
+    }
+
+    p, li {
+      font-size: 11px;
+      margin: 3px 0;
+    }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      margin-bottom: 5px;
+    }
+
+    .box {
+      border: 1px solid #000;
+      padding: 1px 8px;
+    }
+
+    .controls {
+      margin-bottom: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid #000;
+      background: #fff;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9px;
+    }
+
+    th, td {
+      border: 1px solid #000;
+      padding: 3px 4px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #e9e9e9;
+      font-weight: 700;
+    }
+
+    td.left, th.left {
+      text-align: left;
+    }
+
+    tr.deload td {
+      background: #f6f6f6;
+    }
+
+    tr.block-row td {
+      background: #dfe7f7;
+      font-weight: 700;
+      text-align: left;
+      font-size: 10px;
+      padding: 5px 6px;
+    }
+
+    .small {
+      font-size: 9px;
+      color: #444;
+    }
+
+    .fact-input, .acc-input, .note-input {
+      width: 100%;
+      box-sizing: border-box;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 9px;
+      text-align: center;
+      padding: 0;
+      margin: 0;
+    }
+
+    .note-input {
+      text-align: left;
+    }
+
+    .done-box {
+      width: 14px;
+      height: 14px;
+      margin: 0 auto;
+      display: block;
+    }
+
+    .narrow { width: 40px; }
+    .warm { width: 52px; }
+    .work { width: 58px; }
+    .fact { width: 42px; }
+    .acc { width: 130px; }
+    .scheme { width: 68px; }
+    .notes { width: 120px; }
+    .done { width: 36px; }
+
+    @media print {
+      .controls {
+        display: none;
+      }
+
+      .fact-input, .acc-input, .note-input {
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="controls">
+      <button class="btn" onclick="window.print()">Печать</button>
+      <button class="btn" onclick="clearInputs()">Очистить поля</button>
+      <button class="btn" onclick="toggleCompact()">Компактный режим</button>
+    </div>
+
+    <h1>План прогрессии нагрузки на 24 недели — версия 2</h1>
+
+    <div class="top-grid">
+      <div class="box">
+        <p><strong>Цель:</strong> набор мышечной массы</p>
+        <p><strong>Неделя:</strong></p>
+        <p>Пн — Жим A</p>
+        <p>Вт — Присед A</p>
+        <p>Чт — Жим B</p>
+        <p>Пт — Присед B</p>
+      </div>
+
+      <div class="box">
+        <p><strong>Правила:</strong></p>
+        <ul>
+          <li>Работай с запасом 1–2 повтора.</li>
+          <li>Если не закрыл план — повтори тот же вес в следующий раз.</li>
+          <li>Каждая 4-я неделя — разгрузка.</li>
+          <li>Доп. упражнение: без отказа, с чистой техникой.</li>
+          <li>Если блок идёт тяжело — можно повторить его ещё раз.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="box">
+      <p><strong>Дополнительные упражнения:</strong></p>
+      <p><strong>Пн / Чт:</strong> жим гантелей на наклонной — 3×8–12</p>
+      <p><strong>Вт / Пт:</strong> выпады / болгарские приседы — 3×8–12 на ногу</p>
+      <p class="small">В разгрузочные недели: 2×8–10 легко.</p>
+    </div>
+
+    <h2>Тренировочная таблица</h2>
+
+    <table id="plan-table">
+      <thead>
+        <tr>
+          <th class="narrow">Нед.</th>
+          <th class="narrow">День</th>
+          <th class="left">Основное упражнение</th>
+          <th class="warm">Разм. 1</th>
+          <th class="warm">Разм. 2</th>
+          <th class="work">План 1</th>
+          <th class="work">План 2</th>
+          <th class="work">План 3</th>
+          <th class="fact">Факт 1</th>
+          <th class="fact">Факт 2</th>
+          <th class="fact">Факт 3</th>
+          <th class="acc left">Доп. упражнение</th>
+          <th class="scheme">Схема</th>
+          <th class="scheme">Вес доп.</th>
+          <th class="done">✓</th>
+          <th class="notes left">Заметки</th>
+        </tr>
+      </thead>
+      <tbody id="plan-body"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const weeks = 24;
+
+    const plan = {
+      benchA: {
+        exercise: "Жим лёжа A",
+        warm1: "20×12",
+        warm2: "40×6",
+        weights: [65,65,65,60,70,70,70,65,70,70,70,65,75,75,75,70,75,75,75,70,80,80,80,75],
+        reps:    [8,9,10,8,8,9,10,8,8,9,10,8,8,9,10,8,8,9,10,8,8,9,10,8]
+      },
+      squatA: {
+        exercise: "Присед A",
+        warm1: "20×10",
+        warm2: "40×5",
+        weights: [60,60,60,55,65,65,65,60,70,70,70,65,70,70,70,65,75,75,75,70,75,75,75,70],
+        reps:    [8,9,10,8,8,9,10,8,8,9,10,8,8,9,10,8,8,9,10,8,8,9,10,8]
+      },
+      benchB: {
+        exercise: "Жим лёжа B",
+        warm1: "20×10",
+        warm2: "45×5",
+        weights: [75,75,75,70,75,75,75,70,80,80,80,75,80,80,80,75,85,85,85,80,85,85,85,80],
+        reps:    [6,7,8,6,6,7,8,6,6,7,8,6,6,7,8,6,6,7,8,6,6,7,8,6]
+      },
+      squatB: {
+        exercise: "Присед B",
+        warm1: "20×10",
+        warm2: "45×5",
+        weights: [70,70,70,65,75,75,75,70,75,75,75,70,80,80,80,75,80,80,80,75,85,85,85,80],
+        reps:    [6,7,8,6,6,7,8,6,6,7,8,6,6,7,8,6,6,7,8,6,6,7,8,6]
+      }
+    };
+
+    function isDeloadWeek(week) {
+      return week % 4 === 0;
+    }
+
+    function workSet(weight, reps) {
+      return `${weight}×${reps}`;
+    }
+
+    function accessory(day, deload) {
+      if (day === "Пн" || day === "Чт") {
+        return deload
+          ? ["Жим гантелей на наклонной", "2×8–10"]
+          : ["Жим гантелей на наклонной", "3×8–12"];
+      }
+
+      if (day === "Вт" || day === "Пт") {
+        return deload
+          ? ["Выпады / болгарские приседы", "2×8–10/нога"]
+          : ["Выпады / болгарские приседы", "3×8–12/нога"];
+      }
+
+      return ["", ""];
+    }
+
+    const schedule = [
+      { day: "Пн", key: "benchA" },
+      { day: "Вт", key: "squatA" },
+      { day: "Чт", key: "benchB" },
+      { day: "Пт", key: "squatB" }
+    ];
+
+    const blockNames = {
+      1: "Блок 1 — адаптация и первый объём",
+      5: "Блок 2 — закрепление",
+      9: "Блок 3 — постепенное утяжеление",
+      13: "Блок 4 — базовый прогресс",
+      17: "Блок 5 — тяжёлая середина цикла",
+      21: "Блок 6 — финальный блок"
+    };
+
+    const tbody = document.getElementById("plan-body");
+
+    for (let w = 1; w <= weeks; w++) {
+      if (blockNames[w]) {
+        const blockRow = document.createElement("tr");
+        blockRow.className = "block-row";
+        blockRow.innerHTML = `<td colspan="16">${blockNames[w]} (недели ${w}–${w+3})</td>`;
+        tbody.appendChild(blockRow);
+      }
+
+      const deload = isDeloadWeek(w);
+
+      schedule.forEach(item => {
+        const p = plan[item.key];
+        const acc = accessory(item.day, deload);
+
+        const tr = document.createElement("tr");
+        if (deload) tr.classList.add("deload");
+
+        const exerciseName = deload
+          ? `${p.exercise} — разгрузка`
+          : p.exercise;
+
+        tr.innerHTML = `
+          <td>${w}</td>
+          <td>${item.day}</td>
+          <td class="left">${exerciseName}</td>
+          <td>${p.warm1}</td>
+          <td>${p.warm2}</td>
+          <td>${workSet(p.weights[w - 1], p.reps[w - 1])}</td>
+          <td>${workSet(p.weights[w - 1], p.reps[w - 1])}</td>
+          <td>${workSet(p.weights[w - 1], p.reps[w - 1])}</td>
+          <td><input class="fact-input" type="text" /></td>
+          <td><input class="fact-input" type="text" /></td>
+          <td><input class="fact-input" type="text" /></td>
+          <td class="left">${acc[0]}</td>
+          <td>${acc[1]}</td>
+          <td><input class="acc-input" type="text" /></td>
+          <td><input class="done-box" type="checkbox" /></td>
+          <td class="left"><input class="note-input" type="text" /></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function clearInputs() {
+      document.querySelectorAll('input[type="text"]').forEach(input => input.value = "");
+      document.querySelectorAll('input[type="checkbox"]').forEach(box => box.checked = false);
+    }
+
+    function toggleCompact() {
+      const table = document.getElementById("plan-table");
+      if (table.style.fontSize === "8px") {
+        table.style.fontSize = "9px";
+      } else {
+        table.style.fontSize = "8px";
+      }
+    }
+  </script>
+</body>
+</html>
