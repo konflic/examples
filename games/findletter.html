@@ -152,6 +152,7 @@
             margin: 0 auto;
             padding: 20px;
             box-sizing: border-box;
+            overflow: hidden;
         }
 
         .game-left-panel {
@@ -212,6 +213,9 @@
             width: 100%;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             flex: 1;
+            height: fit-content;
+            max-height: calc(100vh - 40px);
+            overflow: hidden;
         }
 
         .letter-cell {
@@ -219,13 +223,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(32px, 8vw, 56px);
+            font-size: clamp(16px, 4vw, 56px);
             font-weight: bold;
             background: #2d2d2d;
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
             user-select: none;
+            width: auto;
+            height: auto;
         }
 
         .letter-cell:hover {
@@ -358,7 +364,7 @@
             .game-container {
                 flex-direction: column;
                 align-items: center;
-                gap: 20px;
+                gap: 15px;
                 padding: 10px;
             }
 
@@ -372,18 +378,25 @@
                 flex-direction: row;
                 justify-content: center;
                 flex-wrap: wrap;
+                gap: 10px;
             }
 
             .target-letter {
-                font-size: 72px;
-                padding: 15px 40px;
+                font-size: 48px;
+                padding: 10px 25px;
+            }
+
+            .game-board {
+                padding: 15px;
+                max-height: calc(100vh - 200px);
             }
         }
 
         @media (max-width: 700px) {
             .game-board {
-                padding: 12px;
-                gap: 4px;
+                padding: 10px;
+                gap: 3px;
+                max-height: calc(100vh - 180px);
             }
 
             .letter-cell {
@@ -396,8 +409,13 @@
             }
 
             .target-letter {
-                font-size: 48px;
-                padding: 12px 30px;
+                font-size: 36px;
+                padding: 8px 20px;
+            }
+
+            .game-container {
+                gap: 10px;
+                padding: 5px;
             }
         }
     </style>
@@ -515,12 +533,72 @@
             }
         }
 
+        function calculateOptimalGridSize() {
+            const gameContainer = document.getElementById('gameContainer');
+            const gameBoard = document.getElementById('gameBoard');
+            const leftPanel = gameContainer.querySelector('.game-left-panel');
+            
+            // Get viewport dimensions
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            
+            // Account for padding and gaps
+            const containerPadding = 40; // 20px * 2
+            const gamePadding = 40; // 20px * 2 for game board
+            const borderWidth = 6; // 3px * 2
+            const gap = 30; // gap between left panel and game board
+            
+            // Calculate available space
+            let availableWidth = viewportWidth - containerPadding;
+            let availableHeight = viewportHeight - containerPadding;
+            
+            // For desktop layout, subtract left panel width
+            if (viewportWidth > 900) {
+                const leftPanelWidth = 250 + gap; // min-width of left panel + gap
+                availableWidth -= leftPanelWidth;
+            } else {
+                // For mobile layout, account for left panel height
+                const leftPanelHeight = 200; // approximate height of left panel in mobile
+                availableHeight -= leftPanelHeight;
+            }
+            
+            // Account for game board padding and border
+            availableWidth -= gamePadding + borderWidth;
+            availableHeight -= gamePadding + borderWidth;
+            
+            // Calculate grid dimensions (10x10)
+            const gridSize = 10;
+            const cellGap = 6;
+            const totalGaps = (gridSize - 1) * cellGap;
+            
+            // Calculate cell size based on available space
+            const maxCellWidth = (availableWidth - totalGaps) / gridSize;
+            const maxCellHeight = (availableHeight - totalGaps) / gridSize;
+            
+            // Use the smaller dimension to ensure square cells that fit
+            const cellSize = Math.floor(Math.min(maxCellWidth, maxCellHeight, 80)); // Max 80px per cell
+            
+            // Apply the calculated size
+            const cells = gameBoard.querySelectorAll('.letter-cell');
+            cells.forEach(cell => {
+                cell.style.width = `${cellSize}px`;
+                cell.style.height = `${cellSize}px`;
+                cell.style.fontSize = `${Math.max(cellSize * 0.4, 16)}px`; // Scale font size
+            });
+            
+            // Update game board max width
+            const totalBoardWidth = (cellSize * gridSize) + totalGaps + gamePadding + borderWidth;
+            gameBoard.style.maxWidth = `${totalBoardWidth}px`;
+        }
+
         function startGame() {
             setupPanel.style.display = 'none';
             gameContainer.style.display = 'flex';
             gameModal.classList.remove('show');
             document.body.classList.add('game-active');
             initGame();
+            // Calculate optimal grid size after the game board is visible
+            setTimeout(calculateOptimalGridSize, 0);
         }
 
         function initGame() {
@@ -635,6 +713,13 @@
             gameActive = false;
         });
         playAgainBtn.addEventListener('click', resetGame);
+        
+        // Recalculate grid size on window resize
+        window.addEventListener('resize', () => {
+            if (document.body.classList.contains('game-active')) {
+                setTimeout(calculateOptimalGridSize, 100);
+            }
+        });
     </script>
 </body>
 
