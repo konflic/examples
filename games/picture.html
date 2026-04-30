@@ -267,9 +267,9 @@
                     <label for="grid-size" style="display: block; margin-bottom: 5px; font-size: 14px;">Grid Size:</label>
                     <select id="grid-size" style="background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
                         <option value="5x5">5x5 (Easy)</option>
-                        <option value="10x10" selected>10x10 (Medium)</option>
-                        <option value="15x15">15x15 (Hard)</option>
-                        <option value="20x20">20x20 (Expert)</option>
+                        <option value="6x6" selected>6x6 (Medium)</option>
+                        <option value="7x7">7x7 (Moderate)</option>
+                        <option value="8x8">8x8 (Hard)</option>
                         <option value="custom">Custom</option>
                     </select>
                 </div>
@@ -277,11 +277,11 @@
                     <div style="display: flex; gap: 10px;">
                         <div>
                             <label for="custom-cols" style="display: block; margin-bottom: 5px; font-size: 14px;">Columns:</label>
-                            <input type="number" id="custom-cols" min="3" max="30" value="10" style="width: 60px; background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+                            <input type="number" id="custom-cols" min="3" max="30" value="6" style="width: 60px; background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
                         </div>
                         <div>
                             <label for="custom-rows" style="display: block; margin-bottom: 5px; font-size: 14px;">Rows:</label>
-                            <input type="number" id="custom-rows" min="3" max="30" value="10" style="width: 60px; background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+                            <input type="number" id="custom-rows" min="3" max="30" value="6" style="width: 60px; background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #444; padding: 5px; border-radius: 4px;">
                         </div>
                     </div>
                 </div>
@@ -297,7 +297,7 @@
     </div>
 
     <div class="stats">
-        <div>Blocks left: <span id="blocks-left">100</span></div>
+        <div>Blocks left: <span id="blocks-left">36</span></div>
         <a id="download-link" href="#" download="spacex-image.jpg"
             style="display: none; color: #bb86fc; text-decoration: none; font-size: 14px;">📥 Download Image</a>
         <button id="new-game">New Game</button>
@@ -344,10 +344,10 @@
                 document.getElementById('sound5')
             ];
 
-            let totalBlocks = 100;
-            let remainingBlocks = 100;
-            let gridColumns = 10;
-            let gridRows = 10;
+            let totalBlocks = 36;
+            let remainingBlocks = 36;
+            let gridColumns = 6;
+            let gridRows = 6;
 
             function getGridDimensions() {
                 const gridSize = gridSizeSelect.value;
@@ -355,21 +355,21 @@
                 switch (gridSize) {
                     case '5x5':
                         return { columns: 5, rows: 5 };
-                    case '10x10':
-                        return { columns: 10, rows: 10 };
-                    case '15x15':
-                        return { columns: 15, rows: 15 };
-                    case '20x20':
-                        return { columns: 20, rows: 20 };
+                    case '6x6':
+                        return { columns: 6, rows: 6 };
+                    case '7x7':
+                        return { columns: 7, rows: 7 };
+                    case '8x8':
+                        return { columns: 8, rows: 8 };
                     case 'custom':
-                        const cols = parseInt(customColsInput.value) || 10;
-                        const rows = parseInt(customRowsInput.value) || 10;
+                        const cols = parseInt(customColsInput.value) || 6;
+                        const rows = parseInt(customRowsInput.value) || 6;
                         return {
                             columns: Math.max(3, Math.min(30, cols)),
                             rows: Math.max(3, Math.min(30, rows))
                         };
                     default:
-                        return { columns: 10, rows: 10 };
+                        return { columns: 6, rows: 6 };
                 }
             }
 
@@ -691,11 +691,11 @@
             });
 
             customColsInput.addEventListener('change', function() {
-                this.value = Math.max(3, Math.min(30, parseInt(this.value) || 10));
+                this.value = Math.max(3, Math.min(30, parseInt(this.value) || 6));
             });
 
             customRowsInput.addEventListener('change', function() {
-                this.value = Math.max(3, Math.min(30, parseInt(this.value) || 10));
+                this.value = Math.max(3, Math.min(30, parseInt(this.value) || 6));
             });
 
             newGameBtn.addEventListener('click', resetGame);
