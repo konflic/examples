@@ -223,7 +223,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(16px, 4vw, 56px);
+            font-size: clamp(50px, 6vw, 80px);
             font-weight: bold;
             background: #2d2d2d;
             border-radius: 10px;
@@ -583,7 +583,7 @@
             cells.forEach(cell => {
                 cell.style.width = `${cellSize}px`;
                 cell.style.height = `${cellSize}px`;
-                cell.style.fontSize = `${Math.max(cellSize * 0.4, 16)}px`; // Scale font size
+                cell.style.fontSize = `${Math.max(cellSize * 0.6, 50)}px`; // Scale font size - minimum 50px
             });
             
             // Update game board max width
