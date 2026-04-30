@@ -132,8 +132,20 @@
 
         .game-container {
             display: none;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .game-left-panel {
+            display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 20px;
+            min-width: 250px;
         }
 
         .target-letter {
@@ -144,16 +156,16 @@
             font-size: 96px;
             font-weight: bold;
             color: var(--accent2);
-            margin-bottom: 20px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            text-align: center;
         }
 
         .stats {
             display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin: 15px 0;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
         }
 
         .stat {
@@ -183,9 +195,10 @@
             border: 3px solid var(--accent);
             border-radius: 12px;
             padding: 20px;
-            max-width: 840px;
+            max-width: 700px;
             width: 100%;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            flex: 1;
         }
 
         .letter-cell {
@@ -328,6 +341,31 @@
             transform: scale(1.05);
         }
 
+        @media (max-width: 900px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .game-left-panel {
+                min-width: auto;
+                width: 100%;
+                max-width: 500px;
+            }
+
+            .stats {
+                flex-direction: row;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .target-letter {
+                font-size: 72px;
+                padding: 15px 40px;
+            }
+        }
+
         @media (max-width: 700px) {
             .game-board {
                 padding: 12px;
@@ -378,22 +416,24 @@
     </div>
 
     <div class="game-container" id="gameContainer">
-        <div class="target-letter" id="targetLetter">A</div>
+        <div class="game-left-panel">
+            <div class="target-letter" id="targetLetter">A</div>
 
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-label">Found</div>
-                <div class="stat-value"><span id="foundCount">0</span> / <span id="totalCount">7</span></div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Found</div>
+                    <div class="stat-value"><span id="foundCount">0</span> / <span id="totalCount">7</span></div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Time</div>
+                    <div class="stat-value" id="timer">0.0s</div>
+                </div>
             </div>
-            <div class="stat">
-                <div class="stat-label">Time</div>
-                <div class="stat-value" id="timer">0.0s</div>
-            </div>
+
+            <button class="restart-btn" id="restartBtn">Restart</button>
         </div>
 
         <div class="game-board" id="gameBoard"></div>
-
-        <button class="restart-btn" id="restartBtn">Restart</button>
     </div>
 
     <div class="modal" id="gameModal">
