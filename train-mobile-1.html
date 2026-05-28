@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>План mobile v2</title>
+  <style>
+    :root{
+      --bench-light:#eaf4ff;
+      --bench-dark:#cfe5ff;
+      --squat-light:#ffeaf1;
+      --squat-dark:#ffd3df;
+      --block:#dfe7f7;
+      --check:#eef7e8;
+      --border:#cfcfcf;
+      --text:#111;
+      --muted:#555;
+      --bg:#f7f7f7;
+      --card:#fff;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      color:var(--text);
+      background:var(--bg);
+    }
+
+    .wrap{
+      max-width:900px;
+      margin:0 auto;
+      padding:12px;
+    }
+
+    h1{
+      font-size:20px;
+      margin:0 0 8px 0;
+    }
+
+    p, li{
+      font-size:13px;
+      margin:4px 0;
+      line-height:1.35;
+    }
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:10px;
+    }
+
+    .btn{
+      border:1px solid #999;
+      background:#fff;
+      border-radius:10px;
+      padding:10px 12px;
+      font-size:14px;
+      cursor:pointer;
+    }
+
+    .status{
+      font-size:13px;
+      color:#444;
+      display:flex;
+      align-items:center;
+    }
+
+    .box{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 12px;
+      margin-bottom:10px;
+    }
+
+    .block-title{
+      background:var(--block);
+      border:1px solid #b9c7ea;
+      border-radius:12px;
+      padding:10px 12px;
+      font-weight:700;
+      margin:14px 0 10px 0;
+      font-size:14px;
+    }
+
+    .card{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      margin-bottom:10px;
+      background:var(--card);
+      box-shadow:0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .press-a{ background:var(--bench-light); }
+    .bench-b{ background:var(--bench-dark); }
+    .step-a{ background:var(--squat-light); }
+    .squat-b{ background:var(--squat-dark); }
+    .deload{ filter:brightness(0.98); }
+
+    .row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+      align-items:flex-start;
+    }
+
+    .meta{
+      font-size:13px;
+      color:#333;
+    }
+
+    .title{
+      font-size:16px;
+      font-weight:700;
+      margin-bottom:4px;
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:8px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .field label{
+      font-size:12px;
+      color:#444;
+    }
+
+    input[type="text"], input[type="number"]{
+      width:100%;
+      padding:10px 10px;
+      border:1px solid #aaa;
+      border-radius:10px;
+      font-size:16px;
+      background:#fff;
+    }
+
+    .metric-box{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .metric{
+      background:#fff;
+      border:1px solid rgba(0,0,0,0.12);
+      border-radius:10px;
+      padding:10px;
+    }
+
+    .metric .label{
+      font-size:12px;
+      color:#555;
+      margin-bottom:4px;
+    }
+
+    .metric .value{
+      font-size:18px;
+      font-weight:700;
+    }
+
+    .summary{
+      background:var(--check);
+      border:1px solid #cfe3c3;
+      border-radius:12px;
+      padding:10px 12px;
+      margin:10px 0 14px 0;
+      font-size:13px;
+    }
+
+    .checkpoint{
+      background:#f4f8ea;
+      border:1px solid #d9e8c7;
+      border-radius:12px;
+      padding:10px 12px;
+      margin:8px 0 16px 0;
+      font-size:13px;
+    }
+
+    .import-input{
+      display:none;
+    }
+
+    input[type="checkbox"]{
+      width:22px;
+      height:22px;
+    }
+
+    @media (min-width: 860px){
+      .cards-grid{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+      }
+      .card{
+        margin-bottom:0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="controls">
+      <button class="btn" onclick="exportJSON()">Экспорт JSON</button>
+      <button class="btn" onclick="document.getElementById('importFile').click()">Импорт JSON</button>
+      <span class="status" id="status">Автосохранение включено</span>
+      <input class="import-input" id="importFile" type="file" accept=".json,application/json" />
+    </div>
+
+    <h1>Тренировочный план</h1>
+
+    <div id="content"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "plan_mobile_v2_autosave";
+    const startWeek = 5;
+    const endWeek = 28;
+
+    const blockNames = {
+      5:  "Блок 2 — закрепление",
+      9:  "Блок 3 — постепенное утяжеление",
+      13: "Блок 4 — базовый прогресс",
+      17: "Блок 5 — тяжёлая середина цикла",
+      21: "Блок 6 — финальный блок",
+      25: "Блок 7 — продление прогрессии"
+    };
+
+    const blockStarts = [5, 9, 13, 17, 21, 25];
+
+    function isDeloadWeek(week) {
+      return week % 4 === 0;
+    }
+
+    function workSet(weight, reps) {
+      return `${weight}x${reps}`;
+    }
+
+    function tonnage(weight, reps, sets) {
+      return weight * reps * sets;
+    }
+
+    function e1RM(weight, reps) {
+      return weight * (1 + reps / 30);
+    }
+
+    function pressAWeight(week) {
+      if (week <= 12) return isDeloadWeek(week) ? 25 : 30;
+      if (week <= 20) return isDeloadWeek(week) ? 30 : 35;
+      return isDeloadWeek(week) ? 35 : 40;
+    }
+
+    function pressAReps(week) {
+      const mod = week % 4;
+      if (mod === 1) return 8;
+      if (mod === 2) return 9;
+      if (mod === 3) return 10;
+      return 8;
+    }
+
+    function raiseWeight(week) {
+      if (week <= 12) return 10;
+      return 15;
+    }
+
+    function stepWeight(week) {
+      if (week <= 12) return isDeloadWeek(week) ? 5 : 10;
+      if (week <= 20) return isDeloadWeek(week) ? 10 : 15;
+      return isDeloadWeek(week) ? 15 : 20;
+    }
+
+    function benchBWeight(week) {
+      const map = {
+        5:75,6:75,7:75,8:70,
+        9:80,10:80,11:80,12:75,
+        13:80,14:80,15:80,16:75,
+        17:85,18:85,19:85,20:80,
+        21:85,22:85,23:85,24:80,
+        25:90,26:90,27:90,28:85
+      };
+      return map[week];
+    }
+
+    function squatBWeight(week) {
+      const map = {
+        5:75,6:75,7:75,8:70,
+        9:75,10:75,11:75,12:70,
+        13:80,14:80,15:80,16:75,
+        17:80,18:80,19:80,20:75,
+        21:85,22:85,23:85,24:80,
+        25:85,26:85,27:85,28:80
+      };
+      return map[week];
+    }
+
+    function heavyReps(week) {
+      const mod = week % 4;
+      if (mod === 1) return 6;
+      if (mod === 2) return 7;
+      if (mod === 3) return 8;
+      return 6;
+    }
+
+    function parseSet(text) {
+      if (!text) return null;
+      const cleaned = String(text)
+        .trim()
+        .replace(",", ".")
+        .replace("×", "x")
+        .replace("*", "x")
+        .toLowerCase();
+
+      const match = cleaned.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)/);
+      if (!match) return null;
+
+      const weight = parseFloat(match[1]);
+      const reps = parseFloat(match[2]);
+      if (isNaN(weight) || isNaN(reps)) return null;
+
+      return { weight, reps };
+    }
+
+    function getCardData(week) {
+      const deload = isDeloadWeek(week);
+
+      return [
+        {
+          id:`w${week}-mon`,
+          type:"press",
+          cls:`card press-a${deload ? " deload" : ""}`,
+          week,
+          day:"Пн",
+          exercise:deload ? "Армейский жим — разгрузка" : "Армейский жим",
+          sets:[
+            "20x8",
+            "25x5",
+            workSet(pressAWeight(week), pressAReps(week)),
+            workSet(pressAWeight(week), pressAReps(week)),
+            workSet(pressAWeight(week), pressAReps(week)),
+            ""
+          ],
+          accessory:"Подъём веса на прямых руках",
+          scheme:deload ? "2x8" : "3x8",
+          accWeight:String(raiseWeight(week))
+        },
+        {
+          id:`w${week}-tue`,
+          type:"step",
+          cls:`card step-a${deload ? " deload" : ""}`,
+          week,
+          day:"Вт",
+          exercise:deload ? "Заступание на возвышенность — разгрузка" : "Заступание на возвышенность с весом",
+          sets:[
+            workSet(stepWeight(week), 10),
+            workSet(stepWeight(week), 10),
+            workSet(stepWeight(week), 10),
+            workSet(stepWeight(week), 10),
+            workSet(stepWeight(week), 10),
+            ""
+          ],
+          accessory:"Болгарские приседы",
+          scheme:deload ? "2x8–10/нога" : "3x8–12/нога",
+          accWeight:""
+        },
+        {
+          id:`w${week}-thu`,
+          type:"bench",
+          cls:`card bench-b${deload ? " deload" : ""}`,
+          week,
+          day:"Чт",
+          exercise:deload ? "Жим лёжа B — разгрузка" : "Жим лёжа B",
+          sets:[
+            "20x10",
+            "45x5",
+            workSet(benchBWeight(week), heavyReps(week)),
+            workSet(benchBWeight(week), heavyReps(week)),
+            workSet(benchBWeight(week), heavyReps(week)),
+            ""
+          ],
+          accessory:"Тяга верхнего блока / подтягивания",
+          scheme:deload ? "2x8–10" : "3x8–12",
+          accWeight:""
+        },
+        {
+          id:`w${week}-fri`,
+          type:"squat",
+          cls:`card squat-b${deload ? " deload" : ""}`,
+          week,
+          day:"Пт",
+          exercise:deload ? "Присед B — разгрузка" : "Присед B",
+          sets:[
+            "20x10",
+            "45x5",
+            workSet(squatBWeight(week), heavyReps(week)),
+            workSet(squatBWeight(week), heavyReps(week)),
+            workSet(squatBWeight(week), heavyReps(week)),
+            ""
+          ],
+          accessory:"Болгарские приседы",
+          scheme:deload ? "2x8–10/нога" : "3x8–12/нога",
+          accWeight:""
+        }
+      ];
+    }
+
+    function render() {
+      const content = document.getElementById("content");
+      content.innerHTML = "";
+
+      blockStarts.forEach(start => {
+        const blockTitle = document.createElement("div");
+        blockTitle.className = "block-title";
+        blockTitle.textContent = `${blockNames[start]} (недели ${start}–${start+3})`;
+        content.appendChild(blockTitle);
+
+        const grid = document.createElement("div");
+        grid.className = "cards-grid";
+
+        for (let week = start; week <= start + 3; week++) {
+          const cards = getCardData(week);
+
+          cards.forEach(card => {
+            const el = document.createElement("div");
+            el.className = card.cls;
+            el.dataset.cardId = card.id;
+            el.dataset.type = card.type;
+            el.dataset.blockStart = start;
+
+            el.innerHTML = `
+              <div class="row">
+                <div>
+                  <div class="title">${card.exercise}</div>
+                  <div class="meta">Неделя ${card.week} · ${card.day}</div>
+                </div>
+                <div class="muted">${isDeloadWeek(card.week) ? "Разгрузка" : "Рабочая"}</div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field"><label>Подход 1</label><input class="set-input" data-index="0" type="text" value="${card.sets[0]}"></div>
+                <div class="field"><label>Подход 2</label><input class="set-input" data-index="1" type="text" value="${card.sets[1]}"></div>
+                <div class="field"><label>Подход 3</label><input class="set-input" data-index="2" type="text" value="${card.sets[2]}"></div>
+                <div class="field"><label>Подход 4</label><input class="set-input" data-index="3" type="text" value="${card.sets[3]}"></div>
+                <div class="field"><label>Подход 5</label><input class="set-input" data-index="4" type="text" value="${card.sets[4]}"></div>
+                <div class="field"><label>Доп. подход</label><input class="set-input" data-index="5" type="text" value="${card.sets[5]}"></div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label>Доп. упражнение</label>
+                  <input type="text" value="${card.accessory}" readonly>
+                </div>
+                <div class="field">
+                  <label>Схема</label>
+                  <input type="text" value="${card.scheme}" readonly>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label>Вес доп. упражнения</label>
+                  <input class="acc-input" type="text" value="${card.accWeight}">
+                </div>
+                <div class="field">
+                  <label>Выполнено</label>
+                  <div style="display:flex;align-items:center;height:42px;padding-left:6px;">
+                    <input class="done-input" type="checkbox">
+                  </div>
+                </div>
+              </div>
+
+              <div class="metric-box">
+                <div class="metric">
+                  <div class="label">Тоннаж</div>
+                  <div class="value tonnage-value">—</div>
+                </div>
+                <div class="metric">
+                  <div class="label">e1RM</div>
+                  <div class="value e1rm-value">—</div>
+                </div>
+              </div>
+            `;
+
+            grid.appendChild(el);
+          });
+        }
+
+        content.appendChild(grid);
+
+        const summary = document.createElement("div");
+        summary.className = "summary";
+        summary.id = `summary-${start}`;
+        summary.textContent = "Итог блока пересчитывается автоматически.";
+        content.appendChild(summary);
+
+        const checkpoint = document.createElement("div");
+        checkpoint.className = "checkpoint";
+        checkpoint.innerHTML = `
+          <strong>Контрольная точка:</strong>
+          сравни этот блок с предыдущим.
+          Прогресс есть, если растут тоннаж и/или лучший e1RM, а качество техники не падает.
+          Если 2 блока подряд без улучшения — повтори блок.
+        `;
+        content.appendChild(checkpoint);
+      });
+
+      bindInputs();
+      loadFromLocal();
+      recalcAll();
+    }
+
+    function calcCard(card) {
+      const type = card.dataset.type;
+      const inputs = card.querySelectorAll(".set-input");
+      let totalTonnage = 0;
+      let best = null;
+
+      inputs.forEach(input => {
+        const parsed = parseSet(input.value);
+        if (!parsed) return;
+
+        totalTonnage += parsed.weight * parsed.reps;
+
+        if (type !== "step") {
+          const est = e1RM(parsed.weight, parsed.reps);
+          if (best === null || est > best) best = est;
+        }
+      });
+
+      card.querySelector(".tonnage-value").textContent = totalTonnage ? totalTonnage.toFixed(0) : "—";
+      card.querySelector(".e1rm-value").textContent = best !== null ? best.toFixed(1) : "—";
+    }
+
+    function recalcAll() {
+      document.querySelectorAll("[data-card-id]").forEach(calcCard);
+
+      blockStarts.forEach(start => {
+        let pressT = 0, pressE = null;
+        let stepT = 0;
+        let benchT = 0, benchE = null;
+        let squatT = 0, squatE = null;
+
+        document.querySelectorAll(`[data-block-start="${start}"]`).forEach(card => {
+          const type = card.dataset.type;
+          const t = parseFloat(card.querySelector(".tonnage-value").textContent.replace(",", "."));
+          const e = parseFloat(card.querySelector(".e1rm-value").textContent.replace(",", "."));
+
+          if (type === "press" && !isNaN(t)) {
+            pressT += t;
+            if (!isNaN(e)) pressE = pressE === null ? e : Math.max(pressE, e);
+          }
+          if (type === "step" && !isNaN(t)) {
+            stepT += t;
+          }
+          if (type === "bench" && !isNaN(t)) {
+            benchT += t;
+            if (!isNaN(e)) benchE = benchE === null ? e : Math.max(benchE, e);
+          }
+          if (type === "squat" && !isNaN(t)) {
+            squatT += t;
+            if (!isNaN(e)) squatE = squatE === null ? e : Math.max(squatE, e);
+          }
+        });
+
+        const summary = document.getElementById(`summary-${start}`);
+        summary.innerHTML = `
+          <strong>Итог блока:</strong><br>
+          Армейский жим — тоннаж ${pressT.toFixed(0)}, лучший e1RM ${pressE !== null ? pressE.toFixed(1) : "—"}<br>
+          Заступания — тоннаж ${stepT.toFixed(0)}<br>
+          Жим лёжа — тоннаж ${benchT.toFixed(0)}, лучший e1RM ${benchE !== null ? benchE.toFixed(1) : "—"}<br>
+          Присед — тоннаж ${squatT.toFixed(0)}, лучший e1RM ${squatE !== null ? squatE.toFixed(1) : "—"}
+        `;
+      });
+    }
+
+    function collectData() {
+      const data = [];
+      document.querySelectorAll("[data-card-id]").forEach(card => {
+        data.push({
+          id: card.dataset.cardId,
+          sets: Array.from(card.querySelectorAll(".set-input")).map(i => i.value),
+          acc: card.querySelector(".acc-input")?.value || "",
+          done: card.querySelector(".done-input")?.checked || false
+        });
+      });
+      return data;
+    }
+
+    function autosave() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+      setStatus("Автосохранено");
+    }
+
+    function loadFromLocal() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+
+      try {
+        const data = JSON.parse(raw);
+        applyData(data);
+        setStatus("Данные загружены из localStorage");
+      } catch (e) {
+        setStatus("Ошибка загрузки localStorage");
+      }
+    }
+
+    function applyData(data) {
+      data.forEach(item => {
+        const card = document.querySelector(`[data-card-id="${item.id}"]`);
+        if (!card) return;
+
+        const setInputs = card.querySelectorAll(".set-input");
+        (item.sets || []).forEach((v, i) => {
+          if (setInputs[i]) setInputs[i].value = v;
+        });
+
+        const accInput = card.querySelector(".acc-input");
+        if (accInput) accInput.value = item.acc || "";
+
+        const doneInput = card.querySelector(".done-input");
+        if (doneInput) doneInput.checked = !!item.done;
+      });
+    }
+
+    function bindInputs() {
+      document.querySelectorAll(".set-input, .acc-input").forEach(input => {
+        input.addEventListener("input", () => {
+          const card = input.closest("[data-card-id]");
+          calcCard(card);
+          recalcAll();
+          autosave();
+        });
+      });
+
+      document.querySelectorAll(".done-input").forEach(input => {
+        input.addEventListener("change", () => {
+          autosave();
+        });
+      });
+
+      document.getElementById("importFile").addEventListener("change", handleImport);
+    }
+
+    function exportJSON() {
+      const data = {
+        exportedAt: new Date().toISOString(),
+        version: "mobile_v2",
+        items: collectData()
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "training_plan_export.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setStatus("Экспортировано в JSON");
+    }
+
+    function handleImport(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          const items = parsed.items || parsed;
+          applyData(items);
+          recalcAll();
+          autosave();
+          setStatus("JSON импортирован");
+        } catch (err) {
+          setStatus("Ошибка импорта JSON");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    }
+
+    function setStatus(text) {
+      document.getElementById("status").textContent = text;
+    }
+
+    render();
+  </script>
+</body>
+</html>
