@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>План mobile v2</title>
+  <title>Тренировочный план</title>
   <style>
     :root{
       --bench-light:#eaf4ff;
@@ -17,6 +17,30 @@
       --muted:#555;
       --bg:#f7f7f7;
       --card:#fff;
+      --input-bg:#fff;
+      --readonly-bg:#f3f3f3;
+      --readonly-text:#444;
+      --button-bg:#fff;
+      --button-border:#999;
+    }
+
+    body.dark{
+      --bench-light:#1e3a52;
+      --bench-dark:#224866;
+      --squat-light:#4b2431;
+      --squat-dark:#633042;
+      --block:#263246;
+      --check:#243826;
+      --border:#3b4653;
+      --text:#f1f1f1;
+      --muted:#c6c6c6;
+      --bg:#121417;
+      --card:#1a1f25;
+      --input-bg:#222831;
+      --readonly-bg:#2a313b;
+      --readonly-text:#d2d2d2;
+      --button-bg:#222831;
+      --button-border:#4e5968;
     }
 
     *{box-sizing:border-box}
@@ -26,6 +50,7 @@
       font-family:Arial,sans-serif;
       color:var(--text);
       background:var(--bg);
+      transition:background 0.2s ease, color 0.2s ease;
     }
 
     .wrap{
@@ -36,7 +61,7 @@
 
     h1{
       font-size:20px;
-      margin:0 0 8px 0;file:///home/chirkov/Documents/train-mobile-1.html
+      margin:0 0 8px 0;
     }
 
     p, li{
@@ -53,8 +78,9 @@
     }
 
     .btn{
-      border:1px solid #999;
-      background:#fff;
+      border:1px solid var(--button-border);
+      background:var(--button-bg);
+      color:var(--text);
       border-radius:10px;
       padding:10px 12px;
       font-size:14px;
@@ -63,7 +89,7 @@
 
     .status{
       font-size:13px;
-      color:#444;
+      color:var(--muted);
       display:flex;
       align-items:center;
     }
@@ -78,7 +104,7 @@
 
     .block-title{
       background:var(--block);
-      border:1px solid #b9c7ea;
+      border:1px solid var(--border);
       border-radius:12px;
       padding:10px 12px;
       font-weight:700;
@@ -111,7 +137,8 @@
 
     .meta{
       font-size:13px;
-      color:#333;
+      color:var(--text);
+      opacity:0.85;
     }
 
     .title{
@@ -140,16 +167,22 @@
 
     .field label{
       font-size:12px;
-      color:#444;
+      color:var(--muted);
     }
 
     input[type="text"], input[type="number"]{
       width:100%;
       padding:10px 10px;
-      border:1px solid #aaa;
+      border:1px solid var(--border);
       border-radius:10px;
       font-size:16px;
-      background:#fff;
+      background:var(--input-bg);
+      color:var(--text);
+    }
+
+    input[readonly]{
+      background:var(--readonly-bg);
+      color:var(--readonly-text);
     }
 
     .metric-box{
@@ -160,15 +193,15 @@
     }
 
     .metric{
-      background:#fff;
-      border:1px solid rgba(0,0,0,0.12);
+      background:var(--card);
+      border:1px solid var(--border);
       border-radius:10px;
       padding:10px;
     }
 
     .metric .label{
       font-size:12px;
-      color:#555;
+      color:var(--muted);
       margin-bottom:4px;
     }
 
@@ -179,7 +212,7 @@
 
     .summary{
       background:var(--check);
-      border:1px solid #cfe3c3;
+      border:1px solid var(--border);
       border-radius:12px;
       padding:10px 12px;
       margin:10px 0 14px 0;
@@ -187,8 +220,8 @@
     }
 
     .checkpoint{
-      background:#f4f8ea;
-      border:1px solid #d9e8c7;
+      background:var(--check);
+      border:1px solid var(--border);
       border-radius:12px;
       padding:10px 12px;
       margin:8px 0 16px 0;
@@ -202,6 +235,13 @@
     input[type="checkbox"]{
       width:22px;
       height:22px;
+      accent-color:#4f8cff;
+    }
+
+    code{
+      background:rgba(127,127,127,0.15);
+      padding:1px 5px;
+      border-radius:6px;
     }
 
     @media (min-width: 860px){
@@ -219,6 +259,7 @@
 <body>
   <div class="wrap">
     <div class="controls">
+      <button class="btn" onclick="toggleTheme()">Тёмная тема</button>
       <button class="btn" onclick="exportJSON()">Экспорт JSON</button>
       <button class="btn" onclick="document.getElementById('importFile').click()">Импорт JSON</button>
       <span class="status" id="status">Автосохранение включено</span>
@@ -232,6 +273,7 @@
 
   <script>
     const STORAGE_KEY = "plan_mobile_v2_autosave";
+    const THEME_KEY = "plan_mobile_theme";
     const startWeek = 5;
     const endWeek = 28;
 
@@ -254,10 +296,6 @@
       return `${weight}x${reps}`;
     }
 
-    function tonnage(weight, reps, sets) {
-      return weight * reps * sets;
-    }
-
     function e1RM(weight, reps) {
       return weight * (1 + reps / 30);
     }
@@ -277,8 +315,7 @@
     }
 
     function raiseWeight(week) {
-      if (week <= 12) return 10;
-      return 15;
+      return week <= 12 ? 10 : 15;
     }
 
     function stepWeight(week) {
@@ -654,14 +691,13 @@
           autosave();
         });
       });
-
-      document.getElementById("importFile").addEventListener("change", handleImport);
     }
 
     function exportJSON() {
       const data = {
         exportedAt: new Date().toISOString(),
         version: "mobile_v2",
+        theme: document.body.classList.contains("dark") ? "dark" : "light",
         items: collectData()
       };
 
@@ -687,6 +723,15 @@
           const parsed = JSON.parse(e.target.result);
           const items = parsed.items || parsed;
           applyData(items);
+
+          if (parsed.theme === "dark") {
+            document.body.classList.add("dark");
+            localStorage.setItem(THEME_KEY, "dark");
+          } else if (parsed.theme === "light") {
+            document.body.classList.remove("dark");
+            localStorage.setItem(THEME_KEY, "light");
+          }
+
           recalcAll();
           autosave();
           setStatus("JSON импортирован");
@@ -702,7 +747,23 @@
       document.getElementById("status").textContent = text;
     }
 
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      const theme = document.body.classList.contains("dark") ? "dark" : "light";
+      localStorage.setItem(THEME_KEY, theme);
+      setStatus(theme === "dark" ? "Тёмная тема включена" : "Светлая тема включена");
+    }
+
+    function applySavedTheme() {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme === "dark") {
+        document.body.classList.add("dark");
+      }
+    }
+
+    applySavedTheme();
     render();
+    document.getElementById("importFile").addEventListener("change", handleImport);
   </script>
 </body>
 </html>
