@@ -22,6 +22,8 @@
       --readonly-text:#444;
       --button-bg:#fff;
       --button-border:#999;
+      --accent:#34c759;
+      --switch-off:#c7c7cc;
     }
 
     body.dark{
@@ -41,6 +43,8 @@
       --readonly-text:#d2d2d2;
       --button-bg:#222831;
       --button-border:#4e5968;
+      --accent:#34c759;
+      --switch-off:#5a6270;
     }
 
     *{box-sizing:border-box}
@@ -73,8 +77,9 @@
     .controls{
       display:flex;
       flex-wrap:wrap;
-      gap:8px;
+      gap:10px;
       margin-bottom:10px;
+      align-items:center;
     }
 
     .btn{
@@ -92,6 +97,56 @@
       color:var(--muted);
       display:flex;
       align-items:center;
+    }
+
+    .theme-switch{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:6px 2px;
+      user-select:none;
+      color:var(--text);
+      cursor:pointer;
+    }
+
+    .theme-switch input{
+      display:none;
+    }
+
+    .theme-slider{
+      position:relative;
+      width:52px;
+      height:32px;
+      border-radius:999px;
+      background:var(--switch-off);
+      transition:background 0.2s ease;
+      flex:0 0 auto;
+    }
+
+    .theme-slider::after{
+      content:"";
+      position:absolute;
+      top:3px;
+      left:3px;
+      width:26px;
+      height:26px;
+      border-radius:50%;
+      background:#fff;
+      box-shadow:0 1px 3px rgba(0,0,0,0.25);
+      transition:transform 0.2s ease;
+    }
+
+    .theme-switch input:checked + .theme-slider{
+      background:var(--accent);
+    }
+
+    .theme-switch input:checked + .theme-slider::after{
+      transform:translateX(20px);
+    }
+
+    .theme-label{
+      font-size:14px;
+      color:var(--text);
     }
 
     .box{
@@ -244,6 +299,17 @@
       border-radius:6px;
     }
 
+    @media (max-width: 420px){
+      .controls{
+        gap:8px;
+      }
+
+      .theme-label,
+      .status{
+        width:100%;
+      }
+    }
+
     @media (min-width: 860px){
       .cards-grid{
         display:grid;
@@ -259,7 +325,12 @@
 <body>
   <div class="wrap">
     <div class="controls">
-      <button class="btn" onclick="toggleTheme()">Тёмная тема</button>
+      <label class="theme-switch" title="Тёмная тема">
+        <input id="themeToggle" type="checkbox" />
+        <span class="theme-slider"></span>
+        <span class="theme-label">Тёмная тема</span>
+      </label>
+
       <button class="btn" onclick="exportJSON()">Экспорт JSON</button>
       <button class="btn" onclick="document.getElementById('importFile').click()">Импорт JSON</button>
       <span class="status" id="status">Автосохранение включено</span>
@@ -274,8 +345,6 @@
   <script>
     const STORAGE_KEY = "plan_mobile_v2_autosave";
     const THEME_KEY = "plan_mobile_theme";
-    const startWeek = 5;
-    const endWeek = 28;
 
     const blockNames = {
       5:  "Блок 2 — закрепление",
@@ -725,11 +794,9 @@
           applyData(items);
 
           if (parsed.theme === "dark") {
-            document.body.classList.add("dark");
-            localStorage.setItem(THEME_KEY, "dark");
+            setTheme("dark");
           } else if (parsed.theme === "light") {
-            document.body.classList.remove("dark");
-            localStorage.setItem(THEME_KEY, "light");
+            setTheme("light");
           }
 
           recalcAll();
@@ -747,23 +814,41 @@
       document.getElementById("status").textContent = text;
     }
 
-    function toggleTheme() {
-      document.body.classList.toggle("dark");
-      const theme = document.body.classList.contains("dark") ? "dark" : "light";
-      localStorage.setItem(THEME_KEY, theme);
-      setStatus(theme === "dark" ? "Тёмная тема включена" : "Светлая тема включена");
+    function syncThemeToggle() {
+      const toggle = document.getElementById("themeToggle");
+      if (!toggle) return;
+      toggle.checked = document.body.classList.contains("dark");
+    }
+
+    function setTheme(theme) {
+      if (theme === "dark") {
+        document.body.classList.add("dark");
+        localStorage.setItem(THEME_KEY, "dark");
+        setStatus("Тёмная тема включена");
+      } else {
+        document.body.classList.remove("dark");
+        localStorage.setItem(THEME_KEY, "light");
+        setStatus("Светлая тема включена");
+      }
+      syncThemeToggle();
     }
 
     function applySavedTheme() {
       const savedTheme = localStorage.getItem(THEME_KEY);
       if (savedTheme === "dark") {
         document.body.classList.add("dark");
+      } else {
+        document.body.classList.remove("dark");
       }
     }
 
     applySavedTheme();
     render();
     document.getElementById("importFile").addEventListener("change", handleImport);
+    document.getElementById("themeToggle").addEventListener("change", function(e) {
+      setTheme(e.target.checked ? "dark" : "light");
+    });
+    syncThemeToggle();
   </script>
 </body>
 </html>
