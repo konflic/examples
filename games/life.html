@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #1e1e30 0%, #14141f 100%);
+            color: #e8e8f2;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn {
+            background: #3a3a55;
+            color: #e8e8f2;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background .15s ease;
+        }
+
+        .btn:hover {
+            background: #4a4a6a;
+        }
+
+        .btn.accent {
+            background: #2e7d32;
+        }
+
+        .btn.accent:hover {
+            background: #388e3c;
+        }
+
+        .btn.warn {
+            background: #b23b3b;
+        }
+
+        .btn.warn:hover {
+            background: #c84b4b;
+        }
+
+        /* ---------- Setup screen ---------- */
+        #setup {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(180deg, #1e1e30 0%, #14141f 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .card {
+            background: rgba(30, 30, 48, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 460px;
+            width: calc(100% - 40px);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .card h1 {
+            font-size: 26px;
+            color: #ffffff;
+        }
+
+        .card .subtitle {
+            font-size: 13px;
+            color: #9aa0c0;
+            margin-top: -12px;
+        }
+
+        .opt {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .opt > label {
+            font-size: 13px;
+            color: #b8bdd9;
+        }
+
+        .size-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .size-btn {
+            flex: 1;
+            height: 64px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: #26263f;
+            color: #e8e8f2;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: border-color .15s ease, background .15s ease;
+        }
+
+        .size-btn .px-preview {
+            width: 22px;
+            height: 22px;
+            border-radius: 3px;
+            background: #7f86c9;
+        }
+
+        .size-btn.selected {
+            border-color: #ffffff;
+            background: #3a3a5a;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #7f86c9;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 13px;
+        }
+
+        .legend-item .rules {
+            font-size: 11px;
+            color: #9aa0c0;
+            background: #26263f;
+            padding: 2px 6px;
+            border-radius: 5px;
+        }
+
+        .legend-item .legend-desc {
+            margin-left: auto;
+            font-size: 11px;
+            color: #9aa0c0;
+            text-align: right;
+        }
+
+        /* ---------- Simulation screen ---------- */
+        #sim {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(26, 26, 40, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .topbar .spacer {
+            flex: 1;
+        }
+
+        .topbar .gen {
+            font-size: 13px;
+            color: #9aa0c0;
+            white-space: nowrap;
+        }
+
+        .speed-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #b8bdd9;
+        }
+
+        .speed-group input {
+            width: 120px;
+            accent-color: #7f86c9;
+        }
+
+        .wrap {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+        }
+
+        canvas {
+            background: #101018;
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+            touch-action: none;
+        }
+
+        .species-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            padding: 12px 16px;
+            background: rgba(26, 26, 40, 0.85);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #2a2a42;
+            color: #e8e8f2;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: border-color .15s ease, background .15s ease;
+        }
+
+        .chip.selected {
+            border-color: #ffffff;
+            background: #3a3a5a;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .chip .rules {
+            font-size: 11px;
+            color: #9aa0c0;
+        }
+
+        .chip .count {
+            font-weight: 700;
+            min-width: 22px;
+            text-align: right;
+            color: #ffffff;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #6f7597;
+            text-align: center;
+            padding: 0 12px 4px;
+        }
+
+        /* ---------- Settings panel ---------- */
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 340px;
+            background: rgba(22, 22, 35, 0.98);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 20;
+            transform: translateX(100%);
+            transition: transform .25s ease;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .settings-overlay.open {
+            transform: translateX(0);
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            position: sticky;
+            top: 0;
+            background: rgba(22, 22, 35, 0.98);
+            z-index: 1;
+        }
+
+        .settings-header h2 {
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .sp-section {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sp-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .sp-title span {
+            font-size: 15px;
+            font-weight: 600;
+            color: #e8e8f2;
+        }
+
+        .param-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+
+        .param-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #9aa0c0;
+        }
+
+        .param-label .val {
+            color: #fff;
+            font-weight: 600;
+            min-width: 28px;
+            text-align: right;
+        }
+
+        .param-row input[type="range"] {
+            width: 100%;
+        }
+
+        @media (max-width: 700px) {
+            .settings-overlay {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .card {
+                padding: 22px;
+            }
+
+            .legend-item .legend-desc {
+                display: none;
+            }
+
+            .topbar {
+                gap: 8px;
+                padding: 10px;
+            }
+
+            .speed-group input {
+                width: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Setup -->
+    <div id="setup">
+        <div class="card">
+            <h1>Life Simulator</h1>
+            <p class="subtitle">A multi-species cellular automaton — every creature follows its own rules.</p>
+
+            <div class="opt">
+                <label>Cell size</label>
+                <div class="size-row" id="size-row">
+                    <button class="size-btn" data-cell="4"><span class="px-preview" style="width:8px;height:8px"></span>4px</button>
+                    <button class="size-btn selected" data-cell="8"><span class="px-preview" style="width:14px;height:14px"></span>8px</button>
+                    <button class="size-btn" data-cell="12"><span class="px-preview" style="width:20px;height:20px"></span>12px</button>
+                    <button class="size-btn" data-cell="20"><span class="px-preview" style="width:26px;height:26px"></span>20px</button>
+                </div>
+            </div>
+
+            <div class="opt">
+                <label>Initial density: <span id="density-val">20%</span></label>
+                <input type="range" id="density" min="5" max="40" value="20">
+            </div>
+
+            <div class="opt">
+                <label>Creatures</label>
+                <div id="legend"></div>
+            </div>
+
+            <button class="btn accent" id="btn-start">Start simulation</button>
+        </div>
+    </div>
+
+    <!-- Simulation -->
+    <div id="sim">
+        <div class="topbar">
+            <button class="btn" id="btn-setup">← Setup</button>
+            <button class="btn accent" id="btn-play">▶ Start</button>
+            <button class="btn" id="btn-step" title="Advance one generation">Step ›</button>
+            <button class="btn" id="btn-reset" title="New random seed">↻ Reset</button>
+            <button class="btn warn" id="btn-clear" title="Clear the grid">✕ Clear</button>
+            <button class="btn" id="btn-settings" title="Adjust creature parameters">⚙</button>
+            <div class="spacer"></div>
+            <div class="speed-group">
+                Speed
+                <input type="range" id="speed" min="1" max="30" value="10">
+            </div>
+            <span class="gen" id="gen">Gen 0</span>
+        </div>
+
+        <div class="wrap" id="wrap">
+            <canvas id="cv"></canvas>
+        </div>
+
+        <div class="species-bar" id="species-bar"></div>
+        <div class="hint">Click / drag on the grid to spawn the selected creature — the sim pauses while you place. Predators arrive with their food.</div>
+    </div>
+
+    <!-- Settings overlay -->
+    <div class="settings-overlay" id="settings-overlay">
+        <div class="settings-header">
+            <h2>⚙ Creature Settings</h2>
+            <button class="btn" id="btn-settings-close">✕</button>
+        </div>
+        <div id="settings-body"></div>
+    </div>
+
+    <script>
+        // ---- Species model -------------------------------------------------
+        // Each species has its own birth/survival rules (counted on its own
+        // kind, classic Life-style) plus an optional food chain via `prey`:
+        //   - a creature dies if any predator (someone who preys on it) is adjacent
+        //   - a predator starves when it has no prey cell adjacent
+        const SPECIES = [
+            { id: 'A', name: 'Algae',   color: '#4CAF50',
+              birth: [3], survive: [2, 3], prey: [],
+              spreadChance: 0.08, overgrow: ['D'], overgrowChance: 0.16, eatChance: 0.14, hungerTol: 0,
+              huntRange: 0,
+              desc: 'Classic Life growth; aggressively erodes Crystal.' },
+            { id: 'B', name: 'Fish',    color: '#2196F3',
+              birth: [2, 3], survive: [2, 3], prey: ['A'],
+              spreadChance: 0.12, overgrow: ['A'], overgrowChance: 0.18, eatChance: 0.10, hungerTol: 3,
+              huntRange: 2,
+              desc: 'Breeds easily; eats algae; quick to recover.' },
+            { id: 'C', name: 'Shark',   color: '#F44336',
+              birth: [3], survive: [2, 3], prey: ['B'],
+              spreadChance: 0.04, overgrow: ['B'], overgrowChance: 0.05, eatChance: 0.02, hungerTol: 3,
+              huntRange: 3,
+              desc: 'Fragile hunter; dies quickly without fish.' },
+            { id: 'D', name: 'Crystal', color: '#9C27B0',
+              birth: [3, 4], survive: [2, 3, 4], prey: [],
+              spreadChance: 0.03, overgrow: [], overgrowChance: 0, eatChance: 0, hungerTol: 0,
+              huntRange: 0,
+              desc: 'Tough mineral growth; appears spontaneously in stagnant areas.' },
+        ];
+
+        // Precompute which species prey on each species
+        SPECIES.forEach(sp => {
+            sp.predators = SPECIES.filter(s => s.prey.includes(sp.id)).map(s => s.id);
+        });
+
+        const BG = '#101018';
+        const OFFSETS = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+
+        // ---- DOM refs -------------------------------------------------------
+        const setupEl = document.getElementById('setup');
+        const simEl = document.getElementById('sim');
+        const wrap = document.getElementById('wrap');
+        const canvas = document.getElementById('cv');
+        const ctx = canvas.getContext('2d');
+        const sizeRow = document.getElementById('size-row');
+        const densityInput = document.getElementById('density');
+        const densityVal = document.getElementById('density-val');
+        const legendEl = document.getElementById('legend');
+        const speciesBar = document.getElementById('species-bar');
+        const btnStart = document.getElementById('btn-start');
+        const btnSetup = document.getElementById('btn-setup');
+        const btnPlay = document.getElementById('btn-play');
+        const btnStep = document.getElementById('btn-step');
+        const btnReset = document.getElementById('btn-reset');
+        const btnClear = document.getElementById('btn-clear');
+        const speedInput = document.getElementById('speed');
+        const genEl = document.getElementById('gen');
+
+        // ---- State -----------------------------------------------------------
+        let cell = 8;
+        let density = 0.2;
+        let cols = 0;
+        let rows = 0;
+        let n = 0;
+        let state = null;
+        let next = null;
+        let hunger = null;     // how many turns without food (predators)
+        let nextHunger = null;
+        let emptyAge = null;   // how many generations a cell has been empty
+        let nextEmptyAge = null;
+        let generation = 0;
+        let running = false;
+        let timer = null;
+        let selectedSpecies = 0;
+        let painting = false;
+        let wasRunningBeforePaint = false;
+        const changes = [];
+
+        // ---- UI builders ------------------------------------------------------
+        function rulesText(sp) {
+            return 'B' + sp.birth.join('') + '/S' + sp.survive.join('');
+        }
+
+        function buildLegend() {
+            SPECIES.forEach(sp => {
+                const div = document.createElement('div');
+                div.className = 'legend-item';
+                div.innerHTML =
+                    '<span class="dot" style="background:' + sp.color + '"></span>' +
+                    '<span>' + sp.name + '</span>' +
+                    '<span class="rules">' + rulesText(sp) + '</span>' +
+                    '<span class="legend-desc">' + sp.desc + '</span>';
+                legendEl.appendChild(div);
+            });
+        }
+
+        function buildSpeciesBar() {
+            SPECIES.forEach((sp, i) => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'chip' + (i === 0 ? ' selected' : '');
+                chip.innerHTML =
+                    '<span class="dot" style="background:' + sp.color + '"></span>' +
+                    '<span>' + sp.name + '</span>' +
+                    '<span class="rules">' + rulesText(sp) + '</span>' +
+                    '<span class="count" id="count-' + i + '">0</span>';
+                chip.addEventListener('click', () => {
+                    selectedSpecies = i;
+                    document.querySelectorAll('.chip').forEach(ch => ch.classList.remove('selected'));
+                    chip.classList.add('selected');
+                });
+                speciesBar.appendChild(chip);
+            });
+        }
+
+        // ---- Settings panel --------------------------------------------------
+        const settingsOverlay = document.getElementById('settings-overlay');
+        const settingsBody = document.getElementById('settings-body');
+        const btnSettings = document.getElementById('btn-settings');
+        const btnSettingsClose = document.getElementById('btn-settings-close');
+
+        // params: key, label, max, step, isPercent
+        const PARAMS = [
+            { key: 'eatChance',      label: 'Eat chance',      max: 30, isPercent: true,
+              tip: 'Chance per adjacent predator per generation to kill this creature.' },
+            { key: 'overgrowChance', label: 'Colonize chance', max: 30, isPercent: true,
+              tip: 'Chance for a predator to spawn in an empty cell next to its prey.' },
+            { key: 'spreadChance',   label: 'Spread chance',   max: 20, isPercent: true,
+              tip: 'Chance per generation to spread into an adjacent empty cell.' },
+            { key: 'hungerTol',      label: 'Hunger tolerance', max: 15, isPercent: false,
+              tip: 'Generations a predator survives without prey nearby before starving.' },
+            { key: 'huntRange',      label: 'Hunt range',      max: 6,  isPercent: false,
+              tip: 'How far this creature can sense prey and swim toward it (in cells).' },
+        ];
+
+        function buildSettingsPanel() {
+            settingsBody.innerHTML = '';
+            SPECIES.forEach((sp, i) => {
+                const section = document.createElement('div');
+                section.className = 'sp-section';
+                const title = document.createElement('div');
+                title.className = 'sp-title';
+                title.innerHTML =
+                    '<span class="dot" style="background:' + sp.color + '"></span>' +
+                    '<span>' + sp.name + '</span>';
+                section.appendChild(title);
+
+                PARAMS.forEach(param => {
+                    const raw = sp[param.key];
+                    const sliderVal = param.isPercent ? Math.round(raw * 100) : raw;
+                    const row = document.createElement('div');
+                    row.className = 'param-row';
+                    row.innerHTML =
+                        '<div class="param-label"><span title="' + param.tip + '" style="cursor:help">' + param.label +
+                        '</span><span class="val" id="val-' + i + '-' + param.key + '">' +
+                        (param.isPercent ? sliderVal + '%' : sliderVal) +
+                        '</span></div>' +
+                        '<input type="range" title="' + param.tip + '" min="0" max="' + param.max +
+                        '" step="1" value="' + sliderVal +
+                        '" id="slider-' + i + '-' + param.key + '">';
+                    section.appendChild(row);
+
+                    const slider = row.querySelector('input');
+                    const valSpan = row.querySelector('.val');
+                    slider.addEventListener('input', () => {
+                        const v = Number(slider.value);
+                        sp[param.key] = param.isPercent ? v / 100 : v;
+                        valSpan.textContent = param.isPercent ? v + '%' : v;
+                    });
+                });
+                settingsBody.appendChild(section);
+            });
+        }
+
+        btnSettings.addEventListener('click', () => {
+            buildSettingsPanel();
+            settingsOverlay.classList.add('open');
+        });
+
+        btnSettingsClose.addEventListener('click', () => {
+            settingsOverlay.classList.remove('open');
+        });
+
+        // ---- Grid / simulation --------------------------------------------------
+        function computeDims() {
+            const availW = wrap.clientWidth - 28;
+            const availH = wrap.clientHeight - 28;
+            cols = Math.max(16, Math.floor(availW / cell));
+            rows = Math.max(16, Math.floor(availH / cell));
+            n = cols * rows;
+            canvas.width = cols * cell;
+            canvas.height = rows * cell;
+            state = new Uint8Array(n);
+            next = new Uint8Array(n);
+            hunger = new Uint8Array(n);
+            nextHunger = new Uint8Array(n);
+            emptyAge = new Uint16Array(n);
+            nextEmptyAge = new Uint16Array(n);
+        }
+
+        function seed() {
+            state.fill(0);
+            hunger.fill(0);
+            emptyAge.fill(0);
+            // Weighted seed: mostly algae (base of food chain), some fish,
+            // few sharks, very little crystal. This gives predators a
+            // realistic ecosystem to hunt in rather than an even mix where
+            // algae and crystal immediately dominate.
+            const weights = [0.60, 0.22, 0.05, 0.13]; // A, B, C, D
+            for (let i = 0; i < n; i++) {
+                if (Math.random() < density) {
+                    const roll = Math.random();
+                    let acc = 0;
+                    for (let s = 0; s < SPECIES.length; s++) {
+                        acc += weights[s];
+                        if (roll < acc) { state[i] = s + 1; break; }
+                    }
+                }
+            }
+            generation = 0;
+            updateStats();
+            redrawAll();
+            genEl.textContent = 'Gen 0';
+            genEl.style.color = '';
+        }
+
+        function drawCell(idx, s) {
+            const r = (idx / cols) | 0;
+            const c = idx - r * cols;
+            ctx.fillStyle = s ? SPECIES[s - 1].color : BG;
+            ctx.fillRect(c * cell, r * cell, cell - 1, cell - 1);
+        }
+
+        function redrawAll() {
+            ctx.fillStyle = BG;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < n; i++) {
+                if (state[i]) drawCell(i, state[i]);
+            }
+        }
+
+        function redrawChanges() {
+            for (const idx of changes) {
+                drawCell(idx, state[idx]);
+            }
+            changes.length = 0;
+        }
+
+        function step() {
+            const counts = [0, 0, 0, 0, 0];
+            // Count populations for crystal self-limiting and algae→fish feedback
+            let crystalCount = 0;
+            let algaeCount = 0;
+            let fishCount = 0;
+            for (let i = 0; i < n; i++) {
+                if (state[i] === 4) crystalCount++;
+                else if (state[i] === 1) algaeCount++;
+                else if (state[i] === 2) fishCount++;
+            }
+            next.fill(0);
+            nextHunger.fill(0);
+            changes.length = 0;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const idx = r * cols + c;
+                    const me = state[idx];
+                    counts[1] = counts[2] = counts[3] = counts[4] = 0;
+                    const neighbors = [];
+                    for (let o = 0; o < 8; o++) {
+                        const nr = r + OFFSETS[o][0];
+                        const nc = c + OFFSETS[o][1];
+                        if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+                        const nidx = nr * cols + nc;
+                        const s = state[nidx];
+                        if (s) counts[s]++;
+                        neighbors.push([nidx, s]);
+                    }
+                    let nv = 0;
+                    let nh = 0;
+                    if (me) {
+                        const sp = SPECIES[me - 1];
+                        let alive = sp.survive.includes(counts[me]);
+                        // Prey being eaten: if an adjacent predator overgrows
+                        // this species, each has a chance to kill this cell
+                        if (alive) {
+                            for (let s = 1; s <= SPECIES.length && alive; s++) {
+                                if (s === me || counts[s] === 0) continue;
+                                const osp = SPECIES[s - 1];
+                                if (osp.overgrow.includes(sp.id)) {
+                                    // Each adjacent predator gets eatChance to kill this prey
+                                    for (let k = 0; k < counts[s] && alive; k++) {
+                                        if (Math.random() < osp.eatChance) alive = false;
+                                    }
+                                }
+                            }
+                        }
+                        // Predator hunger: track turns without prey nearby.
+                        // When a predator starves, it decays into algae (species 1)
+                        // instead of just dying — organic matter returns to the
+                        // base of the food chain.
+                        if (alive && sp.prey.length) {
+                            let preyCount = 0;
+                            for (let s = 1; s <= SPECIES.length; s++) {
+                                if (sp.prey.includes(SPECIES[s - 1].id)) preyCount += counts[s];
+                            }
+                            if (preyCount > 0) {
+                                nh = 0; // fed
+                            } else {
+                                nh = (hunger[idx] || 0) + 1;
+                                if (nh > sp.hungerTol) {
+                                    alive = false;
+                                    // Decay into algae instead of empty space
+                                    nv = 1;
+                                }
+                            }
+                        }
+                        if (alive) nv = me;
+                        // Universal feedback principle: the more of a species there is,
+                        // the more it feeds its predator. Each species cell
+                        // has a chance to turn into the species that eats it,
+                        // scaling continuously with the prey's population ratio.
+                        //   Crystal → Algae   (algae "eats" crystal)
+                        //   Algae  → Fish
+                        //   Fish   → Shark
+                        if (alive) {
+                            let predator = 0;
+                            let ratio = 0;
+                            let multiplier = 0;
+                            if (me === 4)      { predator = 1; ratio = crystalCount / n; multiplier = 0.50; }
+                            else if (me === 1) { predator = 2; ratio = algaeCount / n; multiplier = 0.02; }
+                            else if (me === 2) { predator = 3; ratio = fishCount / n; multiplier = 0.02; }
+                            if (predator) {
+                                const chance = ratio * multiplier;
+                                if (Math.random() < chance) {
+                                    nv = predator;
+                                }
+                            }
+                        }
+                    } else {
+                        // Empty cell: check birth rules first
+                        // Predators can only be born if prey is adjacent —
+                        // birth depends on the food chain, not just
+                        // same-species neighbor count.
+                        const cand = [];
+                        for (let s = 1; s <= SPECIES.length; s++) {
+                            const sp = SPECIES[s - 1];
+                            if (!sp.birth.includes(counts[s])) continue;
+                            if (sp.prey.length) {
+                                let preyCount = 0;
+                                for (let p = 1; p <= SPECIES.length; p++) {
+                                    if (sp.prey.includes(SPECIES[p - 1].id)) preyCount += counts[p];
+                                }
+                                if (preyCount === 0) continue; // no prey nearby, no birth
+                            }
+                            cand.push(s);
+                        }
+                        if (cand.length) {
+                            nv = cand[(Math.random() * cand.length) | 0];
+                        } else {
+                            // No birth — check spreading and overgrowing
+                            // Spreading: a random adjacent same-species creature
+                            // spreads into this cell with spreadChance.
+                            // Overgrowing: a random adjacent predator whose
+                            // prey includes this cell's "would-be" species
+                            // colonizes it. We check overgrowth first since it
+                            // represents eating/colonizing prey cells.
+                            const spreaders = [];   // species that can spread here
+                            const overgrowers = []; // species that can overgrow here
+                            for (const [nidx, ns] of neighbors) {
+                                if (ns === 0) continue;
+                                const nsp = SPECIES[ns - 1];
+                                // Can this neighbor spread into empty space?
+                                if (nsp.spreadChance > 0 && Math.random() < nsp.spreadChance) {
+                                    spreaders.push(ns);
+                                }
+                            }
+                            // Check overgrowing: if any adjacent cell is prey
+                            // for some species, that species can colonize here
+                            // We look at ALL species: if species X overgrows
+                            // species Y, and Y is adjacent, X can spawn here
+                            for (const [nidx, ns] of neighbors) {
+                                if (ns === 0) continue;
+                                const nsp = SPECIES[ns - 1];
+                                // Is this neighbor a prey for some other species?
+                                for (let s = 1; s <= SPECIES.length; s++) {
+                                    if (s === ns) continue;
+                                    const osp = SPECIES[s - 1];
+                                    if (osp.overgrow.includes(nsp.id) && osp.overgrow.length) {
+                                        // predator s can colonize by eating prey ns at this cell
+                                        // Check if predator s is also adjacent
+                                        if (counts[s] > 0 && Math.random() < osp.overgrowChance) {
+                                            overgrowers.push(s);
+                                        }
+                                    }
+                                }
+                            }
+                            if (overgrowers.length) {
+                                nv = overgrowers[(Math.random() * overgrowers.length) | 0];
+                            } else if (spreaders.length) {
+                                nv = spreaders[(Math.random() * spreaders.length) | 0];
+                            } else {
+                                // Extended-range hunting: predators with
+                                // huntRange > 0 can sense prey beyond their
+                                // immediate neighbors and colonize empty cells
+                                // toward the prey. The probability drops with
+                                // distance so closer prey attracts more.
+                                const hunters = [];
+                                for (let s = 1; s <= SPECIES.length; s++) {
+                                    const hsp = SPECIES[s - 1];
+                                    if (!hsp.huntRange || !hsp.overgrow.length) continue;
+                                    const range = hsp.huntRange;
+                                    let selfCount = 0;
+                                    let preyCount = 0;
+                                    for (let dr = -range; dr <= range; dr++) {
+                                        for (let dc = -range; dc <= range; dc++) {
+                                            if (dr === 0 && dc === 0) continue;
+                                            const rr = r + dr;
+                                            const cc = c + dc;
+                                            if (rr < 0 || rr >= rows || cc < 0 || cc >= cols) continue;
+                                            const ns = state[rr * cols + cc];
+                                            if (ns === s) selfCount++;
+                                            else if (ns > 0 && hsp.overgrow.includes(SPECIES[ns - 1].id)) preyCount++;
+                                        }
+                                    }
+                                    if (selfCount > 0 && preyCount > 0) {
+                                        // Probability: more predator + more prey nearby = more likely,
+                                        // but keep it modest so it's a slow stalking behavior
+                                        const prob = Math.min(0.25, (selfCount + preyCount) * 0.02);
+                                        if (Math.random() < prob) hunters.push(s);
+                                    }
+                                }
+                                if (hunters.length) {
+                                    nv = hunters[(Math.random() * hunters.length) | 0];
+                                }
+                            }
+                            // Spontaneous crystallization: if this cell has
+                            // been empty for a long time (15+ generations),
+                            // crystal can precipitate here. The probability
+                            // drops as the total crystal population rises,
+                            // so crystal self-limits its own growth.
+                            if (nv === 0) {
+                                const age = (emptyAge[idx] || 0) + 1;
+                                if (age >= 15) {
+                                    // crystalDensity: 0 = no crystal, 1 = entire grid
+                                    const crystalRatio = crystalCount / n;
+                                    const baseChance = 0.002;
+                                    const chance = baseChance * (1 - crystalRatio * 5);
+                                    if (chance > 0.00001 && Math.random() < chance) {
+                                        nv = 4; // Crystal
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Track empty-cell age for crystallization
+                    if (nv === 0) {
+                        nextEmptyAge[idx] = (emptyAge[idx] || 0) + 1;
+                    } else {
+                        nextEmptyAge[idx] = 0;
+                    }
+                    if (nv !== me) {
+                        next[idx] = nv;
+                        nextHunger[idx] = nh;
+                        changes.push(idx);
+                    } else {
+                        next[idx] = me;
+                        nextHunger[idx] = nh;
+                    }
+                }
+            }
+            const ts = state, th = hunger, tea = emptyAge;
+            state = next; next = ts;
+            hunger = nextHunger; nextHunger = th;
+            emptyAge = nextEmptyAge; nextEmptyAge = tea;
+            generation++;
+            // Extinction check: AFTER the step completes, so the feedback
+            // loops (algae→fish, crystal→algae) get a chance to rescue
+            // populations before we declare extinction.
+            let aliveCount = [0, 0, 0, 0];
+            for (let i = 0; i < n; i++) {
+                if (state[i] > 0) aliveCount[state[i] - 1]++;
+            }
+            if (aliveCount[0] === 0 || aliveCount[1] === 0 || aliveCount[2] === 0) {
+                const extinct = [];
+                if (aliveCount[0] === 0) extinct.push('Algae');
+                if (aliveCount[1] === 0) extinct.push('Fish');
+                if (aliveCount[2] === 0) extinct.push('Shark');
+                showExtinction(extinct);
+                return false;
+            }
+            return true;
+        }
+
+        function updateStats() {
+            const pop = [0, 0, 0, 0, 0];
+            for (let i = 0; i < n; i++) pop[state[i]]++;
+            for (let s = 0; s < SPECIES.length; s++) {
+                document.getElementById('count-' + s).textContent = pop[s + 1];
+            }
+        }
+
+        // ---- Timing -------------------------------------------------------------
+        function tick() {
+            const ok = step();
+            if (ok === false) {
+                setRunning(false);
+                return;
+            }
+            redrawChanges();
+            updateStats();
+            genEl.textContent = 'Gen ' + generation;
+        }
+
+        function showExtinction(species) {
+            const msg = species.length === 1
+                ? species[0] + ' went extinct!'
+                : species.join(' and ') + ' went extinct!';
+            genEl.textContent = msg + ' (Gen ' + generation + ')';
+            genEl.style.color = '#ff6b6b';
+        }
+
+        function setTimer() {
+            if (timer) clearInterval(timer);
+            timer = null;
+            if (running) {
+                timer = setInterval(tick, Math.round(1000 / Number(speedInput.value)));
+            }
+        }
+
+        function setRunning(value) {
+            running = value;
+            btnPlay.textContent = running ? '⏸ Pause' : '▶ Start';
+            setTimer();
+        }
+
+        // ---- Painting ------------------------------------------------------------
+        // Placing spawns a 3x3 colony of the creature (stable, enough
+        // neighbors to breed) and, for predators, a large ring of prey
+        // directly around them so they have food long enough to establish.
+        // The sim pauses while you place.
+        function spawnCreatureAt(r, c, sp, withFood, depth) {
+            if (depth > 4) return;
+            const spNum = sp + 1;
+            // Place the creature as a 3x3 block
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    const rr = r + dr;
+                    const cc = c + dc;
+                    if (rr < 0 || rr >= rows || cc < 0 || cc >= cols) continue;
+                    const idx = rr * cols + cc;
+                    if (state[idx] === 0) {
+                        state[idx] = spNum;
+                        hunger[idx] = 0;
+                        emptyAge[idx] = 0;
+                        drawCell(idx, spNum);
+                    }
+                }
+            }
+            // Place prey in a generous ring around the creature
+            if (withFood && SPECIES[sp].prey.length) {
+                const preyIdx = SPECIES.findIndex(s => s.id === SPECIES[sp].prey[0]);
+                for (let dr = -3; dr <= 3; dr++) {
+                    for (let dc = -3; dc <= 3; dc++) {
+                        if (dr >= -1 && dr <= 1 && dc >= -1 && dc <= 1) continue; // skip creature block
+                        const rr = r + dr;
+                        const cc = c + dc;
+                        if (rr < 0 || rr >= rows || cc < 0 || cc >= cols) continue;
+                        const idx = rr * cols + cc;
+                        if (state[idx] === 0) {
+                            state[idx] = preyIdx + 1;
+                            hunger[idx] = 0;
+                            emptyAge[idx] = 0;
+                            drawCell(idx, preyIdx + 1);
+                        }
+                    }
+                }
+                // Recursively spawn food for the prey too (one level down)
+                spawnCreatureAt(r - 5, c - 5, preyIdx, true, depth + 1);
+            }
+        }
+
+        function paintAt(e, withFood) {
+            const rect = canvas.getBoundingClientRect();
+            const c = Math.floor((e.clientX - rect.left) / cell);
+            const r = Math.floor((e.clientY - rect.top) / cell);
+            if (c < 0 || r < 0 || c >= cols || r >= rows) return;
+            spawnCreatureAt(r, c, selectedSpecies, withFood, 0);
+            updateStats();
+        }
+
+        canvas.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            painting = true;
+            // pause while placing so the spawn is visible and stays put
+            wasRunningBeforePaint = running;
+            if (running) setRunning(false);
+            paintAt(e, true);
+        });
+
+        canvas.addEventListener('pointermove', e => {
+            if (painting) paintAt(e, false);
+        });
+
+        window.addEventListener('pointerup', () => {
+            painting = false;
+            if (wasRunningBeforePaint) setRunning(true);
+            wasRunningBeforePaint = false;
+        });
+
+        // ---- Controls --------------------------------------------------------------
+        btnStart.addEventListener('click', () => {
+            setupEl.style.display = 'none';
+            simEl.style.display = 'flex';
+            computeDims();
+            seed();
+            setRunning(true);
+        });
+
+        btnSetup.addEventListener('click', () => {
+            setRunning(false);
+            simEl.style.display = 'none';
+            setupEl.style.display = 'flex';
+        });
+
+        btnPlay.addEventListener('click', () => setRunning(!running));
+
+        btnStep.addEventListener('click', () => {
+            if (running) setRunning(false);
+            tick();
+        });
+
+        btnReset.addEventListener('click', () => seed());
+
+        btnClear.addEventListener('click', () => {
+            state.fill(0);
+            hunger.fill(0);
+            emptyAge.fill(0);
+            generation = 0;
+            genEl.textContent = 'Gen 0';
+            genEl.style.color = '';
+            updateStats();
+            redrawAll();
+        });
+
+        speedInput.addEventListener('input', setTimer);
+        densityInput.addEventListener('input', () => {
+            density = Number(densityInput.value) / 100;
+            densityVal.textContent = densityInput.value + '%';
+        });
+
+        sizeRow.addEventListener('click', e => {
+            const btn = e.target.closest('.size-btn');
+            if (!btn) return;
+            cell = Number(btn.dataset.cell);
+            sizeRow.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        });
+
+        // ---- Init -----------------------------------------------------------------
+        buildLegend();
+        buildSpeciesBar();
+        buildSettingsPanel();
+    </script>
+</body>
+</html>
