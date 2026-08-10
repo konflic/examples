@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nonograms — Picross Puzzle</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --panel: #1e1e1e;
+            --accent: #bb86fc;
+            --accent2: #03dac6;
+            --danger: #cf6679;
+            --text: #ffffff;
+            --border: #3700b3;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 {
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(187,134,252,0.4);
+            margin: 8px 0 4px 0;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 2px 0 6px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .panel {
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 6px 12px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        select, button {
+            background: #2d2d2d;
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        button { background: var(--border); }
+        button:hover:not(:disabled) { transform: scale(1.05); background: #6200ee; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .stats {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 2px 0 6px;
+            flex-shrink: 0;
+        }
+        .stat {
+            background: var(--panel);
+            border: 2px dashed var(--border);
+            padding: 3px 9px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        .tools {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin: 2px 0 6px;
+            flex-shrink: 0;
+        }
+        .tool {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .tool .swatch { width: 16px; height: 16px; border-radius: 4px; border: 1px solid #555; }
+        .tool.active { background: #6200ee; }
+        .game-area {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: auto;
+            padding: 4px;
+        }
+        .board-wrap {
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: inline-block;
+            margin: auto;
+        }
+        .board { display: grid; }
+        .corner { background: #1a1a1a; border: 1px solid #333; }
+        .col-clue {
+            background: #232323;
+            border: 1px solid #333;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            align-content: center;
+            font-weight: bold;
+            color: var(--accent2);
+            overflow: hidden;
+        }
+        .row-clue {
+            background: #232323;
+            border: 1px solid #333;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            align-content: center;
+            font-weight: bold;
+            color: var(--accent2);
+            overflow: hidden;
+            padding-right: 2px;
+        }
+        .clue-num {
+            margin: 1px;
+            line-height: 1;
+            display: inline-block;
+        }
+        .cell {
+            border: 1px solid #333;
+            background: #2a2a2a;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background 0.1s ease;
+        }
+        .cell:hover { background: #353535; }
+        .cell.filled { background: var(--accent); border-color: #6c5ce7; }
+        .cell.wrong { background: var(--danger); border-color: #ff1744; }
+        .cell.marked { color: #999; font-weight: bold; }
+        .cell.hint { background: var(--accent2); border-color: #00a896; }
+        .message {
+            min-height: 18px;
+            color: var(--accent2);
+            font-weight: bold;
+            font-size: 13px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .note { color: #888; font-size: 11px; flex-shrink: 0; }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.1rem; margin: 6px 0 2px; }
+            .stats { gap: 4px; margin: 2px 0 4px; }
+            .stat { padding: 2px 6px; font-size: 11px; }
+            .panel { padding: 4px 8px; }
+            select, button { font-size: 12px; padding: 5px 9px; }
+            .tools { margin: 2px 0 4px; }
+            .message { font-size: 12px; }
+        }
+        @media (max-height: 640px) {
+            h1 { font-size: 1rem; margin: 4px 0 2px; }
+            .board-wrap { padding: 4px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🧩 Nonograms — Picross</h1>
+    <div class="controls">
+        <div class="panel">
+            <label for="level-select">Level:</label>
+            <select id="level-select"></select>
+            <button id="new-btn">New Game</button>
+            <button id="hint-btn">💡 Hint</button>
+        </div>
+    </div>
+    <div class="stats">
+        <div class="stat">⏱ Time: <span id="time">0:00</span></div>
+        <div class="stat">Mistakes: <span id="mistakes">0</span></div>
+        <div class="stat">Solved: <span id="solved">0</span></div>
+        <div class="stat">Best: <span id="best">–</span></div>
+    </div>
+    <div class="tools">
+        <button id="mode-fill" class="tool active"><span class="swatch" style="background:var(--accent)"></span>Fill</button>
+        <button id="mode-x" class="tool"><span class="swatch" style="color:#999;display:flex;align-items:center;justify-content:center;background:#2a2a2a">✕</span>Mark</button>
+        <button id="mode-erase" class="tool"><span class="swatch" style="background:#2a2a2a"></span>Erase</button>
+    </div>
+    <div class="game-area">
+        <div class="board-wrap">
+            <div id="board" class="board"></div>
+        </div>
+    </div>
+    <div id="message" class="message">Press New Game to start.</div>
+    <div id="legend" class="note">Numbers show how many consecutive filled cells are in that row/column.</div>
+    <script>
+    'use strict';
+    document.addEventListener('DOMContentLoaded', () => {
+        const LEVELS = [
+            { r: 5,  c: 5,  d: 0.55, time: 0,   name: '5×5 · Beginner' },
+            { r: 6,  c: 6,  d: 0.50, time: 0,   name: '6×6 · Easy' },
+            { r: 7,  c: 7,  d: 0.45, time: 0,   name: '7×7 · Easy' },
+            { r: 8,  c: 8,  d: 0.45, time: 0,   name: '8×8 · Medium' },
+            { r: 9,  c: 9,  d: 0.40, time: 0,   name: '9×9 · Medium' },
+            { r: 10, c: 10, d: 0.38, time: 0,   name: '10×10 · Medium' },
+            { r: 12, c: 12, d: 0.35, time: 0,   name: '12×12 · Hard' },
+            { r: 15, c: 15, d: 0.32, time: 0,   name: '15×15 · Hard' },
+            { r: 15, c: 15, d: 0.26, time: 300, name: '15×15 · Sparse · 5min' },
+            { r: 18, c: 18, d: 0.28, time: 0,   name: '18×18 · Expert' },
+            { r: 20, c: 20, d: 0.26, time: 480, name: '20×20 · Expert · 8min' },
+            { r: 20, c: 20, d: 0.22, time: 480, name: '20×20 · Sparse · 8min' },
+        ];
+        const TAGS = ['Beginner', 'Easy', 'Medium', 'Hard', 'Expert', 'Nightmare'];
+
+        const levelSelect = document.getElementById('level-select');
+        const newBtn = document.getElementById('new-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const boardEl = document.getElementById('board');
+        const messageEl = document.getElementById('message');
+        const timeEl = document.getElementById('time');
+        const mistakesEl = document.getElementById('mistakes');
+        const solvedEl = document.getElementById('solved');
+        const bestEl = document.getElementById('best');
+        const modeBtns = { fill: document.getElementById('mode-fill'), x: document.getElementById('mode-x'), erase: document.getElementById('mode-erase') };
+
+        // Audio
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(freq = 700, dur = 0.1, vol = 0.25) {
+            const o = audioContext.createOscillator();
+            const g = audioContext.createGain();
+            o.connect(g); g.connect(audioContext.destination);
+            o.type = 'sine'; o.frequency.value = freq;
+            g.gain.setValueAtTime(vol, audioContext.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
+            o.start(); o.stop(audioContext.currentTime + dur);
+        }
+        function successSound() { beep(600, 0.07, 0.25); setTimeout(() => beep(900, 0.07, 0.2), 80); }
+        function errorSound() { beep(180, 0.14, 0.18); }
+        function winSound() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.12, 0.25), i * 120)); }
+
+        // State
+        let cfg = null, pattern = [], rowClues = [], colClues = [], state = [];
+        let mistakes = 0, gameOver = false, startTime = 0, elapsed = 0, timerId = null, mode = 'fill';
+        let cellEls = [], hintUsed = 0;
+
+        function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+        function load(k, d) { const v = localStorage.getItem(k); return v === null ? d : Number(v); }
+        function save(k, v) { localStorage.setItem(k, String(v)); }
+
+        // ---------- Puzzle generation ----------
+        function lineClues(line) {
+            const res = [];
+            let run = 0;
+            for (const v of line) {
+                if (v) run++;
+                else { if (run) { res.push(run); run = 0; } }
+            }
+            if (run) res.push(run);
+            return res.length ? res : [0];
+        }
+
+        function linePlacements(len, clue, known) {
+            const results = [];
+            const b = clue.length;
+            const starts = new Array(b).fill(0);
+            function rec(i, minStart) {
+                if (i === b) {
+                    const covered = new Array(len).fill(false);
+                    for (let k = 0; k < b; k++)
+                        for (let c = starts[k]; c < starts[k] + clue[k]; c++) covered[c] = true;
+                    for (let k = 0; k < b; k++) {
+                        const s = starts[k], e = s + clue[k];
+                        for (let c = s; c < e; c++) if (known[c] === -1) return;
+                        if (k < b - 1 && known[e] === 1) return;
+                    }
+                    for (let c = 0; c < len; c++) if (!covered[c] && known[c] === 1) return;
+                    results.push(starts.slice());
+                    return;
+                }
+                let minNext = 0;
+                for (let k = i + 1; k < b; k++) minNext += clue[k];
+                if (i + 1 < b) minNext += (b - 1 - i);
+                const maxStart = len - clue[i] - minNext;
+                for (let s = minStart; s <= maxStart; s++) {
+                    starts[i] = s;
+                    rec(i + 1, s + clue[i] + 1);
+                }
+            }
+            rec(0, 0);
+            return results;
+        }
+
+        function solveLine(len, clue, known) {
+            const positions = linePlacements(len, clue, known);
+            if (positions.length === 0) return null;
+            const total = positions.length;
+            const nFilled = new Array(len).fill(0), nEmpty = new Array(len).fill(0);
+            for (const p of positions) {
+                const covered = new Array(len).fill(false);
+                for (let k = 0; k < p.length; k++)
+                    for (let c = p[k]; c < p[k] + clue[k]; c++) covered[c] = true;
+                for (let c = 0; c < len; c++) covered[c] ? nFilled[c]++ : nEmpty[c]++;
+            }
+            const known2 = known.slice();
+            let changed = false;
+            for (let c = 0; c < len; c++) {
+                if (known[c] !== 0) continue;
+                if (nFilled[c] === total) { known2[c] = 1; changed = true; }
+                else if (nEmpty[c] === total) { known2[c] = -1; changed = true; }
+            }
+            return { known: known2, changed };
+        }
+
+        function solveGrid(rows, cols, rClues, cClues) {
+            const known = Array.from({ length: rows }, () => new Array(cols).fill(0));
+            let depth = 0;
+            while (true) {
+                let changed = false;
+                for (let r = 0; r < rows; r++) {
+                    const res = solveLine(cols, rClues[r], known[r]);
+                    if (!res) return null;
+                    for (let c = 0; c < cols; c++)
+                        if (res.known[c] !== known[r][c]) { known[r][c] = res.known[c]; changed = true; }
+                }
+                for (let c = 0; c < cols; c++) {
+                    const line = known.map(row => row[c]);
+                    const res = solveLine(rows, cClues[c], line);
+                    if (!res) return null;
+                    for (let r = 0; r < rows; r++)
+                        if (res.known[r] !== known[r][c]) { known[r][c] = res.known[r]; changed = true; }
+                }
+                if (!changed) break;
+                depth++;
+                if (depth > 5000) return null;
+            }
+            const solved = known.every(row => row.every(v => v !== 0));
+            return solved ? { grid: known, depth } : null;
+        }
+
+        function randomMatrix(rows, cols, d) {
+            const m = Array.from({ length: rows }, () => Array.from({ length: cols }, () => Math.random() < d));
+            for (let r = 0; r < rows; r++) {
+                const full = m[r].every(v => v), empty = m[r].every(v => !v);
+                if (full || empty) return null;
+            }
+            for (let c = 0; c < cols; c++) {
+                let full = true, empty = true;
+                for (let r = 0; r < rows; r++) { if (!m[r][c]) full = false; if (m[r][c]) empty = false; }
+                if (full || empty) return null;
+            }
+            return m;
+        }
+
+        const FALLBACKS = {
+            '5,5': ['.#.#.', '#####', '#####', '.###.', '..#..'],
+            '7,7': ['...#...', '..###..', '.#####.', '#######', '.#####.', '..###..', '...#...'],
+            '9,9': ['.........', '..#####..', '.#.....#.', '.##..##..', '.#.....#.', '..#..#...', '..#####..', '.........', '.........']
+        };
+
+        function fallbackPattern(rows, cols) {
+            const src = FALLBACKS[rows + ',' + cols];
+            const m = Array.from({ length: rows }, () => new Array(cols).fill(false));
+            if (src) {
+                for (let r = 0; r < Math.min(rows, src.length); r++)
+                    for (let c = 0; c < Math.min(cols, src[r].length); c++)
+                        m[r][c] = src[r][c] === '#';
+            }
+            return m;
+        }
+
+        function generatePuzzle(rows, cols, density) {
+            const cacheKey = 'nono_puz_' + rows + 'x' + cols + '_' + Math.round(density * 100);
+            try {
+                const cached = localStorage.getItem(cacheKey);
+                if (cached) {
+                    const obj = JSON.parse(cached);
+                    if (obj && obj.rows === rows && obj.cols === cols) return obj;
+                }
+            } catch (e) { /* ignore */ }
+
+            const t0 = performance.now();
+            let d = density;
+            for (let t = 0; t < 300; t++) {
+                if (performance.now() - t0 > 3500) break;
+                const m = randomMatrix(rows, cols, d);
+                if (!m) { d = Math.min(0.6, d + 0.02); continue; }
+                const rClues = m.map(lineClues), cClues = [];
+                for (let c = 0; c < cols; c++) cClues.push(lineClues(m.map(row => row[c])));
+                const res = solveGrid(rows, cols, rClues, cClues);
+                if (res) {
+                    const puz = { rows, cols, density: d, pattern: m, rowClues: rClues, colClues: cClues, depth: res.depth };
+                    try { localStorage.setItem(cacheKey, JSON.stringify(puz)); } catch (e) { /* ignore */ }
+                    return puz;
+                }
+                if (t > 40 && d < 0.55) d += 0.02; // denser grids are more solvable
+            }
+            const m = fallbackPattern(rows, cols);
+            return { rows, cols, pattern: m, rowClues: m.map(lineClues),
+                     colClues: m[0].map((_, c) => lineClues(m.map(row => row[c]))), depth: 1 };
+        }
+
+        // ---------- Level UI ----------
+        function buildLevelOptions() {
+            LEVELS.forEach((l, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = (i + 1) + '. ' + l.name;
+                levelSelect.appendChild(opt);
+            });
+        }
+
+        function difficultyOf(depth) {
+            if (depth <= 3) return TAGS[0];
+            if (depth <= 7) return TAGS[1];
+            if (depth <= 14) return TAGS[2];
+            if (depth <= 25) return TAGS[3];
+            if (depth <= 40) return TAGS[4];
+            return TAGS[5];
+        }
+
+        // ---------- Board rendering ----------
+        function renderBoard() {
+            const rows = cfg.r, cols = cfg.c;
+            boardEl.innerHTML = '';
+            boardEl.style.gridTemplateColumns = '';
+            boardEl.style.gridTemplateRows = '';
+
+            const availW = window.innerWidth - 40;
+            const availH = Math.max(200, window.innerHeight - 250);
+            const cell = Math.max(18, Math.min(44, Math.floor(Math.min(availW / (cols + 1.5), availH / (rows + 1.5)))));
+            const maxRowClueLen = Math.max(...rowClues.map(c => c.length));
+            const maxColClueLen = Math.max(...colClues.map(c => c.length));
+            const rowClueW = Math.min(72, Math.max(34, maxRowClueLen * 9 + 8));
+            const colClueH = Math.min(72, Math.max(34, maxColClueLen * 9 + 8));
+            const clueFont = Math.min(11, Math.max(8, Math.floor(cell * 0.32)));
+            const clueFontTop = Math.min(11, Math.max(7, Math.floor(colClueH / Math.max(1, maxColClueLen))));
+
+            boardEl.style.gridTemplateColumns = rowClueW + 'px ' + ('repeat(' + cols + ',' + cell + 'px)');
+            boardEl.style.gridTemplateRows = colClueH + 'px ' + ('repeat(' + rows + ',' + cell + 'px)');
+
+            const corner = document.createElement('div');
+            corner.className = 'corner';
+            corner.style.gridColumn = '1';
+            corner.style.gridRow = '1';
+            boardEl.appendChild(corner);
+
+            for (let c = 0; c < cols; c++) {
+                const d = document.createElement('div');
+                d.className = 'col-clue';
+                d.style.gridColumn = (c + 2);
+                d.style.gridRow = '1';
+                d.style.fontSize = clueFontTop + 'px';
+                for (const n of colClues[c]) {
+                    const s = document.createElement('span');
+                    s.className = 'clue-num';
+                    s.textContent = n;
+                    d.appendChild(s);
+                }
+                boardEl.appendChild(d);
+            }
+            for (let r = 0; r < rows; r++) {
+                const d = document.createElement('div');
+                d.className = 'row-clue';
+                d.style.gridColumn = '1';
+                d.style.gridRow = (r + 2);
+                d.style.fontSize = clueFont + 'px';
+                for (const n of rowClues[r]) {
+                    const s = document.createElement('span');
+                    s.className = 'clue-num';
+                    s.textContent = n;
+                    d.appendChild(s);
+                }
+                boardEl.appendChild(d);
+            }
+
+            cellEls = [];
+            for (let r = 0; r < rows; r++) {
+                cellEls[r] = [];
+                for (let c = 0; c < cols; c++) {
+                    const d = document.createElement('div');
+                    d.className = 'cell';
+                    d.style.gridColumn = (c + 2);
+                    d.style.gridRow = (r + 2);
+                    d.dataset.r = r;
+                    d.dataset.c = c;
+                    d.addEventListener('click', () => onCell(r, c));
+                    boardEl.appendChild(d);
+                    cellEls[r][c] = d;
+                }
+            }
+            updateCells();
+        }
+
+        function updateCells() {
+            for (let r = 0; r < cfg.r; r++) {
+                for (let c = 0; c < cfg.c; c++) {
+                    const el = cellEls[r][c];
+                    const s = state[r][c];
+                    el.className = 'cell';
+                    if (s === 1) el.classList.add('filled');
+                    else if (s === -1) el.classList.add('marked');
+                    else if (s === 2) el.classList.add('wrong');
+                    else if (s === 3) el.classList.add('hint');
+                    el.textContent = (s === -1) ? '✕' : '';
+                }
+            }
+        }
+
+        // ---------- Game logic ----------
+        function setMode(m) {
+            mode = m;
+            for (const k in modeBtns) modeBtns[k].classList.toggle('active', k === m);
+        }
+
+        function onCell(r, c) {
+            if (gameOver || !cfg) return;
+            if (audioContext.state === 'suspended') audioContext.resume();
+            const isPatternFilled = pattern[r][c];
+            if (mode === 'fill') {
+                if (state[r][c] === 1 || state[r][c] === 3) {
+                    state[r][c] = 0;
+                } else if (isPatternFilled) {
+                    state[r][c] = 1;
+                    successSound();
+                } else {
+                    state[r][c] = 2;
+                    mistakes++;
+                    mistakesEl.textContent = mistakes;
+                    errorSound();
+                }
+            } else if (mode === 'x') {
+                state[r][c] = (state[r][c] === -1) ? 0 : -1;
+            } else {
+                state[r][c] = 0;
+            }
+            updateCells();
+            checkWin();
+        }
+
+        function checkWin() {
+            if (gameOver) return;
+            for (let r = 0; r < cfg.r; r++)
+                for (let c = 0; c < cfg.c; c++) {
+                    const s = state[r][c];
+                    if (pattern[r][c]) { if (s !== 1 && s !== 3) return; }
+                    else { if (s === 1) return; }
+                }
+            gameOver = true;
+            clearInterval(timerId);
+            elapsed = Math.round((performance.now() - startTime) / 1000);
+            solvedEl.textContent = load('nono_solved', 0) + 1;
+            save('nono_solved', load('nono_solved', 0));
+            const idx = levelSelect.value;
+            const prev = localStorage.getItem('nono_best_' + idx);
+            if (prev === null || elapsed < Number(prev)) {
+                save('nono_best_' + idx, elapsed);
+                bestEl.textContent = fmtTime(elapsed);
+            }
+            winSound();
+            messageEl.textContent = 'Puzzle solved in ' + fmtTime(elapsed) + ' with ' + mistakes + ' mistake' + (mistakes === 1 ? '' : 's') + '! 🎉';
+        }
+
+        function fmtTime(s) {
+            s = Math.max(0, Math.floor(s));
+            const m = Math.floor(s / 60), r = s % 60;
+            return m + ':' + String(r).padStart(2, '0');
+        }
+
+        function updateTimer() {
+            if (cfg.time > 0 && !gameOver) {
+                const left = cfg.time - Math.floor((performance.now() - startTime) / 1000);
+                if (left <= 0) {
+                    gameOver = true;
+                    clearInterval(timerId);
+                    errorSound();
+                    messageEl.textContent = 'Time up! Press New Game to retry.';
+                    return;
+                }
+                timeEl.textContent = fmtTime(left);
+            } else {
+                elapsed = Math.floor((performance.now() - startTime) / 1000);
+                timeEl.textContent = fmtTime(elapsed);
+            }
+        }
+
+        function newGame() {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            const idx = Number(levelSelect.value);
+            cfg = LEVELS[idx];
+            messageEl.textContent = 'Generating puzzle…';
+            boardEl.innerHTML = '';
+            setTimeout(() => {
+                const puz = generatePuzzle(cfg.r, cfg.c, cfg.d);
+                pattern = puz.pattern;
+                rowClues = puz.rowClues;
+                colClues = puz.colClues;
+                state = pattern.map(row => row.map(() => 0));
+                mistakes = 0;
+                gameOver = false;
+                hintUsed = 0;
+                mistakesEl.textContent = 0;
+                bestEl.textContent = localStorage.getItem('nono_best_' + idx) !== null ? fmtTime(Number(localStorage.getItem('nono_best_' + idx))) : '–';
+                startTime = performance.now();
+                clearInterval(timerId);
+                timerId = setInterval(updateTimer, 1000);
+                renderBoard();
+                updateTimer();
+                const d = difficultyOf(puz.depth || 1);
+                messageEl.textContent = cfg.name + ' · logic depth ' + puz.depth + ' (' + d + ') — fill the grid!';
+                messageEl.style.color = 'var(--accent2)';
+            }, 30);
+        }
+
+        hintBtn.addEventListener('click', () => {
+            if (gameOver || !cfg) return;
+            if (hintUsed >= 3) {
+                messageEl.textContent = 'Max 3 hints per puzzle!';
+                messageEl.style.color = 'var(--danger)';
+                errorSound();
+                return;
+            }
+            const candidates = [];
+            for (let r = 0; r < cfg.r; r++)
+                for (let c = 0; c < cfg.c; c++)
+                    if (pattern[r][c] && state[r][c] !== 1 && state[r][c] !== 3) candidates.push([r, c]);
+            if (!candidates.length) return;
+            const [r, c] = candidates[randInt(0, candidates.length - 1)];
+            state[r][c] = 3;
+            hintUsed++;
+            successSound();
+            updateCells();
+            checkWin();
+        });
+
+        newBtn.addEventListener('click', newGame);
+        modeBtns.fill.addEventListener('click', () => setMode('fill'));
+        modeBtns.x.addEventListener('click', () => setMode('x'));
+        modeBtns.erase.addEventListener('click', () => setMode('erase'));
+        levelSelect.addEventListener('change', () => {
+            const idx = levelSelect.value;
+            bestEl.textContent = localStorage.getItem('nono_best_' + idx) !== null ? fmtTime(Number(localStorage.getItem('nono_best_' + idx))) : '–';
+        });
+
+        buildLevelOptions();
+        newGame();
+    });
+    </script>
+</body>
+</html>

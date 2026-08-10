@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mastermind — Code Breaker</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --panel: #1e1e1e;
+            --accent: #bb86fc;
+            --accent2: #03dac6;
+            --danger: #cf6679;
+            --text: #ffffff;
+            --border: #3700b3;
+            --slot: clamp(30px, 9vw, 46px);
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 {
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(187,134,252,0.4);
+            margin: 10px 0 4px 0;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 2px 0 6px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .panel {
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 6px 12px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        select, button {
+            background: #2d2d2d;
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 7px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        button { background: var(--border); }
+        button:hover:not(:disabled) { transform: scale(1.05); background: #6200ee; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .stats {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 2px 0 6px;
+            flex-shrink: 0;
+        }
+        .stat {
+            background: var(--panel);
+            border: 2px dashed var(--border);
+            padding: 4px 10px;
+            border-radius: 10px;
+            min-width: 86px;
+            font-size: 13px;
+        }
+        .game-area {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            width: min(94vw, 900px);
+            margin: 0 auto;
+            padding-bottom: 6px;
+        }
+        .palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            padding: 8px;
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+        .palette button {
+            width: var(--slot);
+            height: var(--slot);
+            border-radius: 50%;
+            border: 2px solid #555;
+            padding: 0;
+            font-size: clamp(11px, 3vw, 15px);
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+        .palette button.light { color: #111; text-shadow: none; }
+        .current-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 8px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+        .slot {
+            width: var(--slot);
+            height: var(--slot);
+            border-radius: 50%;
+            border: 2px dashed #555;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(11px, 3vw, 15px);
+            font-weight: bold;
+            user-select: none;
+        }
+        .slot.filled { border-style: solid; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        .slot.light { color: #111; }
+        .row-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+        .board {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 2px 4px 8px;
+        }
+        .guess-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--panel);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 5px 8px;
+            justify-content: center;
+        }
+        .guess-row.win-row { border: 2px solid var(--accent2); box-shadow: 0 0 10px rgba(3,218,198,0.3); }
+        .guess-row.lose-row { border: 2px solid var(--danger); }
+        .guess-num { font-size: 12px; color: #999; width: 26px; flex-shrink: 0; }
+        .guess-slots { display: flex; gap: 5px; }
+        .guess-slots .slot {
+            width: clamp(26px, 7vw, 36px);
+            height: clamp(26px, 7vw, 36px);
+            font-size: clamp(10px, 2.6vw, 13px);
+            border-style: solid;
+            border-color: #555;
+        }
+        .feedback {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+        .feedback i {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #2a2a2a;
+            border: 1px solid #444;
+        }
+        .feedback i.exact { background: #fff; border-color: #aaa; box-shadow: 0 0 4px rgba(255,255,255,0.6); }
+        .feedback i.match { background: #ff4d4d; border-color: #ff6666; box-shadow: 0 0 4px rgba(255,77,77,0.6); }
+        .message {
+            min-height: 20px;
+            color: var(--accent2);
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .note { color: #888; font-size: 12px; flex-shrink: 0; }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.15rem; margin: 6px 0 2px; }
+            .stats { gap: 5px; margin: 2px 0 4px; }
+            .stat { min-width: 0; padding: 3px 7px; font-size: 11px; }
+            .panel { padding: 4px 8px; }
+            select, button { font-size: 12px; padding: 5px 9px; }
+            .game-area { width: 98vw; }
+            .palette { gap: 6px; padding: 6px; }
+            .row-actions { margin-bottom: 5px; }
+            .message { font-size: 12px; }
+        }
+        @media (max-height: 640px) {
+            h1 { font-size: 1rem; margin: 4px 0 2px; }
+            .palette { padding: 4px; margin-bottom: 4px; }
+            .current-row { padding: 4px; margin-bottom: 4px; }
+            .slot { width: clamp(26px, 8vw, 38px); height: clamp(26px, 8vw, 38px); }
+            .stats .stat { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Mastermind — Code Breaker</h1>
+    <div class="controls">
+        <div class="panel">
+            <label for="level-select">Level:</label>
+            <select id="level-select"></select>
+            <button id="new-btn">New Game</button>
+        </div>
+    </div>
+    <div class="stats">
+        <div class="stat">Wins: <span id="wins">0</span></div>
+        <div class="stat">Losses: <span id="losses">0</span></div>
+        <div class="stat">Best: <span id="best">–</span></div>
+        <div class="stat">Attempts: <span id="attempts">0</span>/<span id="max-attempts">–</span></div>
+        <div class="stat">⏱ <span id="timer">–</span></div>
+    </div>
+    <div class="game-area">
+        <div id="palette" class="palette"></div>
+        <div id="current-row" class="current-row"></div>
+        <div class="row-actions">
+            <button id="guess-btn">Guess</button>
+            <button id="clear-btn">Clear</button>
+        </div>
+        <div id="board" class="board"></div>
+        <div id="message" class="message">Press New Game to start.</div>
+        <div id="legend" class="note">● white = right color &amp; right position · red = right color, wrong position</div>
+    </div>
+    <script>
+    'use strict';
+    document.addEventListener('DOMContentLoaded', () => {
+        const COLORS = [
+            '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6',
+            '#fd79a8', '#00cec9', '#f8c291', '#a04000', '#dfe6e9', '#2d3436'
+        ];
+        const TAGS = ['Rookie', 'Novice', 'Learner', 'Apprentice', 'Skilled', 'Advanced',
+                      'Expert', 'Pro', 'Master', 'Grandmaster', 'Legend', 'Nightmare'];
+        const LEVELS = [
+            { pegs: 4, colors: 4, dup: false, max: 12, mode: 'classic', time: 0 },
+            { pegs: 4, colors: 5, dup: false, max: 12, mode: 'classic', time: 0 },
+            { pegs: 4, colors: 6, dup: false, max: 10, mode: 'classic', time: 0 },
+            { pegs: 4, colors: 6, dup: true,  max: 10, mode: 'classic', time: 0 },
+            { pegs: 4, colors: 8, dup: true,  max: 9,  mode: 'classic', time: 0 },
+            { pegs: 5, colors: 8, dup: true,  max: 9,  mode: 'classic', time: 0 },
+            { pegs: 5, colors: 9, dup: true,  max: 8,  mode: 'classic', time: 90 },
+            { pegs: 6, colors: 8, dup: true,  max: 8,  mode: 'classic', time: 0 },
+            { pegs: 6, colors: 10, dup: true, max: 8,  mode: 'classic', time: 120 },
+            { pegs: 5, colors: 10, dup: true, max: 8,  mode: 'black',  time: 0 },
+            { pegs: 6, colors: 10, dup: true, max: 7,  mode: 'black',  time: 150 },
+            { pegs: 6, colors: 12, dup: true, max: 9,  mode: 'black',  time: 120 },
+        ];
+
+        const levelSelect = document.getElementById('level-select');
+        const newBtn = document.getElementById('new-btn');
+        const guessBtn = document.getElementById('guess-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const paletteEl = document.getElementById('palette');
+        const currentRowEl = document.getElementById('current-row');
+        const boardEl = document.getElementById('board');
+        const messageEl = document.getElementById('message');
+        const legendEl = document.getElementById('legend');
+        const winsEl = document.getElementById('wins');
+        const lossesEl = document.getElementById('losses');
+        const bestEl = document.getElementById('best');
+        const attemptsEl = document.getElementById('attempts');
+        const maxAttemptsEl = document.getElementById('max-attempts');
+        const timerEl = document.getElementById('timer');
+
+        // Audio
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(freq = 700, dur = 0.1, vol = 0.25) {
+            const o = audioContext.createOscillator();
+            const g = audioContext.createGain();
+            o.connect(g); g.connect(audioContext.destination);
+            o.type = 'sine'; o.frequency.value = freq;
+            g.gain.setValueAtTime(vol, audioContext.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
+            o.start(); o.stop(audioContext.currentTime + dur);
+        }
+        function successSound() { beep(600, 0.08, 0.25); setTimeout(() => beep(900, 0.08, 0.2), 90); }
+        function errorSound() { beep(180, 0.15, 0.18); }
+        function winSound() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.12, 0.25), i * 120)); }
+        function loseSound() { [400, 300, 200].forEach((f, i) => setTimeout(() => beep(f, 0.18, 0.2), i * 180)); }
+
+        // State
+        let cfg = null, secret = [], current = [], guesses = [], gameOver = false, attempts = 0;
+        let timerId = null, timeLeft = 0, timeStarted = false;
+
+        function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+        function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+        function isLight(hex) {
+            const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return (0.299 * r + 0.587 * g + 0.114 * b) > 150;
+        }
+        function factorial(n) { let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; }
+        function possibilities(c) { return c.dup ? Math.pow(c.colors, c.pegs) : factorial(c.colors) / factorial(c.colors - c.pegs); }
+
+        // Persistence
+        function load(k, d) { const v = localStorage.getItem(k); return v === null ? d : Number(v); }
+        function save(k, v) { localStorage.setItem(k, String(v)); }
+
+        function buildLevelOptions() {
+            LEVELS.forEach((c, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                const codes = possibilities(c);
+                const parts = [TAGS[i], `${c.pegs}×${c.colors}`, c.dup ? 'dup' : 'no-dup',
+                               `${codes.toLocaleString()} codes`, `${c.max} guesses`];
+                if (c.time) parts.push(`${c.time}s`);
+                if (c.mode === 'black') parts.push('BLACK');
+                opt.textContent = `${i + 1}. ${parts.join(' · ')}`;
+                levelSelect.appendChild(opt);
+            });
+        }
+
+        function generateSecret(c) {
+            if (c.dup) return Array.from({ length: c.pegs }, () => randInt(0, c.colors - 1));
+            return shuffle([...Array(c.colors).keys()]).slice(0, c.pegs);
+        }
+
+        function evaluate(secretGuess, guess) {
+            let exact = 0;
+            const sUsed = [], gUsed = [];
+            for (let i = 0; i < secretGuess.length; i++) {
+                if (guess[i] === secretGuess[i]) exact++;
+                else { sUsed.push(secretGuess[i]); gUsed.push(guess[i]); }
+            }
+            let match = 0;
+            for (const c of gUsed) {
+                const idx = sUsed.indexOf(c);
+                if (idx !== -1) { match++; sUsed.splice(idx, 1); }
+            }
+            return { exact, match };
+        }
+
+        function buildSlot(slotClass, colorIdx) {
+            const d = document.createElement('div');
+            d.className = slotClass + (colorIdx !== null && colorIdx !== undefined ? ' filled' : '');
+            if (colorIdx !== null && colorIdx !== undefined) {
+                d.style.background = COLORS[colorIdx];
+                d.style.color = isLight(COLORS[colorIdx]) ? '#111' : '#fff';
+                if (isLight(COLORS[colorIdx])) d.classList.add('light');
+                d.textContent = colorIdx + 1;
+            }
+            return d;
+        }
+
+        function renderPalette() {
+            paletteEl.innerHTML = '';
+            for (let i = 0; i < cfg.colors; i++) {
+                const b = document.createElement('button');
+                b.style.background = COLORS[i];
+                if (isLight(COLORS[i])) b.classList.add('light');
+                b.textContent = i + 1;
+                b.addEventListener('click', () => {
+                    if (gameOver) return;
+                    if (audioContext.state === 'suspended') audioContext.resume();
+                    if (current.length < cfg.pegs) {
+                        current.push(i);
+                        successSound();
+                        renderCurrentRow();
+                    }
+                });
+                paletteEl.appendChild(b);
+            }
+        }
+
+        function renderCurrentRow() {
+            currentRowEl.innerHTML = '';
+            for (let i = 0; i < cfg.pegs; i++) {
+                const idx = i < current.length ? current[i] : null;
+                const s = buildSlot('slot', idx);
+                if (idx !== null && idx !== undefined) {
+                    s.addEventListener('click', () => {
+                        if (gameOver) return;
+                        current.splice(i, 1);
+                        renderCurrentRow();
+                    });
+                }
+                currentRowEl.appendChild(s);
+            }
+        }
+
+        function renderFeedback(fb) {
+            const g = document.createElement('div');
+            g.className = 'feedback';
+            let shown = 0;
+            for (let i = 0; i < fb.exact; i++) {
+                const d = document.createElement('i'); d.className = 'exact'; g.appendChild(d);
+            }
+            shown = fb.exact;
+            if (cfg.mode === 'classic') {
+                for (let i = 0; i < fb.match; i++) {
+                    const d = document.createElement('i'); d.className = 'match'; g.appendChild(d);
+                }
+                shown += fb.match;
+            }
+            for (let i = shown; i < cfg.pegs; i++) {
+                const d = document.createElement('i'); g.appendChild(d);
+            }
+            return g;
+        }
+
+        function renderBoard() {
+            boardEl.innerHTML = '';
+            for (let i = guesses.length - 1; i >= 0; i--) {
+                const row = guesses[i];
+                const r = document.createElement('div');
+                r.className = 'guess-row' + (row.win ? ' win-row' : '');
+                const num = document.createElement('div');
+                num.className = 'guess-num';
+                num.textContent = (i + 1) + '.';
+                r.appendChild(num);
+                const slots = document.createElement('div');
+                slots.className = 'guess-slots';
+                row.guess.forEach(idx => slots.appendChild(buildSlot('slot', idx)));
+                r.appendChild(slots);
+                r.appendChild(renderFeedback(row.fb));
+                boardEl.appendChild(r);
+            }
+        }
+
+        function updateStats() {
+            winsEl.textContent = load('mm_wins', 0);
+            lossesEl.textContent = load('mm_losses', 0);
+            const best = localStorage.getItem('mm_best_' + levelSelect.value);
+            bestEl.textContent = best === null ? '–' : best;
+            attemptsEl.textContent = attempts;
+            maxAttemptsEl.textContent = cfg ? cfg.max : '–';
+            updateTimer();
+        }
+
+        function updateTimer() {
+            if (!cfg || cfg.time === 0 || timeLeft <= 0) {
+                timerEl.textContent = cfg && cfg.time > 0 ? fmtTime(cfg.time) : '∞';
+                return;
+            }
+            timerEl.textContent = fmtTime(timeLeft);
+        }
+
+        function fmtTime(s) {
+            s = Math.max(0, Math.ceil(s));
+            const m = Math.floor(s / 60), r = s % 60;
+            return m + ':' + String(r).padStart(2, '0');
+        }
+
+        function startTimer(sec) {
+            clearInterval(timerId);
+            timeLeft = sec;
+            timeStarted = false;
+            updateTimer();
+            if (sec > 0) {
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    updateTimer();
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        endGame('time');
+                    }
+                }, 1000);
+            }
+        }
+
+        function endGame(reason) {
+            if (gameOver) return;
+            gameOver = true;
+            clearInterval(timerId);
+            guessBtn.disabled = true;
+            clearBtn.disabled = true;
+            if (reason === 'time') {
+                lossesEl.textContent = load('mm_losses', 0) + 1;
+                save('mm_losses', load('mm_losses', 0));
+                loseSound();
+                revealSecret('Time up! The code was:');
+            }
+        }
+
+        function revealSecret(label) {
+            const r = document.createElement('div');
+            r.className = 'guess-row lose-row';
+            const num = document.createElement('div');
+            num.className = 'guess-num';
+            num.textContent = '✕';
+            r.appendChild(num);
+            const slots = document.createElement('div');
+            slots.className = 'guess-slots';
+            secret.forEach(idx => slots.appendChild(buildSlot('slot', idx)));
+            r.appendChild(slots);
+            boardEl.prepend(r);
+            messageEl.textContent = label;
+            messageEl.style.color = 'var(--danger)';
+        }
+
+        function newGame() {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            cfg = LEVELS[Number(levelSelect.value)];
+            secret = generateSecret(cfg);
+            current = [];
+            guesses = [];
+            attempts = 0;
+            gameOver = false;
+            guessBtn.disabled = false;
+            clearBtn.disabled = false;
+            messageEl.style.color = 'var(--accent2)';
+            messageEl.textContent = 'Level ' + (Number(levelSelect.value) + 1) + ': break the code!';
+            legendEl.textContent = cfg.mode === 'black'
+                ? 'HARD MODE: feedback shows ONLY exact matches (white dots). No color info!'
+                : '● white = right color & right position · red = right color, wrong position';
+            renderPalette();
+            renderCurrentRow();
+            renderBoard();
+            updateStats();
+            startTimer(cfg.time);
+        }
+
+        guessBtn.addEventListener('click', () => {
+            if (gameOver || !cfg) return;
+            if (current.length < cfg.pegs) {
+                messageEl.textContent = 'Fill all ' + cfg.pegs + ' slots first!';
+                messageEl.style.color = 'var(--danger)';
+                errorSound();
+                return;
+            }
+            const fb = evaluate(secret, current);
+            const isWin = fb.exact === cfg.pegs;
+            attempts++;
+            guesses.push({ guess: [...current], fb, win: isWin });
+            current = [];
+            if (isWin) {
+                gameOver = true;
+                clearInterval(timerId);
+                guessBtn.disabled = true;
+                clearBtn.disabled = true;
+                const t = cfg.time > 0 ? Math.max(0, cfg.time - timeLeft) : 0;
+                winsEl.textContent = load('mm_wins', 0) + 1;
+                save('mm_wins', load('mm_wins', 0));
+                const prevBest = localStorage.getItem('mm_best_' + levelSelect.value);
+                if (prevBest === null || attempts < Number(prevBest)) {
+                    save('mm_best_' + levelSelect.value, attempts);
+                    bestEl.textContent = attempts;
+                }
+                winSound();
+                messageEl.textContent = 'Solved in ' + attempts + ' attempt' + (attempts > 1 ? 's' : '') + (t > 0 ? ' · ' + fmtTime(t) : '') + '! 🎉';
+            } else if (attempts >= cfg.max) {
+                gameOver = true;
+                clearInterval(timerId);
+                guessBtn.disabled = true;
+                clearBtn.disabled = true;
+                lossesEl.textContent = load('mm_losses', 0) + 1;
+                save('mm_losses', load('mm_losses', 0));
+                loseSound();
+                revealSecret('Out of guesses. The code was:');
+            } else {
+                messageEl.textContent = 'Wrong! ' + (cfg.max - attempts) + ' guesses left.';
+                messageEl.style.color = 'var(--danger)';
+                errorSound();
+            }
+            renderBoard();
+            renderCurrentRow();
+            updateStats();
+        });
+
+        clearBtn.addEventListener('click', () => {
+            if (gameOver || !cfg) return;
+            current = [];
+            renderCurrentRow();
+        });
+
+        newBtn.addEventListener('click', newGame);
+        levelSelect.addEventListener('change', () => updateStats());
+
+        buildLevelOptions();
+        newGame();
+    });
+    </script>
+</body>
+</html>
