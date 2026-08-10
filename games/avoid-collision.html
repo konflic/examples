@@ -89,13 +89,70 @@
         .game-container {
             display: none;
             position: relative;
-            width: 1200px;
-            height: 800px;
+            width: 90vw;
+            height: 90vh;
             background: linear-gradient(135deg, #0f0f2e 0%, #05051f 100%);
             border: 3px solid #bb86fc;
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .score-popup {
+            position: absolute;
+            color: #ffff44;
+            font-weight: bold;
+            font-size: 18px;
+            pointer-events: none;
+            z-index: 12;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+            animation: scorePop 0.8s ease-out forwards;
+        }
+
+        @keyframes scorePop {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-40px); opacity: 0; }
+        }
+
+        .upgrade-banner {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ffcc;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 18;
+            pointer-events: none;
+            text-shadow: 0 0 15px rgba(0, 255, 204, 0.8);
+            animation: upgradePulse 1.5s ease-out forwards;
+        }
+
+        @keyframes upgradePulse {
+            0% { opacity: 0; transform: translateX(-50%) scale(0.5); }
+            20% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+            100% { opacity: 0; transform: translateX(-50%) scale(1); }
+        }
+
+        .combo-display {
+            position: absolute;
+            top: 60px;
+            left: 10px;
+            color: #ffaa33;
+            font-weight: bold;
+            font-size: 18px;
+            z-index: 10;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+            display: none;
         }
 
         .game-stats {
@@ -108,6 +165,30 @@
             border-radius: 8px;
             font-size: 16px;
             z-index: 10;
+        }
+
+        .level-display {
+            display: inline-block;
+            margin-left: 10px;
+            color: #00ffcc;
+            font-weight: bold;
+        }
+
+        .pause-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            z-index: 30;
+            text-shadow: 0 0 20px rgba(187, 134, 252, 0.8);
         }
 
         .player-ball {
@@ -130,13 +211,44 @@
             box-shadow: 0 0 15px rgba(255, 68, 68, 0.7);
         }
 
+        @keyframes enemyHitFlash {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(2.5); }
+            100% { filter: brightness(1); }
+        }
+
+        .obstacle.hit-flash {
+            animation: enemyHitFlash 0.15s ease-out;
+        }
+
+        .enemy-hp-fill {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.85);
+            pointer-events: none;
+            transition: width 0.1s linear, height 0.1s linear;
+        }
+
         .bullet {
             position: absolute;
             width: 12px;
-            height: 12px;
+            height: 24px;
             background: radial-gradient(circle at 30% 30%, #ffff00, #ff9900);
             border-radius: 50%;
             box-shadow: 0 0 15px rgba(255, 255, 0, 0.9);
+            z-index: 6;
+        }
+
+        .enemy-bullet {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle at 30% 30%, #ff5555, #990000);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 80, 80, 0.9);
             z-index: 6;
         }
 
@@ -180,6 +292,18 @@
 
         .game-container.shake {
             animation: screenShake 0.5s ease-in-out;
+        }
+
+        @keyframes screenShakeSmall {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(2px, -2px); }
+            60% { transform: translate(-2px, -2px); }
+            80% { transform: translate(2px, 2px); }
+        }
+
+        .game-container.shake-small {
+            animation: screenShakeSmall 0.2s ease-in-out;
         }
 
         .reload-bar {
@@ -259,8 +383,9 @@
         <h2>Space Shooter</h2>
         <p>
             Control the spaceship with UP and DOWN arrow keys<br>
-            Press SPACE to shoot and destroy red asteroids<br>
-            Destroy asteroids to score points!
+            Press SPACE to shoot and destroy enemies<br>
+            Every 500 score upgrades your ship (faster fire &amp; movement)<br>
+            Press P to pause. Survive as long as you can!
         </p>
 
         <div class="difficulty-options">
@@ -274,23 +399,30 @@
 
     <div class="game-container" id="gameContainer">
         <div class="game-stats">
-            <div>Score: <span id="score">0</span></div>
-            <div>Time: <span id="time">0.0</span>s</div>
+            <div>Score: <span id="score">0</span> <span class="level-display">Lv.<span id="level">1</span></span></div>
+            <div>Time: <span id="time">0.0</span>s | Best: <span id="highScore">0</span></div>
+            <div>Accuracy: <span id="accuracy">0</span>%</div>
         </div>
+        
+        <div class="combo-display" id="comboDisplay">Combo x<span id="comboCount">1</span></div>
         
         <div class="player-ball" id="playerBall"></div>
         
-        <div class="controls-info">↑↓ to move • SPACE to shoot</div>
+        <div class="controls-info">↑↓ move • SPACE shoot • P pause</div>
         
         <div class="reload-bar" id="reloadBar" style="display: none;">
             <div class="reload-progress" id="reloadProgress"></div>
             <div class="reload-text">RELOAD</div>
         </div>
         
+        <div class="pause-overlay" id="pauseOverlay">PAUSED</div>
+        
         <div class="game-over" id="gameOver" style="display: none;">
             <h2>Game Over!</h2>
             <p>Final Score: <span id="finalScore">0</span></p>
             <p>Time Survived: <span id="finalTime">0.0</span>s</p>
+            <p>Accuracy: <span id="finalAccuracy">0</span>%</p>
+            <p>Best Score: <span id="bestScore">0</span></p>
             <button id="playAgainBtn">Play Again</button>
             <button id="menuBtn">Main Menu</button>
         </div>
@@ -306,12 +438,21 @@
         let setupContainer;
         
         let gameActive = false;
+        let paused = false;
         let playerY = 50; // percentage
         let obstacles = [];
         let bullets = [];
+        let enemyBullets = [];
+        let scorePopups = [];
+        let stars = [];
         let score = 0;
         let gameTime = 0;
+        let shotsFired = 0;
+        let shotsHit = 0;
         let gameLoop;
+        let spawnInterval;
+        let timeInterval;
+        let currentSpawnRate = 2000;
         let obstacleSpawnRate = 2000; // milliseconds
         let obstacleSpeed = 2; // pixels per frame
         let difficulty = 'easy';
@@ -319,15 +460,51 @@
         let lastShootTime = 0;
         let reloadStartTime = 0;
         let reloadInterval;
+        let combo = 0;
+        let comboTimer = 0;
+        let highScore = 0;
+        let activeParticles = 0;
+        let activeExplosions = 0;
+        const COMBO_WINDOW = 1500; // ms to keep combo alive
+        const MAX_OBSTACLES = 60;
+        const MAX_ENEMY_BULLETS = 40;
+        const MAX_PLAYER_BULLETS = 20;
+        const MAX_PARTICLES = 150;
+        const MAX_EXPLOSIONS = 4;
+        const MAX_CHAIN_DEPTH = 2;
         
-        // Game area dimensions
-        const GAME_WIDTH = 1200;
-        const GAME_HEIGHT = 800;
+        // Input state for smooth continuous movement
+        let keys = {
+            ArrowUp: false,
+            ArrowDown: false
+        };
+        
+        // Game area dimensions (set dynamically to 90% of viewport)
+        let GAME_WIDTH = window.innerWidth * 0.9;
+        let GAME_HEIGHT = window.innerHeight * 0.9;
+        
         const PLAYER_SIZE = 40;
-        const OBSTACLE_MIN_SIZE = 30;
-        const OBSTACLE_MAX_SIZE = 80;
         const BULLET_SPEED = 12;
-        const RELOAD_TIME = 1000; // 1 second reload time
+        const RELOAD_TIME_BASE = 1000; // 1 second reload time
+        let currentReloadTime = RELOAD_TIME_BASE;
+        let currentMoveSpeed = 0.6; // percentage per frame
+        let shipUpgradeLevel = 0;
+        
+        // Enemy class definitions: size, speed, hit points, score and special traits
+        const ENEMY_CLASSES = [
+            { name: 'swarmer', sizeMin: 15, sizeMax: 25, speedMultiplier: 1.0, hp: 1, score: 20, gradient: ['#ff7777', '#cc0000'], shadow: 'rgba(255, 100, 100, 0.8)' },
+            { name: 'scout', sizeMin: 20, sizeMax: 35, speedMultiplier: 1.3, hp: 1, score: 30, gradient: ['#ff6666', '#cc0000'], shadow: 'rgba(255, 102, 102, 0.8)' },
+            { name: 'fighter', sizeMin: 35, sizeMax: 55, speedMultiplier: 1.0, hp: 1, score: 50, gradient: ['#ff8800', '#cc5500'], shadow: 'rgba(255, 136, 0, 0.8)' },
+            { name: 'speeder', sizeMin: 25, sizeMax: 40, speedMultiplier: 1.5, hp: 1, score: 80, gradient: ['#ffff55', '#bbbb00'], shadow: 'rgba(255, 255, 85, 0.9)' },
+            { name: 'shooter', sizeMin: 40, sizeMax: 60, speedMultiplier: 0.8, hp: 2, score: 110, canShoot: true, shootInterval: 1800, gradient: ['#ff3333', '#990000'], shadow: 'rgba(255, 50, 50, 1.0)' },
+            { name: 'splitter', sizeMin: 55, sizeMax: 75, speedMultiplier: 0.6, hp: 3, score: 130, splitInto: 'swarmer', splitCount: 3, gradient: ['#ff9933', '#aa5500'], shadow: 'rgba(255, 153, 51, 0.9)' },
+            { name: 'elite', sizeMin: 45, sizeMax: 65, speedMultiplier: 1.2, hp: 2, score: 100, gradient: ['#ff55ff', '#cc00cc'], shadow: 'rgba(255, 85, 255, 0.9)' },
+            { name: 'bomber', sizeMin: 60, sizeMax: 90, speedMultiplier: 0.7, hp: 3, score: 120, explosiveRadius: 150, gradient: ['#55ffff', '#00aaaa'], shadow: 'rgba(85, 255, 255, 0.8)' },
+            { name: 'destroyer', sizeMin: 80, sizeMax: 120, speedMultiplier: 0.6, hp: 4, score: 150, explosiveRadius: 100, gradient: ['#aa99ff', '#7744cc'], shadow: 'rgba(170, 153, 255, 0.9)' },
+            { name: 'tank', sizeMin: 70, sizeMax: 100, speedMultiplier: 0.5, hp: 5, score: 200, gradient: ['#55ff55', '#00aa00'], shadow: 'rgba(85, 255, 85, 0.8)' }
+        ];
+
+        const MOVEMENT_PATTERNS = ['straight', 'sine', 'bounce', 'zigzag', 'diagonal', 'spiral', 'homing', 'erratic'];
         
         // Initialize game
         document.addEventListener('DOMContentLoaded', function() {
@@ -342,6 +519,13 @@
             const playAgainBtn = document.getElementById('playAgainBtn');
             const menuBtn = document.getElementById('menuBtn');
             const difficultyOptions = document.querySelectorAll('.difficulty-option');
+            
+            // Load high score from local storage
+            const savedHigh = localStorage.getItem('avoidCollisionHighScore');
+            if (savedHigh) {
+                highScore = parseInt(savedHigh) || 0;
+                document.getElementById('highScore').textContent = highScore;
+            }
             
             startBtn.addEventListener('click', startGame);
             playAgainBtn.addEventListener('click', resetGame);
@@ -364,30 +548,43 @@
         function handleKeyPress(e) {
             if (!gameActive) return;
             
-            const moveSpeed = 3; // percentage per key press
-            
             switch(e.key) {
                 case 'ArrowUp':
-                    e.preventDefault();
-                    playerY = Math.max(5, playerY - moveSpeed);
-                    updatePlayerPosition();
-                    break;
                 case 'ArrowDown':
                     e.preventDefault();
-                    playerY = Math.min(95, playerY + moveSpeed);
-                    updatePlayerPosition();
+                    if (!paused) keys[e.key] = true;
                     break;
                 case ' ':
+                    if (!paused) {
+                        e.preventDefault();
+                        shootBullet();
+                    }
+                    break;
+                case 'p':
+                case 'P':
                     e.preventDefault();
-                    shootBullet();
+                    togglePause();
                     break;
             }
         }
 
         function handleKeyUp(e) {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                keys[e.key] = false;
+            }
             // Reset shooting cooldown when space is released
             if (e.key === ' ') {
                 canShoot = true;
+            }
+        }
+
+        function togglePause() {
+            if (!gameActive) return;
+            paused = !paused;
+            document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
+            if (paused) {
+                keys.ArrowUp = false;
+                keys.ArrowDown = false;
             }
         }
         
@@ -397,8 +594,10 @@
         }
 
         function shootBullet() {
+            if (bullets.length >= MAX_PLAYER_BULLETS) return;
+            
             const currentTime = Date.now();
-            if (!canShoot || currentTime - lastShootTime < RELOAD_TIME) return;
+            if (!canShoot || currentTime - lastShootTime < currentReloadTime) return;
             
             canShoot = false;
             lastShootTime = currentTime;
@@ -419,7 +618,7 @@
             // Position bullet at player location (center of player)
             const playerTop = (playerY / 100) * (GAME_HEIGHT - PLAYER_SIZE);
             const bulletX = 90; // Start from right edge of player
-            const bulletY = playerTop + (PLAYER_SIZE / 2) - 6; // Center of player (bullet size 12px / 2 = 6)
+            const bulletY = playerTop + (PLAYER_SIZE / 2) - 12; // Center of player (bullet height 24px / 2 = 12)
             
             bullet.style.left = bulletX + 'px';
             bullet.style.top = bulletY + 'px';
@@ -430,6 +629,13 @@
                 x: bulletX,
                 y: bulletY
             });
+            shotsFired++;
+            updateAccuracyDisplay();
+        }
+
+        function updateAccuracyDisplay() {
+            const accuracy = shotsFired > 0 ? Math.round((shotsHit / shotsFired) * 100) : 0;
+            document.getElementById('accuracy').textContent = accuracy;
         }
 
         function startReloadAnimation() {
@@ -438,7 +644,7 @@
             
             reloadInterval = setInterval(() => {
                 const elapsed = Date.now() - startTime;
-                const progress = Math.min((elapsed / RELOAD_TIME) * 100, 100);
+                const progress = Math.min((elapsed / currentReloadTime) * 100, 100);
                 reloadProgress.style.width = progress + '%';
                 
                 if (progress >= 100) {
@@ -467,17 +673,43 @@
                     obstacleSpawnRate = 1200;
                     break;
             }
+            currentSpawnRate = obstacleSpawnRate;
             
             // Reset game state
             gameActive = true;
+            paused = false;
             score = 0;
             gameTime = 0;
+            shotsFired = 0;
+            shotsHit = 0;
             obstacles = [];
+            scorePopups = [];
+            combo = 0;
+            comboTimer = 0;
             playerY = 50;
+            document.getElementById('pauseOverlay').style.display = 'none';
+            document.getElementById('comboDisplay').style.display = 'none';
             
-            // Clear existing obstacles
+            // Reset input state
+            keys.ArrowUp = false;
+            keys.ArrowDown = false;
+            
+            // Reset ship upgrades
+            shipUpgradeLevel = 0;
+            currentReloadTime = RELOAD_TIME_BASE;
+            currentMoveSpeed = 0.6;
+            document.getElementById('level').textContent = '1';
+            
+            // Clear existing obstacles, enemy bullets and score popups
             const existingObstacles = gameContainer.querySelectorAll('.obstacle');
             existingObstacles.forEach(obstacle => obstacle.remove());
+            const existingEnemyBullets = gameContainer.querySelectorAll('.enemy-bullet');
+            existingEnemyBullets.forEach(bullet => bullet.remove());
+            const existingPopups = gameContainer.querySelectorAll('.score-popup');
+            existingPopups.forEach(popup => popup.remove());
+            
+            // Create animated starfield background
+            createStarfield();
             
             // Update UI
             scoreElement.textContent = score;
@@ -486,22 +718,71 @@
             setupContainer.style.display = 'none';
             gameContainer.style.display = 'block';
             
+            // Update dimensions to match the 90% viewport container now that it's visible
+            GAME_WIDTH = gameContainer.clientWidth;
+            GAME_HEIGHT = gameContainer.clientHeight;
+            
             // Update player position
             updatePlayerPosition();
             
-            // Start game loops
+            // Start game loops (store all interval IDs so they can be cleared)
             gameLoop = setInterval(updateGame, 16); // ~60 FPS
-            setInterval(spawnObstacle, obstacleSpawnRate);
-            setInterval(updateTime, 100);
+            spawnInterval = setInterval(spawnObstacle, currentSpawnRate);
+            timeInterval = setInterval(updateTime, 100);
         }
         
         function updateGame() {
-            if (!gameActive) return;
+            if (!gameActive || paused) return;
             
-            // Move obstacles with complex patterns
-            obstacles.forEach((obstacle, index) => {
+            // Move background starfield for sense of motion
+            for (let i = 0; i < stars.length; i++) {
+                const star = stars[i];
+                let x = parseFloat(star.element.style.left) - star.speed;
+                if (x < -2) x = GAME_WIDTH;
+                star.element.style.left = x + 'px';
+            }
+            
+            // Progressive difficulty: speed up spawns over time for dynamic gameplay
+            const targetRate = Math.max(400, obstacleSpawnRate - gameTime * 20);
+            if (Math.abs(targetRate - currentSpawnRate) > 100) {
+                currentSpawnRate = targetRate;
+                clearInterval(spawnInterval);
+                spawnInterval = setInterval(spawnObstacle, currentSpawnRate);
+            }
+            
+            // Combo timer decay
+            if (combo > 0) {
+                comboTimer -= 16;
+                if (comboTimer <= 0) {
+                    combo = 0;
+                    document.getElementById('comboDisplay').style.display = 'none';
+                }
+            }
+            
+            // Move score popups
+            for (let i = scorePopups.length - 1; i >= 0; i--) {
+                const p = scorePopups[i];
+                if (!p.parentNode) {
+                    scorePopups.splice(i, 1);
+                    continue;
+                }
+            }
+            
+            // Smooth continuous ship movement while keys are held
+            if (keys.ArrowUp) {
+                playerY = Math.max(5, playerY - currentMoveSpeed);
+            }
+            if (keys.ArrowDown) {
+                playerY = Math.min(95, playerY + currentMoveSpeed);
+            }
+            updatePlayerPosition();
+            
+            // Move obstacles with complex patterns (backward iteration for safe removal)
+            for (let index = obstacles.length - 1; index >= 0; index--) {
+                const obstacle = obstacles[index];
                 const currentX = parseFloat(obstacle.element.style.left);
-                const newX = currentX - obstacleSpeed;
+                const speed = obstacleSpeed * obstacle.speedMultiplier;
+                const newX = currentX - speed;
                 
                 if (newX < -100) {
                     // Remove obstacle that went off screen (no points for just avoiding)
@@ -509,15 +790,36 @@
                     obstacles.splice(index, 1);
                 } else {
                     obstacle.element.style.left = newX + 'px';
+                    obstacle.x = newX;
                     
                     // Apply movement pattern
+                    const distance = GAME_WIDTH - newX;
                     let newY = obstacle.y;
                     switch(obstacle.movementPattern) {
                         case 'sine':
-                            newY = obstacle.baseY + Math.sin((GAME_WIDTH - newX) * obstacle.frequency + obstacle.phase) * obstacle.amplitude;
+                            newY = obstacle.baseY + Math.sin(distance * obstacle.frequency + obstacle.phase) * obstacle.amplitude;
                             break;
                         case 'bounce':
-                            newY = obstacle.baseY + Math.abs(Math.sin((GAME_WIDTH - newX) * obstacle.frequency + obstacle.phase)) * obstacle.amplitude * 2 - obstacle.amplitude;
+                            newY = obstacle.baseY + Math.abs(Math.sin(distance * obstacle.frequency + obstacle.phase)) * obstacle.amplitude * 2 - obstacle.amplitude;
+                            break;
+                        case 'zigzag':
+                            newY = obstacle.baseY + Math.sign(Math.sin(distance * obstacle.frequency + obstacle.phase)) * obstacle.amplitude;
+                            break;
+                        case 'diagonal':
+                            newY = obstacle.baseY + distance * obstacle.diagonalSlope;
+                            break;
+                        case 'spiral':
+                            const spiralFactor = Math.max(0.2, 1 - distance * 0.001);
+                            newY = obstacle.baseY + Math.sin(distance * obstacle.frequency + obstacle.phase) * obstacle.amplitude * spiralFactor;
+                            break;
+                        case 'homing':
+                            const playerTop = (playerY / 100) * (GAME_HEIGHT - PLAYER_SIZE);
+                            const targetY = playerTop + (PLAYER_SIZE / 2) - (obstacle.size / 2);
+                            const approachFactor = 0.04;
+                            newY = obstacle.y + (targetY - obstacle.y) * approachFactor;
+                            break;
+                        case 'erratic':
+                            newY = obstacle.baseY + Math.sin(Date.now() * 0.008 + obstacle.phase) * obstacle.amplitude * 0.6;
                             break;
                         // 'straight' pattern doesn't change Y
                     }
@@ -527,84 +829,224 @@
                     obstacle.element.style.top = newY + 'px';
                     obstacle.y = newY;
                 }
-            });
+            }
             
-            // Move bullets
-            bullets.forEach((bullet, index) => {
+            // Move bullets (backward iteration for safe removal)
+            for (let index = bullets.length - 1; index >= 0; index--) {
+                const bullet = bullets[index];
                 bullet.x += BULLET_SPEED;
+                
+                // Slight vertical homing toward the nearest enemy ahead
+                let nearestObstacle = null;
+                let nearestDist = Infinity;
+                for (let i = 0; i < obstacles.length; i++) {
+                    const obstacle = obstacles[i];
+                    const obsX = obstacle.x;
+                    const obsY = obstacle.y + obstacle.size / 2;
+                    if (obsX > bullet.x && obsX - bullet.x < 500) {
+                        const dx = obsX - bullet.x;
+                        const dy = obsY - (bullet.y + 12);
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearestObstacle = obstacle;
+                            if (dist < 50) break; // Close enough, stop searching
+                        }
+                    }
+                }
+                
+                if (nearestObstacle && nearestDist < 200) {
+                    const targetY = nearestObstacle.y + nearestObstacle.size / 2;
+                    const diff = targetY - (bullet.y + 12);
+                    bullet.y += Math.max(-3, Math.min(3, diff * 0.05));
+                }
+                
                 bullet.element.style.left = bullet.x + 'px';
+                bullet.element.style.top = bullet.y + 'px';
                 
                 // Remove bullets that went off screen
                 if (bullet.x > GAME_WIDTH) {
                     bullet.element.remove();
                     bullets.splice(index, 1);
                 }
-            });
+            }
             
+            // Enemy shooting
+            const now = Date.now();
+            for (let i = 0; i < obstacles.length; i++) {
+                const obstacle = obstacles[i];
+                if (obstacle.canShoot && now - obstacle.lastShotTime > obstacle.shootInterval) {
+                    shootEnemyBullet(obstacle);
+                    obstacle.lastShotTime = now;
+                }
+            }
+
+            // Move enemy bullets
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const eb = enemyBullets[i];
+                eb.x -= eb.speed;
+                eb.element.style.left = eb.x + 'px';
+                if (eb.x < -20) {
+                    eb.element.remove();
+                    enemyBullets.splice(i, 1);
+                }
+            }
+
             // Check bullet-obstacle collisions
             checkBulletCollisions();
-            
+
+            // Check enemy bullet-player collisions
+            checkEnemyBulletCollisions();
+
             // Check player-obstacle collisions
             checkCollisions();
         }
         
-        function spawnObstacle() {
-            if (!gameActive) return;
-            
+        function spawnEnemyAt(enemyClass, x, y, overrideMovementPattern) {
             const obstacle = document.createElement('div');
             obstacle.className = 'obstacle';
-            
-            // Random size
-            const size = OBSTACLE_MIN_SIZE + Math.random() * (OBSTACLE_MAX_SIZE - OBSTACLE_MIN_SIZE);
+
+            const size = enemyClass.sizeMin + Math.random() * (enemyClass.sizeMax - enemyClass.sizeMin);
             obstacle.style.width = size + 'px';
             obstacle.style.height = size + 'px';
-            
-            // Random Y position
-            const maxY = GAME_HEIGHT - size;
-            const randomY = Math.random() * maxY;
-            obstacle.style.top = randomY + 'px';
-            
-            // Start from right edge
-            obstacle.style.left = GAME_WIDTH + 'px';
-            
-            // Complex movement pattern
-            const movementPattern = Math.random() < 0.33 ? 'straight' : 
-                                  Math.random() < 0.5 ? 'sine' : 'bounce';
-            
-            const amplitude = 50 + Math.random() * 100; // Wave amplitude
-            const frequency = 0.02 + Math.random() * 0.03; // Wave frequency
-            const baseY = randomY; // Base Y position
-            
+            obstacle.style.left = x + 'px';
+            obstacle.style.top = y + 'px';
+            obstacle.style.background = `linear-gradient(135deg, ${enemyClass.gradient[0]}, ${enemyClass.gradient[1]})`;
+            obstacle.style.boxShadow = `0 0 15px ${enemyClass.shadow}`;
+
+            // Black HP circle for multi-hit enemies
+            let hpCircle = null;
+            if (enemyClass.hp > 1) {
+                hpCircle = document.createElement('div');
+                hpCircle.className = 'enemy-hp-fill';
+                hpCircle.style.width = size + 'px';
+                hpCircle.style.height = size + 'px';
+                obstacle.appendChild(hpCircle);
+            }
+
+            const movementPattern = overrideMovementPattern || MOVEMENT_PATTERNS[Math.floor(Math.random() * MOVEMENT_PATTERNS.length)];
+            const amplitude = 30 + Math.random() * 120;
+            const frequency = 0.015 + Math.random() * 0.035;
+
             gameContainer.appendChild(obstacle);
-            obstacles.push({
+            const obstacleObj = {
                 element: obstacle,
-                x: GAME_WIDTH,
-                y: randomY,
+                x: x,
+                y: y,
                 size: size,
-                baseY: baseY,
+                baseY: y,
                 movementPattern: movementPattern,
+                speedMultiplier: enemyClass.speedMultiplier,
+                color: enemyClass.gradient[0],
                 amplitude: amplitude,
                 frequency: frequency,
-                phase: Math.random() * Math.PI * 2 // Random starting phase
-            });
+                phase: Math.random() * Math.PI * 2,
+                diagonalSlope: (Math.random() - 0.5) * 0.3,
+                hp: enemyClass.hp,
+                maxHp: enemyClass.hp,
+                score: enemyClass.score,
+                hpCircle: hpCircle,
+                explosiveRadius: enemyClass.explosiveRadius || 0,
+                splitInto: enemyClass.splitInto || null,
+                splitCount: enemyClass.splitCount || 0,
+                canShoot: enemyClass.canShoot || false,
+                shootInterval: enemyClass.shootInterval || 0,
+                lastShotTime: Date.now() + Math.random() * (enemyClass.shootInterval || 0)
+            };
+            obstacles.push(obstacleObj);
+            return obstacleObj;
+        }
+
+        function spawnObstacle() {
+            if (!gameActive || paused) return;
+            if (obstacles.length >= MAX_OBSTACLES) return;
+            const enemyClass = ENEMY_CLASSES[Math.floor(Math.random() * ENEMY_CLASSES.length)];
+            const size = enemyClass.sizeMin + Math.random() * (enemyClass.sizeMax - enemyClass.sizeMin);
+            const maxY = GAME_HEIGHT - size;
+            const randomY = Math.random() * maxY;
+            spawnEnemyAt(enemyClass, GAME_WIDTH, randomY);
+        }
+
+        function spawnSplitEnemies(parent) {
+            const childClass = ENEMY_CLASSES.find(c => c.name === parent.splitInto);
+            if (!childClass) return;
+
+            for (let i = 0; i < parent.splitCount; i++) {
+                const childSize = childClass.sizeMin + Math.random() * (childClass.sizeMax - childClass.sizeMin);
+                let x = parent.x + (Math.random() - 0.5) * parent.size;
+                let y = parent.y + (Math.random() - 0.5) * parent.size;
+                x = Math.max(0, Math.min(GAME_WIDTH - childSize, x));
+                y = Math.max(0, Math.min(GAME_HEIGHT - childSize, y));
+                spawnEnemyAt(childClass, x, y, 'straight');
+            }
+        }
+
+        function createStarfield() {
+            const oldStars = gameContainer.querySelectorAll('.star');
+            oldStars.forEach(s => s.remove());
+            stars = [];
+            const starCount = Math.min(80, Math.floor((GAME_WIDTH * GAME_HEIGHT) / 25000));
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = 1 + Math.random() * 2;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = (Math.random() * GAME_WIDTH) + 'px';
+                star.style.top = (Math.random() * GAME_HEIGHT) + 'px';
+                star.style.opacity = 0.3 + Math.random() * 0.5;
+                gameContainer.appendChild(star);
+                stars.push({
+                    element: star,
+                    speed: 0.2 + Math.random() * 0.8,
+                    size: size
+                });
+            }
+        }
+        
+        function createScorePopup(x, y, value) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = '+' + value;
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            gameContainer.appendChild(popup);
+            scorePopups.push(popup);
+            setTimeout(() => {
+                if (popup.parentNode) {
+                    popup.remove();
+                    const idx = scorePopups.indexOf(popup);
+                    if (idx >= 0) scorePopups.splice(idx, 1);
+                }
+            }, 800);
         }
         
         function createExplosion(x, y) {
+            // Performance: limit simultaneous explosions and particles
+            if (activeExplosions >= MAX_EXPLOSIONS || activeParticles >= MAX_PARTICLES) return;
+            
             const explosion = document.createElement('div');
             explosion.className = 'explosion';
             explosion.style.left = x + 'px';
             explosion.style.top = y + 'px';
+            activeExplosions++;
             
-            const colors = ['#ff4444', '#ffaa00', '#ffff00', '#ff6600', '#ffffff'];
-            const particleCount = 12 + Math.floor(Math.random() * 8);
+            const colors = ['#ff5555', '#ff8800', '#ffdd00', '#ff3300', '#ffffff', '#ffaa33'];
+            // Reduced particle count and no box-shadow for performance
+            const particleCount = 15 + Math.floor(Math.random() * 10);
+            activeParticles += particleCount;
             
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'explosion-particle';
-                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.backgroundColor = color;
+                // Removed expensive box-shadow - just use solid color
+                particle.style.width = (10 + Math.random() * 8) + 'px';
+                particle.style.height = particle.style.width;
                 
-                const angle = (Math.PI * 2 * i) / particleCount;
-                const velocity = 50 + Math.random() * 100;
+                const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.5;
+                const velocity = 120 + Math.random() * 180;
                 const tx = Math.cos(angle) * velocity;
                 const ty = Math.sin(angle) * velocity;
                 
@@ -616,49 +1058,227 @@
             
             gameContainer.appendChild(explosion);
             
-            // Remove explosion after animation
+            // Remove explosion after animation and update counters
             setTimeout(() => {
-                explosion.remove();
+                if (explosion.parentNode) {
+                    explosion.remove();
+                    activeExplosions--;
+                    activeParticles -= particleCount;
+                }
             }, 600);
+        }
+
+        function checkShipUpgrade() {
+            const newLevel = Math.floor(score / 500);
+            if (newLevel > shipUpgradeLevel) {
+                shipUpgradeLevel = newLevel;
+                currentReloadTime = Math.max(250, RELOAD_TIME_BASE * Math.pow(0.85, shipUpgradeLevel));
+                currentMoveSpeed = Math.min(2.0, 0.6 + shipUpgradeLevel * 0.12);
+                document.getElementById('level').textContent = shipUpgradeLevel + 1;
+                // Show upgrade banner
+                showUpgradeBanner(shipUpgradeLevel);
+            }
+        }
+
+        function showUpgradeBanner(level) {
+            const banner = document.createElement('div');
+            banner.className = 'upgrade-banner';
+            banner.textContent = 'SHIP LEVEL ' + (level + 1) + '!';
+            gameContainer.appendChild(banner);
+            setTimeout(() => {
+                if (banner.parentNode) banner.remove();
+            }, 1500);
+        }
+
+        function damageEnemy(obstacle, index, damage, chainDepth = 0) {
+            obstacle.hp -= damage;
+
+            // Update HP circle if present
+            if (obstacle.hpCircle) {
+                const ratio = Math.max(0, obstacle.hp / obstacle.maxHp);
+                const newSize = obstacle.size * ratio;
+                obstacle.hpCircle.style.width = newSize + 'px';
+                obstacle.hpCircle.style.height = newSize + 'px';
+            }
+
+            // Hit flash effect
+            obstacle.element.classList.add('hit-flash');
+            setTimeout(() => {
+                if (obstacle.element.parentNode) {
+                    obstacle.element.classList.remove('hit-flash');
+                }
+            }, 150);
+
+            if (obstacle.hp <= 0) {
+                destroyEnemy(obstacle, index, chainDepth);
+            }
+        }
+
+        function destroyEnemy(obstacle, index, chainDepth = 0) {
+            const centerX = obstacle.x + obstacle.size / 2;
+            const centerY = obstacle.y + obstacle.size / 2;
+
+            // Create explosion (respects global particle/explosion limits)
+            createExplosion(centerX, centerY);
+
+            // Trigger small screen shake on enemy destruction (only for direct kills, not chain reactions)
+            if (chainDepth === 0) {
+                gameContainer.classList.remove('shake-small');
+                void gameContainer.offsetWidth;
+                gameContainer.classList.add('shake-small');
+                setTimeout(() => {
+                    gameContainer.classList.remove('shake-small');
+                }, 200);
+            }
+
+            // Track the obstacle's array index before any nested destroys change the array
+            const actualIndex = obstacles.indexOf(obstacle);
+            if (actualIndex < 0) return; // already destroyed
+
+            // Chain reaction: area damage (limited depth to prevent infinite loops)
+            if (obstacle.explosiveRadius > 0 && chainDepth < MAX_CHAIN_DEPTH) {
+                applyAreaDamage(centerX, centerY, obstacle.explosiveRadius, 2, chainDepth + 1);
+            }
+
+            // Split into smaller enemies (spawn children at current position)
+            if (obstacle.splitInto && obstacle.splitCount > 0) {
+                spawnSplitEnemies(obstacle);
+            }
+
+            // Remove obstacle (recompute index in case nested destroys shifted it)
+            const removeIndex = obstacles.indexOf(obstacle);
+            if (removeIndex >= 0) {
+                obstacle.element.remove();
+                obstacles.splice(removeIndex, 1);
+            }
+
+            // Combo system: increment combo and award bonus
+            combo++;
+            comboTimer = COMBO_WINDOW;
+            const comboMultiplier = 1 + (combo - 1) * 0.1;
+            const awardedScore = Math.round(obstacle.score * comboMultiplier);
+            if (combo >= 2) {
+                const comboDisplay = document.getElementById('comboDisplay');
+                comboDisplay.style.display = 'block';
+                document.getElementById('comboCount').textContent = combo;
+            }
+
+            // Score popup (only for direct kills to reduce DOM clutter)
+            if (chainDepth === 0) {
+                createScorePopup(centerX, centerY, awardedScore);
+            }
+
+            // Add class-based score (with combo bonus) and check upgrades
+            score += awardedScore;
+            scoreElement.textContent = score;
+            checkShipUpgrade();
+        }
+
+        function applyAreaDamage(centerX, centerY, radius, damage, chainDepth = 0) {
+            // Snapshot the current obstacles so nested destroys can't corrupt our iteration
+            const targets = obstacles.slice();
+            for (let i = targets.length - 1; i >= 0; i--) {
+                const obstacle = targets[i];
+                const currentIndex = obstacles.indexOf(obstacle);
+                if (currentIndex < 0) continue; // skip already destroyed
+                const obsCenterX = obstacle.x + obstacle.size / 2;
+                const obsCenterY = obstacle.y + obstacle.size / 2;
+                const dx = obsCenterX - centerX;
+                const dy = obsCenterY - centerY;
+                if (Math.sqrt(dx * dx + dy * dy) <= radius) {
+                    damageEnemy(obstacle, currentIndex, damage, chainDepth);
+                }
+            }
+        }
+
+        function shootEnemyBullet(obstacle) {
+            if (enemyBullets.length >= MAX_ENEMY_BULLETS) return;
+            const bullet = document.createElement('div');
+            bullet.className = 'enemy-bullet';
+            const size = 10;
+            bullet.style.width = size + 'px';
+            bullet.style.height = size + 'px';
+            const x = parseFloat(obstacle.element.style.left);
+            const y = parseFloat(obstacle.element.style.top) + obstacle.size / 2 - size / 2;
+            bullet.style.left = x + 'px';
+            bullet.style.top = y + 'px';
+            gameContainer.appendChild(bullet);
+            enemyBullets.push({
+                element: bullet,
+                x: x,
+                y: y,
+                speed: 5 + obstacleSpeed * 0.3,
+                size: size
+            });
+        }
+
+        function checkEnemyBulletCollisions() {
+            const playerRect = {
+                x: 50,
+                y: (playerY / 100) * (GAME_HEIGHT - PLAYER_SIZE),
+                width: PLAYER_SIZE,
+                height: PLAYER_SIZE
+            };
+
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const eb = enemyBullets[i];
+                const bulletRect = {
+                    x: eb.x,
+                    y: eb.y,
+                    width: eb.size,
+                    height: eb.size
+                };
+
+                if (isColliding(playerRect, bulletRect)) {
+                    // Player hit by enemy bullet
+                    createExplosion(playerRect.x + PLAYER_SIZE / 2, playerRect.y + PLAYER_SIZE / 2);
+                    createPlayerExplosion();
+                    gameContainer.classList.add('shake');
+                    setTimeout(() => {
+                        gameContainer.classList.remove('shake');
+                    }, 500);
+                    endGame();
+                    return;
+                }
+            }
         }
 
         function checkBulletCollisions() {
             if (!gameActive) return;
-            
-            bullets.forEach((bullet, bulletIndex) => {
-                obstacles.forEach((obstacle, obstacleIndex) => {
-                    const bulletRect = {
-                        x: bullet.x,
-                        y: bullet.y,
-                        width: 12,
-                        height: 12
-                    };
-                    
+
+            for (let b = bullets.length - 1; b >= 0; b--) {
+                const bullet = bullets[b];
+                const bulletRect = {
+                    x: bullet.x,
+                    y: bullet.y,
+                    width: 12,
+                    height: 24
+                };
+
+                let hit = false;
+                for (let o = obstacles.length - 1; o >= 0; o--) {
+                    const obstacle = obstacles[o];
                     const obstacleRect = {
-                        x: parseFloat(obstacle.element.style.left),
-                        y: parseFloat(obstacle.element.style.top),
+                        x: obstacle.x,
+                        y: obstacle.y,
                         width: obstacle.size,
                         height: obstacle.size
                     };
-                    
-                    if (isColliding(bulletRect, obstacleRect)) {
-                        // Create explosion at obstacle center
-                        const explosionX = obstacleRect.x + (obstacleRect.width / 2);
-                        const explosionY = obstacleRect.y + (obstacleRect.height / 2);
-                        createExplosion(explosionX, explosionY);
-                        
-                        // Remove bullet and obstacle
-                        bullet.element.remove();
-                        obstacle.element.remove();
-                        bullets.splice(bulletIndex, 1);
-                        obstacles.splice(obstacleIndex, 1);
-                        
-                        // Add score for destroyed obstacle
-                        score += 50;
-                        scoreElement.textContent = score;
-                    }
-                });
-            });
+
+                    if (!isColliding(bulletRect, obstacleRect)) continue;
+
+                    hit = true;
+                    damageEnemy(obstacle, o, 1);
+                    break; // one bullet hits only one enemy
+                }
+
+                if (hit) {
+                    shotsHit++;
+                    bullet.element.remove();
+                    bullets.splice(b, 1);
+                    updateAccuracyDisplay();
+                }
+            }
         }
 
         function createPlayerExplosion() {
@@ -696,7 +1316,9 @@
             
             // Remove explosion after animation
             setTimeout(() => {
-                explosion.remove();
+                if (explosion.parentNode) {
+                    explosion.remove();
+                }
             }, 800);
         }
 
@@ -713,10 +1335,11 @@
             let collisionDetected = false;
             let collidedObstacle = null;
             
-            obstacles.forEach(obstacle => {
+            for (let i = 0; i < obstacles.length; i++) {
+                const obstacle = obstacles[i];
                 const obstacleRect = {
-                    x: parseFloat(obstacle.element.style.left),
-                    y: parseFloat(obstacle.element.style.top),
+                    x: obstacle.x,
+                    y: obstacle.y,
                     width: obstacle.size,
                     height: obstacle.size
                 };
@@ -724,8 +1347,9 @@
                 if (isColliding(playerRect, obstacleRect)) {
                     collisionDetected = true;
                     collidedObstacle = obstacle;
+                    break;
                 }
-            });
+            }
             
             if (collisionDetected) {
                 // Create explosion at collision point
@@ -762,23 +1386,48 @@
         
         function endGame() {
             gameActive = false;
+            paused = false;
             clearInterval(gameLoop);
             clearInterval(reloadInterval);
+            clearInterval(spawnInterval);
+            clearInterval(timeInterval);
             
-            // Clear remaining obstacles and bullets
+            // High score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('avoidCollisionHighScore', highScore);
+                document.getElementById('highScore').textContent = highScore;
+            }
+            document.getElementById('bestScore').textContent = highScore;
+            
+            // Clear remaining obstacles, bullets, enemy bullets and popups
             obstacles.forEach(obstacle => obstacle.element.remove());
             bullets.forEach(bullet => bullet.element.remove());
+            enemyBullets.forEach(bullet => bullet.remove());
+            scorePopups.forEach(popup => { if (popup.parentNode) popup.remove(); });
             const explosions = gameContainer.querySelectorAll('.explosion');
             explosions.forEach(explosion => explosion.remove());
+            const starsElements = gameContainer.querySelectorAll('.star');
+            starsElements.forEach(star => star.remove());
             obstacles = [];
             bullets = [];
+            enemyBullets = [];
+            scorePopups = [];
+            stars = [];
             
-            // Hide reload bar
+            // Reset performance counters
+            activeExplosions = 0;
+            activeParticles = 0;
+            
+            // Hide reload bar and combo
             document.getElementById('reloadBar').style.display = 'none';
+            document.getElementById('comboDisplay').style.display = 'none';
             
             // Update game over screen
             document.getElementById('finalScore').textContent = score;
             document.getElementById('finalTime').textContent = gameTime.toFixed(1);
+            const finalAccuracy = shotsFired > 0 ? Math.round((shotsHit / shotsFired) * 100) : 0;
+            document.getElementById('finalAccuracy').textContent = finalAccuracy;
             gameOverElement.style.display = 'block';
         }
         
@@ -789,19 +1438,35 @@
         
         function backToMenu() {
             gameActive = false;
+            paused = false;
             clearInterval(gameLoop);
             clearInterval(reloadInterval);
+            clearInterval(spawnInterval);
+            clearInterval(timeInterval);
             
-            // Clear remaining obstacles and bullets
+            // Clear remaining obstacles, bullets and enemy bullets
             obstacles.forEach(obstacle => obstacle.element.remove());
             bullets.forEach(bullet => bullet.element.remove());
+            enemyBullets.forEach(bullet => bullet.element.remove());
+            scorePopups.forEach(popup => { if (popup.parentNode) popup.remove(); });
             const explosions = gameContainer.querySelectorAll('.explosion');
             explosions.forEach(explosion => explosion.remove());
+            const starsElements = gameContainer.querySelectorAll('.star');
+            starsElements.forEach(star => star.remove());
             obstacles = [];
             bullets = [];
+            enemyBullets = [];
+            scorePopups = [];
+            stars = [];
             
-            // Hide reload bar
+            // Reset performance counters
+            activeExplosions = 0;
+            activeParticles = 0;
+            
+            // Hide reload bar and combo
             document.getElementById('reloadBar').style.display = 'none';
+            document.getElementById('comboDisplay').style.display = 'none';
+            document.getElementById('pauseOverlay').style.display = 'none';
             
             gameContainer.style.display = 'none';
             gameOverElement.style.display = 'none';
