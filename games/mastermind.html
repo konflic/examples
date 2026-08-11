@@ -18,6 +18,50 @@
         }
         h1 { flex-shrink: 0; }
         .stat { min-width: 86px; }
+        .stats {
+            width: min(94vw, 900px);
+            margin: 4px auto 8px;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: min(94vw, 900px);
+            margin: 4px auto 8px;
+            padding: 8px 12px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .controls .field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            min-width: 0;
+        }
+        .controls .field label {
+            font-size: 13px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        .controls .field select {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+        }
+        .controls .btns {
+            display: flex;
+            gap: 8px;
+        }
+        .controls .btns button {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+        }
         .game-area {
             flex: 1;
             min-height: 0;
@@ -77,13 +121,6 @@
         }
         .slot.filled { border-color: #666; }
         .slot.light { color: #111; }
-        .row-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 8px;
-            flex-shrink: 0;
-        }
         .board {
             flex: 1;
             min-height: 0;
@@ -128,25 +165,16 @@
         }
         .feedback i.exact { background: #e5e5e5; border-color: #999; }
         .feedback i.match { background: #f87171; border-color: #f87171; }
-        .message {
-            min-height: 20px;
-            color: var(--accent2);
-            font-weight: 600;
-            font-size: 14px;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
         .note { color: #666; font-size: 12px; flex-shrink: 0; }
         @media (max-width: 600px) {
             h1 { font-size: 1.15rem; margin: 6px 0 2px; }
-            .stats { gap: 5px; margin: 2px 0 4px; }
+            .stats { gap: 5px; margin: 2px auto 4px; }
             .stat { min-width: 0; padding: 3px 7px; font-size: 11px; }
-            .panel { padding: 4px 8px; }
+            .controls { gap: 6px; margin: 2px auto 6px; padding: 6px 10px; }
+            .controls .btns button { padding: 5px 9px; }
             select, button { font-size: 12px; padding: 5px 9px; }
             .game-area { width: 98vw; }
             .palette { gap: 6px; padding: 6px; }
-            .row-actions { margin-bottom: 5px; }
-            .message { font-size: 12px; }
         }
         @media (max-height: 640px) {
             h1 { font-size: 1rem; margin: 4px 0 2px; }
@@ -161,28 +189,27 @@
     <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
     <h1>Mastermind — Code Breaker</h1>
     <div class="controls">
-        <div class="panel">
+        <div class="field">
             <label for="level-select">Level:</label>
             <select id="level-select"></select>
+        </div>
+        <div class="btns">
             <button id="new-btn">New Game</button>
+            <button id="guess-btn">Guess</button>
+            <button id="clear-btn">Clear</button>
         </div>
     </div>
     <div class="stats">
-        <div class="stat">Wins: <span id="wins">0</span></div>
-        <div class="stat">Losses: <span id="losses">0</span></div>
-        <div class="stat">Best: <span id="best">–</span></div>
-        <div class="stat">Attempts: <span id="attempts">0</span>/<span id="max-attempts">–</span></div>
-        <div class="stat">⏱ <span id="timer">–</span></div>
+        <div class="stat"><span class="stat-label">Wins</span><span class="stat-value" id="wins">0</span></div>
+        <div class="stat"><span class="stat-label">Losses</span><span class="stat-value" id="losses">0</span></div>
+        <div class="stat"><span class="stat-label">Best</span><span class="stat-value" id="best">–</span></div>
+        <div class="stat"><span class="stat-label">Attempts</span><span class="stat-value"><span id="attempts">0</span>/<span id="max-attempts">–</span></span></div>
+        <div class="stat"><span class="stat-label">Time</span><span class="stat-value">⏱ <span id="timer">–</span></span></div>
     </div>
     <div class="game-area">
         <div id="palette" class="palette"></div>
         <div id="current-row" class="current-row"></div>
-        <div class="row-actions">
-            <button id="guess-btn">Guess</button>
-            <button id="clear-btn">Clear</button>
-        </div>
         <div id="board" class="board"></div>
-        <div id="message" class="message">Press New Game to start.</div>
         <div id="legend" class="note">● white = right color &amp; right position · red = right color, wrong position</div>
     </div>
     <script>
@@ -216,7 +243,6 @@
         const paletteEl = document.getElementById('palette');
         const currentRowEl = document.getElementById('current-row');
         const boardEl = document.getElementById('board');
-        const messageEl = document.getElementById('message');
         const legendEl = document.getElementById('legend');
         const winsEl = document.getElementById('wins');
         const lossesEl = document.getElementById('losses');
@@ -343,6 +369,7 @@
         function renderFeedback(fb) {
             const g = document.createElement('div');
             g.className = 'feedback';
+            g.style.gridTemplateColumns = `repeat(${cfg.pegs}, 1fr)`;
             let shown = 0;
             for (let i = 0; i < fb.exact; i++) {
                 const d = document.createElement('i'); d.className = 'exact'; g.appendChild(d);
@@ -434,7 +461,7 @@
             }
         }
 
-        function revealSecret(label) {
+        function revealSecret() {
             const r = document.createElement('div');
             r.className = 'guess-row lose-row';
             const num = document.createElement('div');
@@ -446,8 +473,6 @@
             secret.forEach(idx => slots.appendChild(buildSlot('slot', idx)));
             r.appendChild(slots);
             boardEl.prepend(r);
-            messageEl.textContent = label;
-            messageEl.style.color = 'var(--danger)';
         }
 
         function newGame() {
@@ -460,8 +485,6 @@
             gameOver = false;
             guessBtn.disabled = false;
             clearBtn.disabled = false;
-            messageEl.style.color = 'var(--accent2)';
-            messageEl.textContent = 'Level ' + (Number(levelSelect.value) + 1) + ': break the code!';
             legendEl.textContent = cfg.mode === 'black'
                 ? 'HARD MODE: feedback shows ONLY exact matches (white dots). No color info!'
                 : '● white = right color & right position · red = right color, wrong position';
@@ -475,8 +498,6 @@
         guessBtn.addEventListener('click', () => {
             if (gameOver || !cfg) return;
             if (current.length < cfg.pegs) {
-                messageEl.textContent = 'Fill all ' + cfg.pegs + ' slots first!';
-                messageEl.style.color = 'var(--danger)';
                 errorSound();
                 return;
             }
@@ -499,7 +520,6 @@
                     bestEl.textContent = attempts;
                 }
                 winSound();
-                messageEl.textContent = 'Solved in ' + attempts + ' attempt' + (attempts > 1 ? 's' : '') + (t > 0 ? ' · ' + fmtTime(t) : '') + '! 🎉';
             } else if (attempts >= cfg.max) {
                 gameOver = true;
                 clearInterval(timerId);
@@ -508,10 +528,8 @@
                 lossesEl.textContent = load('mm_losses', 0) + 1;
                 save('mm_losses', load('mm_losses', 0));
                 loseSound();
-                revealSecret('Out of guesses. The code was:');
+                revealSecret();
             } else {
-                messageEl.textContent = 'Wrong! ' + (cfg.max - attempts) + ' guesses left.';
-                messageEl.style.color = 'var(--danger)';
                 errorSound();
             }
             renderBoard();

@@ -17,10 +17,60 @@
             -webkit-tap-highlight-color: transparent;
         }
         h1 { margin: 15px 0 5px; font-size: 1.6rem; flex-shrink: 0; }
-        .controls { gap: 12px; margin: 5px 0 8px; }
-        .panel { padding: 8px 14px; }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: min(92vw, 1200px);
+            margin: 5px auto 8px;
+            padding: 8px 12px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .controls .field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            min-width: 0;
+        }
+        .controls .field label {
+            font-size: 14px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        .controls .field select {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+        }
+        .controls .btns {
+            display: flex;
+            gap: 8px;
+        }
+        .controls .btns button {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+        }
         select, button { font-size: 15px; padding: 8px 14px; }
-        .stats { gap: 12px; margin: 5px 0 8px; }
+        #start-btn {
+            background: var(--accent2);
+            color: #000;
+            font-weight: 600;
+        }
+        #start-btn:hover {
+            background: #2ebd8f;
+        }
+        .stats {
+            gap: 12px;
+            width: min(92vw, 1200px);
+            margin: 5px auto 8px;
+        }
         .stat { min-width: 100px; font-size: 14px; }
         .game-area {
             width: 100%;
@@ -105,20 +155,6 @@
             border-color: #ff1744;
             animation: shake 0.4s ease;
         }
-        .message {
-            min-height: 20px;
-            margin-top: 4px;
-            color: var(--accent);
-            font-weight: bold;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-        .note {
-            margin-top: 4px;
-            color: #aaaaaa;
-            font-size: 13px;
-            flex-shrink: 0;
-        }
         .hidden { display: none; }
 
 @media (max-width: 900px) {
@@ -130,9 +166,9 @@
 
 @media (max-width: 600px) {
     h1 { font-size: 1.2rem; margin: 8px 0 4px; }
-    .controls { margin: 2px 0 4px; gap: 6px; }
-    .controls .panel { width: 94vw; padding: 6px 10px; }
-    select, button { font-size: 13px; padding: 6px 10px; border-radius: 14px; }
+    .controls { margin: 2px auto 4px; gap: 6px; padding: 6px 10px; }
+    .controls .btns button { padding: 5px 10px; }
+    select, button { font-size: 13px; padding: 5px 10px; border-radius: 14px; }
     .content { width: 98vw; }
     .expression { font-size: clamp(20px, 9vw, 56px); padding: 2vw 3vw; border-radius: 10px; }
     .options {
@@ -143,24 +179,19 @@
         border-radius: 10px;
     }
     .option { font-size: clamp(18px, 7vw, 40px); border-radius: 12px; padding: 0.3em 0.6em; }
-    .stats { flex-direction: row; flex-wrap: wrap; gap: 4px; margin: 2px 0 4px; }
+    .stats { flex-direction: row; flex-wrap: wrap; gap: 4px; margin: 2px auto 4px; }
     .stat { min-width: 0; width: auto; padding: 4px 8px; font-size: 12px; }
-    .note { display: none; }
-    .message { min-height: 16px; font-size: 13px; margin-top: 2px; }
-    .footer-controls { margin-top: 2px; }
 }
 
 @media (max-height: 600px) and (max-width: 600px) {
     h1 { font-size: 1rem; margin: 4px 0 2px; }
-    .controls { margin: 0 0 2px; }
-    .controls .panel { padding: 4px 8px; }
+    .controls { margin: 0 0 2px; padding: 4px 8px; }
     select, button { font-size: 12px; padding: 4px 8px; }
-    .stats { margin: 0 0 2px; gap: 3px; }
+    .stats { margin: 0 auto 2px; gap: 3px; }
     .stat { padding: 2px 6px; font-size: 11px; }
     .expression { padding: 1.5vw 2.5vw; font-size: clamp(18px, 8vw, 44px); }
     .options { padding: 1.5vw 2.5vw; margin-top: 4px; gap: 4px; }
     .option { font-size: clamp(16px, 6.5vw, 36px); padding: 0.2em 0.5em; }
-    .message { min-height: 14px; font-size: 12px; }
 }
 
 @media (max-width: 380px) {
@@ -173,8 +204,8 @@
 <body>
     <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
     <h1>Arithmetic Trainer</h1>
-    <div class="controls">
-        <div class="panel">
+        <div class="controls">
+        <div class="field">
             <label for="level-select">Level:</label>
             <select id="level-select">
                 <option value="1">1 - +/- with 1..9</option>
@@ -188,23 +219,22 @@
                 <option value="9">9 - tough combos, X</option>
                 <option value="10">10 - 1..999, X equations</option>
             </select>
+        </div>
+        <div class="btns">
             <button id="start-btn">Start</button>
         </div>
     </div>
 
     <div class="stats">
-        <div class="stat">Score: <span id="score">0</span></div>
-        <div class="stat">Average time: <span id="avg-time">0.00</span>s</div>
-        <div class="stat">Solved: <span id="solved">0</span></div>
+        <div class="stat"><span class="stat-label">Score</span><span class="stat-value" id="score">0</span></div>
+        <div class="stat"><span class="stat-label">Avg time</span><span class="stat-value"><span id="avg-time">0.00</span>s</span></div>
+        <div class="stat"><span class="stat-label">Solved</span><span class="stat-value" id="solved">0</span></div>
     </div>
 
     <div class="game-area">
         <div class="content">
-            <div id="expression" class="expression">Press Start</div>
+            <div id="expression" class="expression" style="display:none"></div>
             <div id="options" class="options"></div>
-            <div id="message" class="message"></div>
-
-            <div class="note">-1 for wrong pick, +2 for correct. Choose until you find the right answer.</div>
         </div>
     </div>
 
@@ -214,7 +244,6 @@
         const startBtn = document.getElementById('start-btn');
         const expressionEl = document.getElementById('expression');
         const optionsEl = document.getElementById('options');
-        const messageEl = document.getElementById('message');
         const scoreEl = document.getElementById('score');
         const avgTimeEl = document.getElementById('avg-time');
         const solvedEl = document.getElementById('solved');
@@ -294,9 +323,9 @@
 
             currentQuestion = q;
             currentAnswer = answer;
+            expressionEl.style.display = '';
             expressionEl.textContent = prettify(q);
             buildOptions(answer, level);
-            messageEl.textContent = '';
             startTime = performance.now();
         }
 
@@ -417,7 +446,6 @@
                 totalTime += dt;
                 score += 2;
                 updateStats();
-                messageEl.textContent = 'Great!';
                 // disable all buttons
                 optionsEl.querySelectorAll('.option').forEach(b => b.disabled = true);
                 // auto next after short delay
@@ -428,7 +456,6 @@
                     errorSound();
                     score -= 1;
                     updateStats();
-                    messageEl.textContent = 'Try again…';
                     btn.disabled = true;
                 }
             }

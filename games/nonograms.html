@@ -16,8 +16,69 @@
             -webkit-tap-highlight-color: transparent;
         }
         h1 { margin: 8px 0 4px; font-size: 1.4rem; flex-shrink: 0; }
-        .controls { gap: 8px; }
-        .stats { gap: 6px; }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: min(94vw, 900px);
+            margin: 4px auto 8px;
+            padding: 8px 12px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .controls .field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            min-width: 0;
+        }
+        .controls .field label {
+            font-size: 13px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        .controls .field select {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+        }
+        .controls .btns {
+            display: flex;
+            gap: 8px;
+        }
+        .controls .btns button {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+        }
+        .tools {
+            display: flex;
+            gap: 8px;
+            width: min(94vw, 900px);
+            margin: 2px auto 6px;
+            padding: 8px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .tools .tool {
+            flex: 1;
+            min-width: 0;
+            justify-content: center;
+            border: none;
+            border-radius: 8px;
+        }
+        .stats {
+            gap: 6px;
+            width: min(94vw, 900px);
+            margin: 4px auto 8px;
+        }
         .stat { padding: 3px 9px; font-size: 12px; }
         .game-area {
             flex: 1;
@@ -81,23 +142,16 @@
         .cell.wrong { background: var(--danger); border-color: #c45252; }
         .cell.marked { color: #777; font-weight: bold; }
         .cell.hint { background: var(--accent2); border-color: #28a87a; }
-        .message {
-            min-height: 18px;
-            color: var(--accent2);
-            font-weight: 600;
-            font-size: 13px;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
         .note { color: #666; font-size: 11px; flex-shrink: 0; }
         @media (max-width: 600px) {
             h1 { font-size: 1.1rem; margin: 6px 0 2px; }
-            .stats { gap: 4px; margin: 2px 0 4px; }
+            .stats { gap: 4px; margin: 2px auto 4px; }
             .stat { padding: 2px 6px; font-size: 11px; }
-            .panel { padding: 4px 8px; }
+            .controls { gap: 6px; margin: 2px auto 6px; padding: 6px 10px; }
+            .controls .btns button { padding: 5px 9px; }
             select, button { font-size: 12px; padding: 5px 9px; }
-            .tools { margin: 2px 0 4px; }
-            .message { font-size: 12px; }
+            .tools { gap: 6px; margin: 2px auto 4px; padding: 6px; }
+            .tools .tool { padding: 5px 9px; }
         }
         @media (max-height: 640px) {
             h1 { font-size: 1rem; margin: 4px 0 2px; }
@@ -109,18 +163,20 @@
     <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
     <h1>Nonograms — Picross</h1>
     <div class="controls">
-        <div class="panel">
+        <div class="field">
             <label for="level-select">Level:</label>
             <select id="level-select"></select>
+        </div>
+        <div class="btns">
             <button id="new-btn">New Game</button>
             <button id="hint-btn">Hint</button>
         </div>
     </div>
     <div class="stats">
-        <div class="stat">⏱ Time: <span id="time">0:00</span></div>
-        <div class="stat">Mistakes: <span id="mistakes">0</span></div>
-        <div class="stat">Solved: <span id="solved">0</span></div>
-        <div class="stat">Best: <span id="best">–</span></div>
+        <div class="stat"><span class="stat-label">Time</span><span class="stat-value">⏱ <span id="time">0:00</span></span></div>
+        <div class="stat"><span class="stat-label">Mistakes</span><span class="stat-value" id="mistakes">0</span></div>
+        <div class="stat"><span class="stat-label">Solved</span><span class="stat-value" id="solved">0</span></div>
+        <div class="stat"><span class="stat-label">Best</span><span class="stat-value" id="best">–</span></div>
     </div>
     <div class="tools">
         <button id="mode-fill" class="tool active"><span class="swatch" style="background:var(--accent)"></span>Fill</button>
@@ -132,32 +188,23 @@
             <div id="board" class="board"></div>
         </div>
     </div>
-    <div id="message" class="message">Press New Game to start.</div>
     <div id="legend" class="note">Numbers show how many consecutive filled cells are in that row/column.</div>
     <script>
     'use strict';
     document.addEventListener('DOMContentLoaded', () => {
         const LEVELS = [
-            { r: 5,  c: 5,  d: 0.55, time: 0,   name: '5×5 · Beginner' },
-            { r: 6,  c: 6,  d: 0.50, time: 0,   name: '6×6 · Easy' },
-            { r: 7,  c: 7,  d: 0.45, time: 0,   name: '7×7 · Easy' },
-            { r: 8,  c: 8,  d: 0.45, time: 0,   name: '8×8 · Medium' },
-            { r: 9,  c: 9,  d: 0.40, time: 0,   name: '9×9 · Medium' },
-            { r: 10, c: 10, d: 0.38, time: 0,   name: '10×10 · Medium' },
-            { r: 12, c: 12, d: 0.35, time: 0,   name: '12×12 · Hard' },
-            { r: 15, c: 15, d: 0.32, time: 0,   name: '15×15 · Hard' },
-            { r: 15, c: 15, d: 0.26, time: 300, name: '15×15 · Sparse · 5min' },
-            { r: 18, c: 18, d: 0.28, time: 0,   name: '18×18 · Expert' },
-            { r: 20, c: 20, d: 0.26, time: 480, name: '20×20 · Expert · 8min' },
-            { r: 20, c: 20, d: 0.22, time: 480, name: '20×20 · Sparse · 8min' },
+            { r: 5,  c: 5,  d: 0.55, name: '5×5 · Beginner' },
+            { r: 6,  c: 6,  d: 0.50, name: '6×6 · Easy' },
+            { r: 7,  c: 7,  d: 0.45, name: '7×7 · Medium' },
+            { r: 8,  c: 8,  d: 0.38, name: '8×8 · Hard' },
+            { r: 9,  c: 9,  d: 0.32, name: '9×9 · Expert' },
+            { r: 10, c: 10, d: 0.26, name: '10×10 · Nightmare' },
         ];
-        const TAGS = ['Beginner', 'Easy', 'Medium', 'Hard', 'Expert', 'Nightmare'];
 
         const levelSelect = document.getElementById('level-select');
         const newBtn = document.getElementById('new-btn');
         const hintBtn = document.getElementById('hint-btn');
         const boardEl = document.getElementById('board');
-        const messageEl = document.getElementById('message');
         const timeEl = document.getElementById('time');
         const mistakesEl = document.getElementById('mistakes');
         const solvedEl = document.getElementById('solved');
@@ -292,33 +339,18 @@
             return m;
         }
 
-        const FALLBACKS = {
-            '5,5': ['.#.#.', '#####', '#####', '.###.', '..#..'],
-            '7,7': ['...#...', '..###..', '.#####.', '#######', '.#####.', '..###..', '...#...'],
-            '9,9': ['.........', '..#####..', '.#.....#.', '.##..##..', '.#.....#.', '..#..#...', '..#####..', '.........', '.........']
-        };
-
         function fallbackPattern(rows, cols) {
-            const src = FALLBACKS[rows + ',' + cols];
+            // Randomized full bar across a random block of columns —
+            // always logically solvable and unique, never a fixed puzzle.
             const m = Array.from({ length: rows }, () => new Array(cols).fill(false));
-            if (src) {
-                for (let r = 0; r < Math.min(rows, src.length); r++)
-                    for (let c = 0; c < Math.min(cols, src[r].length); c++)
-                        m[r][c] = src[r][c] === '#';
-            }
+            const bw = cols > 3 ? randInt(1, cols - 1) : cols;
+            const start = cols > 3 ? randInt(0, cols - bw) : 0;
+            for (let r = 0; r < rows; r++)
+                for (let c = start; c < start + bw; c++) m[r][c] = true;
             return m;
         }
 
         function generatePuzzle(rows, cols, density) {
-            const cacheKey = 'nono_puz_' + rows + 'x' + cols + '_' + Math.round(density * 100);
-            try {
-                const cached = localStorage.getItem(cacheKey);
-                if (cached) {
-                    const obj = JSON.parse(cached);
-                    if (obj && obj.rows === rows && obj.cols === cols) return obj;
-                }
-            } catch (e) { /* ignore */ }
-
             const t0 = performance.now();
             let d = density;
             for (let t = 0; t < 300; t++) {
@@ -329,9 +361,7 @@
                 for (let c = 0; c < cols; c++) cClues.push(lineClues(m.map(row => row[c])));
                 const res = solveGrid(rows, cols, rClues, cClues);
                 if (res) {
-                    const puz = { rows, cols, density: d, pattern: m, rowClues: rClues, colClues: cClues, depth: res.depth };
-                    try { localStorage.setItem(cacheKey, JSON.stringify(puz)); } catch (e) { /* ignore */ }
-                    return puz;
+                    return { rows, cols, density: d, pattern: m, rowClues: rClues, colClues: cClues, depth: res.depth };
                 }
                 if (t > 40 && d < 0.55) d += 0.02; // denser grids are more solvable
             }
@@ -345,18 +375,9 @@
             LEVELS.forEach((l, i) => {
                 const opt = document.createElement('option');
                 opt.value = i;
-                opt.textContent = (i + 1) + '. ' + l.name;
+                opt.textContent = l.name;
                 levelSelect.appendChild(opt);
             });
-        }
-
-        function difficultyOf(depth) {
-            if (depth <= 3) return TAGS[0];
-            if (depth <= 7) return TAGS[1];
-            if (depth <= 14) return TAGS[2];
-            if (depth <= 25) return TAGS[3];
-            if (depth <= 40) return TAGS[4];
-            return TAGS[5];
         }
 
         // ---------- Board rendering ----------
@@ -491,14 +512,14 @@
             elapsed = Math.round((performance.now() - startTime) / 1000);
             solvedEl.textContent = load('nono_solved', 0) + 1;
             save('nono_solved', load('nono_solved', 0));
-            const idx = levelSelect.value;
-            const prev = localStorage.getItem('nono_best_' + idx);
+            const lIdx = Number(levelSelect.value);
+            const bestKey = 'nono_best_' + lIdx;
+            const prev = localStorage.getItem(bestKey);
             if (prev === null || elapsed < Number(prev)) {
-                save('nono_best_' + idx, elapsed);
+                save(bestKey, elapsed);
                 bestEl.textContent = fmtTime(elapsed);
             }
             winSound();
-            messageEl.textContent = 'Puzzle solved in ' + fmtTime(elapsed) + ' with ' + mistakes + ' mistake' + (mistakes === 1 ? '' : 's') + '! 🎉';
         }
 
         function fmtTime(s) {
@@ -514,7 +535,6 @@
                     gameOver = true;
                     clearInterval(timerId);
                     errorSound();
-                    messageEl.textContent = 'Time up! Press New Game to retry.';
                     return;
                 }
                 timeEl.textContent = fmtTime(left);
@@ -526,9 +546,8 @@
 
         function newGame() {
             if (audioContext.state === 'suspended') audioContext.resume();
-            const idx = Number(levelSelect.value);
-            cfg = LEVELS[idx];
-            messageEl.textContent = 'Generating puzzle…';
+            const lIdx = Number(levelSelect.value);
+            cfg = LEVELS[lIdx];
             boardEl.innerHTML = '';
             setTimeout(() => {
                 const puz = generatePuzzle(cfg.r, cfg.c, cfg.d);
@@ -540,23 +559,19 @@
                 gameOver = false;
                 hintUsed = 0;
                 mistakesEl.textContent = 0;
-                bestEl.textContent = localStorage.getItem('nono_best_' + idx) !== null ? fmtTime(Number(localStorage.getItem('nono_best_' + idx))) : '–';
+                const bestKey = 'nono_best_' + lIdx;
+                bestEl.textContent = localStorage.getItem(bestKey) !== null ? fmtTime(Number(localStorage.getItem(bestKey))) : '–';
                 startTime = performance.now();
                 clearInterval(timerId);
                 timerId = setInterval(updateTimer, 1000);
                 renderBoard();
                 updateTimer();
-                const d = difficultyOf(puz.depth || 1);
-                messageEl.textContent = cfg.name + ' · logic depth ' + puz.depth + ' (' + d + ') — fill the grid!';
-                messageEl.style.color = 'var(--accent2)';
             }, 30);
         }
 
         hintBtn.addEventListener('click', () => {
             if (gameOver || !cfg) return;
             if (hintUsed >= 3) {
-                messageEl.textContent = 'Max 3 hints per puzzle!';
-                messageEl.style.color = 'var(--danger)';
                 errorSound();
                 return;
             }
@@ -577,10 +592,11 @@
         modeBtns.fill.addEventListener('click', () => setMode('fill'));
         modeBtns.x.addEventListener('click', () => setMode('x'));
         modeBtns.erase.addEventListener('click', () => setMode('erase'));
-        levelSelect.addEventListener('change', () => {
-            const idx = levelSelect.value;
-            bestEl.textContent = localStorage.getItem('nono_best_' + idx) !== null ? fmtTime(Number(localStorage.getItem('nono_best_' + idx))) : '–';
-        });
+        function updateBest() {
+            const bestKey = 'nono_best_' + levelSelect.value;
+            bestEl.textContent = localStorage.getItem(bestKey) !== null ? fmtTime(Number(localStorage.getItem(bestKey))) : '–';
+        }
+        levelSelect.addEventListener('change', () => { updateBest(); newGame(); });
 
         buildLevelOptions();
         newGame();
