@@ -1,25 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Card Game</title>
+    <link rel="stylesheet" href="ui.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
             color: #ffffff;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px;
-            margin: 0;
         }
 
-        h1 {
-            color: #bb86fc;
-            margin-bottom: 10px;
-        }
+        h1 { margin-bottom: 10px; }
 
         .setup-container {
             background-color: #1e1e1e;
@@ -136,6 +131,7 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
     <h1>Memory Card Game</h1>
 
     <div class="setup-container" id="setup">
@@ -366,6 +362,20 @@
                 return array;
             }
         });
+    </script>
+    <script>
+    (function(){
+        var t=localStorage.getItem("ui-theme")||"dark";
+        document.documentElement.dataset.theme=t;
+        var btn=document.getElementById("theme-toggle");
+        btn.textContent=t==="dark"?"☀":"☾";
+        btn.addEventListener("click",function(){
+            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
+            document.documentElement.dataset.theme=t;
+            localStorage.setItem("ui-theme",t);
+            btn.textContent=t==="dark"?"☀":"☾";
+        });
+    })();
     </script>
 </body>
 </html>

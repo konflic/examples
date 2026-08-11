@@ -1,28 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mastermind — Code Breaker</title>
+    <link rel="stylesheet" href="ui.css">
     <style>
-        :root {
-            --bg: #121212;
-            --panel: #1e1e1e;
-            --accent: #bb86fc;
-            --accent2: #03dac6;
-            --danger: #cf6679;
-            --text: #ffffff;
-            --border: #3700b3;
-            --slot: clamp(30px, 9vw, 46px);
-        }
-        *, *::before, *::after { box-sizing: border-box; }
+        :root { --slot: clamp(30px, 9vw, 46px); }
         html, body { height: 100%; overflow: hidden; }
         body {
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 0;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -30,60 +16,8 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        h1 {
-            color: var(--accent);
-            text-shadow: 0 0 10px rgba(187,134,252,0.4);
-            margin: 10px 0 4px 0;
-            font-size: 1.5rem;
-            flex-shrink: 0;
-        }
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 2px 0 6px;
-            flex-wrap: wrap;
-            flex-shrink: 0;
-        }
-        .panel {
-            background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 6px 12px;
-            display: inline-block;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        select, button {
-            background: #2d2d2d;
-            color: var(--text);
-            border: 2px solid var(--border);
-            border-radius: 20px;
-            padding: 7px 12px;
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-        button { background: var(--border); }
-        button:hover:not(:disabled) { transform: scale(1.05); background: #6200ee; }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
-        .stats {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 2px 0 6px;
-            flex-shrink: 0;
-        }
-        .stat {
-            background: var(--panel);
-            border: 2px dashed var(--border);
-            padding: 4px 10px;
-            border-radius: 10px;
-            min-width: 86px;
-            font-size: 13px;
-        }
+        h1 { flex-shrink: 0; }
+        .stat { min-width: 86px; }
         .game-area {
             flex: 1;
             min-height: 0;
@@ -100,32 +34,30 @@
             justify-content: center;
             padding: 8px;
             background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
             margin-bottom: 8px;
             flex-shrink: 0;
         }
         .palette button {
             width: var(--slot);
             height: var(--slot);
-            border-radius: 50%;
-            border: 2px solid #555;
+            border-radius: 5px;
+            border: 1px solid #555;
             padding: 0;
             font-size: clamp(11px, 3vw, 15px);
             font-weight: bold;
             color: #fff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.9);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
         }
-        .palette button.light { color: #111; text-shadow: none; }
+        .palette button.light { color: #111; }
         .current-row {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
             background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
             padding: 8px;
             margin-bottom: 8px;
             flex-shrink: 0;
@@ -133,8 +65,8 @@
         .slot {
             width: var(--slot);
             height: var(--slot);
-            border-radius: 50%;
-            border: 2px dashed #555;
+            border-radius: 5px;
+            border: 1px solid #444;
             background: #2a2a2a;
             display: flex;
             align-items: center;
@@ -143,7 +75,7 @@
             font-weight: bold;
             user-select: none;
         }
-        .slot.filled { border-style: solid; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        .slot.filled { border-color: #666; }
         .slot.light { color: #111; }
         .row-actions {
             display: flex;
@@ -166,21 +98,19 @@
             align-items: center;
             gap: 8px;
             background: var(--panel);
-            border: 1px solid #333;
-            border-radius: 10px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
             padding: 5px 8px;
             justify-content: center;
         }
-        .guess-row.win-row { border: 2px solid var(--accent2); box-shadow: 0 0 10px rgba(3,218,198,0.3); }
-        .guess-row.lose-row { border: 2px solid var(--danger); }
-        .guess-num { font-size: 12px; color: #999; width: 26px; flex-shrink: 0; }
+        .guess-row.win-row { border-color: var(--accent2); }
+        .guess-row.lose-row { border-color: var(--danger); }
+        .guess-num { font-size: 12px; color: #666; width: 26px; flex-shrink: 0; }
         .guess-slots { display: flex; gap: 5px; }
         .guess-slots .slot {
             width: clamp(26px, 7vw, 36px);
             height: clamp(26px, 7vw, 36px);
             font-size: clamp(10px, 2.6vw, 13px);
-            border-style: solid;
-            border-color: #555;
         }
         .feedback {
             display: grid;
@@ -192,21 +122,21 @@
         .feedback i {
             width: 10px;
             height: 10px;
-            border-radius: 50%;
+            border-radius: 3px;
             background: #2a2a2a;
             border: 1px solid #444;
         }
-        .feedback i.exact { background: #fff; border-color: #aaa; box-shadow: 0 0 4px rgba(255,255,255,0.6); }
-        .feedback i.match { background: #ff4d4d; border-color: #ff6666; box-shadow: 0 0 4px rgba(255,77,77,0.6); }
+        .feedback i.exact { background: #e5e5e5; border-color: #999; }
+        .feedback i.match { background: #f87171; border-color: #f87171; }
         .message {
             min-height: 20px;
             color: var(--accent2);
-            font-weight: bold;
+            font-weight: 600;
             font-size: 14px;
             flex-shrink: 0;
             margin-top: 2px;
         }
-        .note { color: #888; font-size: 12px; flex-shrink: 0; }
+        .note { color: #666; font-size: 12px; flex-shrink: 0; }
         @media (max-width: 600px) {
             h1 { font-size: 1.15rem; margin: 6px 0 2px; }
             .stats { gap: 5px; margin: 2px 0 4px; }
@@ -228,7 +158,8 @@
     </style>
 </head>
 <body>
-    <h1>🎯 Mastermind — Code Breaker</h1>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
+    <h1>Mastermind — Code Breaker</h1>
     <div class="controls">
         <div class="panel">
             <label for="level-select">Level:</label>
@@ -600,6 +531,20 @@
         buildLevelOptions();
         newGame();
     });
+    </script>
+    <script>
+    (function(){
+        var t=localStorage.getItem("ui-theme")||"dark";
+        document.documentElement.dataset.theme=t;
+        var btn=document.getElementById("theme-toggle");
+        btn.textContent=t==="dark"?"☀":"☾";
+        btn.addEventListener("click",function(){
+            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
+            document.documentElement.dataset.theme=t;
+            localStorage.setItem("ui-theme",t);
+            btn.textContent=t==="dark"?"☀":"☾";
+        });
+    })();
     </script>
 </body>
 </html>

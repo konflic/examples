@@ -4,41 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pixel Art for Kids</title>
+    <link rel="stylesheet" href="ui.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* pixelart-specific tokens that extend ui.css */
         :root {
-            --bg: linear-gradient(180deg, #1e1e30 0%, #14141f 100%);
+            --body-bg: linear-gradient(180deg, #1e1e30 0%, #14141f 100%);
             --sidebar-bg: rgba(26, 26, 40, 0.85);
             --sidebar-border: rgba(255, 255, 255, 0.08);
             --grid-line: #4a4a66;
             --cell-empty: #232338;
-            --btn-bg: rgba(255, 255, 255, 0.1);
             --btn-bg-hover: rgba(255, 255, 255, 0.18);
-            --btn-icon: #e8e8f2;
-            --sel-border: #ffffff;
+            --btn-icon: var(--text);
+            --sel-border: var(--accent);
         }
 
         [data-theme="light"] {
-            --bg: linear-gradient(180deg, #f3e8ff 0%, #e0f2f1 100%);
-            --sidebar-bg: rgba(255, 255, 255, 0.6);
+            --body-bg: linear-gradient(180deg, #f3e8ff 0%, #e0f2f1 100%);
+            --sidebar-bg: rgba(255, 255, 255, 0.75);
             --sidebar-border: rgba(0, 0, 0, 0.08);
-            --grid-line: #d7d2de;
+            --grid-line: #d1d1d1;
             --cell-empty: #ffffff;
-            --btn-bg: rgba(0, 0, 0, 0.08);
-            --btn-bg-hover: rgba(0, 0, 0, 0.16);
-            --btn-icon: #44445a;
-            --sel-border: #4a3f66;
+            --btn-bg-hover: rgba(0, 0, 0, 0.12);
+            --sel-border: var(--accent);
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
-            background: var(--bg);
+            background: var(--body-bg);
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
         }
@@ -339,15 +331,15 @@
             saveTimer = setTimeout(saveDrawing, 250);
         }
 
-        // Theme: dark by default, toggle persisted in localStorage
+        // Theme: shared ui-theme key across all games
         function setTheme(theme) {
             document.documentElement.dataset.theme = theme;
             themeBtn.textContent = theme === 'dark' ? '☀' : '☾';
             themeBtn.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
-            localStorage.setItem('pixelart-theme', theme);
+            localStorage.setItem('ui-theme', theme);
         }
 
-        setTheme(localStorage.getItem('pixelart-theme') === 'light' ? 'light' : 'dark');
+        setTheme(localStorage.getItem('ui-theme') === 'light' ? 'light' : 'dark');
 
         themeBtn.addEventListener('click', () => {
             setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');

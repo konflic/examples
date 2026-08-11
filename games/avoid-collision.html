@@ -1,15 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space Shooter</title>
+    <link rel="stylesheet" href="ui.css">
     <style>
         body {
-            margin: 0;
-            padding: 0;
             background-color: #0a0a1a;
-            font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -19,24 +17,23 @@
         }
 
         .setup-container {
-            background: linear-gradient(145deg, #1e1e2e 0%, #0f0f1e 100%);
+            background: var(--panel);
             padding: 30px;
-            border-radius: 15px;
+            border-radius: 6px;
             margin-bottom: 20px;
             width: 400px;
             text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(187, 134, 252, 0.3);
+            border: 1px solid var(--border);
         }
 
         .setup-container h2 {
-            color: #bb86fc;
+            color: var(--accent);
             margin-bottom: 15px;
             font-size: 24px;
         }
 
         .setup-container p {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.7);
             margin-bottom: 20px;
             line-height: 1.4;
         }
@@ -49,41 +46,37 @@
         }
 
         .difficulty-option {
-            background: #3d3d3d;
-            border: 2px solid #444;
+            background: #2a2a2a;
+            border: 1px solid var(--border);
             padding: 12px 20px;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: all 0.3s;
-            color: #ffffff;
+            transition: background 0.15s;
+            color: var(--text);
         }
 
         .difficulty-option:hover {
-            background: #4d4d4d;
-            border-color: #bb86fc;
+            background: #3a3a3a;
         }
 
         .difficulty-option.selected {
-            background: rgba(187, 134, 252, 0.2);
-            border-color: #bb86fc;
-            color: #bb86fc;
+            background: rgba(167, 139, 250, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         button {
-            background-color: #bb86fc;
+            background-color: var(--accent);
             color: #121212;
             border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            transition: all 0.3s;
+            padding: 10px 22px;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 15px;
         }
 
-        button:hover {
-            background-color: #9a67ea;
-            transform: translateY(-2px);
+        button:hover:not(:disabled) {
+            background-color: #8b6fe8;
         }
 
         .game-container {
@@ -92,10 +85,9 @@
             width: 90vw;
             height: 90vh;
             background: linear-gradient(135deg, #0f0f2e 0%, #05051f 100%);
-            border: 3px solid #bb86fc;
-            border-radius: 15px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
             overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
         }
 
         .star {
@@ -379,6 +371,7 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
     <div class="setup-container" id="setupContainer">
         <h2>Space Shooter</h2>
         <p>
@@ -1472,6 +1465,20 @@
             gameOverElement.style.display = 'none';
             setupContainer.style.display = 'block';
         }
+    </script>
+    <script>
+    (function(){
+        var t=localStorage.getItem("ui-theme")||"dark";
+        document.documentElement.dataset.theme=t;
+        var btn=document.getElementById("theme-toggle");
+        btn.textContent=t==="dark"?"☀":"☾";
+        btn.addEventListener("click",function(){
+            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
+            document.documentElement.dataset.theme=t;
+            localStorage.setItem("ui-theme",t);
+            btn.textContent=t==="dark"?"☀":"☾";
+        });
+    })();
     </script>
 </body>
 </html>

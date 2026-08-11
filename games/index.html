@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Hub</title>
+    <link rel="stylesheet" href="ui.css">
     <style>
         :root {
             --primary: #6c5ce7;
@@ -12,15 +13,9 @@
             --dark: #1a1a2e;
             --darker: #16213e;
             --light: #e2e2e2;
-            --accent: #00cec9;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        * { margin: 0; padding: 0; }
 
         body {
             background: linear-gradient(135deg, var(--dark), var(--darker));
@@ -102,6 +97,7 @@
 </head>
 
 <body>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
     <div class="container">
         <h1>Game Hub</h1>
 
@@ -215,6 +211,20 @@
             © Game Hub | All games are property of their respective owners
         </footer>
     </div>
+    <script>
+    (function(){
+        var t=localStorage.getItem("ui-theme")||"dark";
+        document.documentElement.dataset.theme=t;
+        var btn=document.getElementById("theme-toggle");
+        btn.textContent=t==="dark"?"☀":"☾";
+        btn.addEventListener("click",function(){
+            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
+            document.documentElement.dataset.theme=t;
+            localStorage.setItem("ui-theme",t);
+            btn.textContent=t==="dark"?"☀":"☾";
+        });
+    })();
+    </script>
 </body>
 
 </html>

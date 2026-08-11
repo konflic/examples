@@ -1,27 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nonograms — Picross Puzzle</title>
+    <link rel="stylesheet" href="ui.css">
     <style>
-        :root {
-            --bg: #121212;
-            --panel: #1e1e1e;
-            --accent: #bb86fc;
-            --accent2: #03dac6;
-            --danger: #cf6679;
-            --text: #ffffff;
-            --border: #3700b3;
-        }
-        *, *::before, *::after { box-sizing: border-box; }
         html, body { height: 100%; overflow: hidden; }
         body {
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 0;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -29,74 +15,10 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        h1 {
-            color: var(--accent);
-            text-shadow: 0 0 10px rgba(187,134,252,0.4);
-            margin: 8px 0 4px 0;
-            font-size: 1.4rem;
-            flex-shrink: 0;
-        }
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin: 2px 0 6px;
-            flex-wrap: wrap;
-            flex-shrink: 0;
-        }
-        .panel {
-            background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 6px 12px;
-            display: inline-block;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        select, button {
-            background: #2d2d2d;
-            color: var(--text);
-            border: 2px solid var(--border);
-            border-radius: 20px;
-            padding: 6px 12px;
-            font-size: 13px;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-        button { background: var(--border); }
-        button:hover:not(:disabled) { transform: scale(1.05); background: #6200ee; }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
-        .stats {
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 2px 0 6px;
-            flex-shrink: 0;
-        }
-        .stat {
-            background: var(--panel);
-            border: 2px dashed var(--border);
-            padding: 3px 9px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-        .tools {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            align-items: center;
-            margin: 2px 0 6px;
-            flex-shrink: 0;
-        }
-        .tool {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .tool .swatch { width: 16px; height: 16px; border-radius: 4px; border: 1px solid #555; }
-        .tool.active { background: #6200ee; }
+        h1 { margin: 8px 0 4px; font-size: 1.4rem; flex-shrink: 0; }
+        .controls { gap: 8px; }
+        .stats { gap: 6px; }
+        .stat { padding: 3px 9px; font-size: 12px; }
         .game-area {
             flex: 1;
             min-height: 0;
@@ -108,36 +30,35 @@
         }
         .board-wrap {
             background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
             padding: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             display: inline-block;
             margin: auto;
         }
         .board { display: grid; }
-        .corner { background: #1a1a1a; border: 1px solid #333; }
+        .corner { background: #1a1a1a; border: 1px solid #2a2a2a; }
         .col-clue {
-            background: #232323;
-            border: 1px solid #333;
+            background: #222;
+            border: 1px solid #2a2a2a;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: center;
             align-content: center;
-            font-weight: bold;
+            font-weight: 600;
             color: var(--accent2);
             overflow: hidden;
         }
         .row-clue {
-            background: #232323;
-            border: 1px solid #333;
+            background: #222;
+            border: 1px solid #2a2a2a;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: flex-end;
             align-content: center;
-            font-weight: bold;
+            font-weight: 600;
             color: var(--accent2);
             overflow: hidden;
             padding-right: 2px;
@@ -148,27 +69,27 @@
             display: inline-block;
         }
         .cell {
-            border: 1px solid #333;
-            background: #2a2a2a;
+            border: 1px solid #2a2a2a;
+            background: #262626;
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
-            transition: background 0.1s ease;
+            transition: background 0.1s;
         }
-        .cell:hover { background: #353535; }
-        .cell.filled { background: var(--accent); border-color: #6c5ce7; }
-        .cell.wrong { background: var(--danger); border-color: #ff1744; }
-        .cell.marked { color: #999; font-weight: bold; }
-        .cell.hint { background: var(--accent2); border-color: #00a896; }
+        .cell:hover { background: #333; }
+        .cell.filled { background: var(--accent); border-color: #7c6bcf; }
+        .cell.wrong { background: var(--danger); border-color: #c45252; }
+        .cell.marked { color: #777; font-weight: bold; }
+        .cell.hint { background: var(--accent2); border-color: #28a87a; }
         .message {
             min-height: 18px;
             color: var(--accent2);
-            font-weight: bold;
+            font-weight: 600;
             font-size: 13px;
             flex-shrink: 0;
             margin-top: 2px;
         }
-        .note { color: #888; font-size: 11px; flex-shrink: 0; }
+        .note { color: #666; font-size: 11px; flex-shrink: 0; }
         @media (max-width: 600px) {
             h1 { font-size: 1.1rem; margin: 6px 0 2px; }
             .stats { gap: 4px; margin: 2px 0 4px; }
@@ -185,13 +106,14 @@
     </style>
 </head>
 <body>
-    <h1>🧩 Nonograms — Picross</h1>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
+    <h1>Nonograms — Picross</h1>
     <div class="controls">
         <div class="panel">
             <label for="level-select">Level:</label>
             <select id="level-select"></select>
             <button id="new-btn">New Game</button>
-            <button id="hint-btn">💡 Hint</button>
+            <button id="hint-btn">Hint</button>
         </div>
     </div>
     <div class="stats">
@@ -663,6 +585,20 @@
         buildLevelOptions();
         newGame();
     });
+    </script>
+    <script>
+    (function(){
+        var t=localStorage.getItem("ui-theme")||"dark";
+        document.documentElement.dataset.theme=t;
+        var btn=document.getElementById("theme-toggle");
+        btn.textContent=t==="dark"?"☀":"☾";
+        btn.addEventListener("click",function(){
+            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
+            document.documentElement.dataset.theme=t;
+            localStorage.setItem("ui-theme",t);
+            btn.textContent=t==="dark"?"☀":"☾";
+        });
+    })();
     </script>
 </body>
 </html>

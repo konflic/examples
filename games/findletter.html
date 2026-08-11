@@ -1,31 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Find Letter Game</title>
+    <link rel="stylesheet" href="ui.css">
     <style>
-        :root {
-            --bg: #121212;
-            --panel: #1e1e1e;
-            --accent: #bb86fc;
-            --accent2: #03dac6;
-            --text: #ffffff;
-            --border: #3700b3;
-        }
-
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
             padding: 20px;
             text-align: center;
             min-height: 100vh;
@@ -50,11 +32,10 @@
 
         .setup-container {
             background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
             padding: 30px;
             display: inline-block;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             margin: 20px auto;
             min-width: 400px;
         }
@@ -83,10 +64,10 @@
             gap: 8px;
             cursor: pointer;
             padding: 10px 20px;
-            background: #2d2d2d;
-            border-radius: 10px;
-            border: 2px solid var(--border);
-            transition: all 0.2s ease;
+            background: #2a2a2a;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            transition: background 0.15s;
         }
 
         .alphabet-option:hover {
@@ -125,20 +106,8 @@
         }
 
         .start-btn {
-            background: var(--border);
-            color: white;
-            border: none;
-            padding: 15px 40px;
+            padding: 12px 36px;
             font-size: 18px;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-
-        .start-btn:hover {
-            background: #6200ee;
-            transform: scale(1.05);
         }
 
         .game-container {
@@ -165,13 +134,12 @@
 
         .target-letter {
             background: var(--panel);
-            border: 3px solid var(--accent);
-            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
             padding: 20px 50px;
             font-size: 96px;
             font-weight: bold;
             color: var(--accent2);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             width: 100%;
             text-align: center;
         }
@@ -184,10 +152,7 @@
         }
 
         .stat {
-            background: var(--panel);
-            border: 2px dashed var(--border);
             padding: 10px 20px;
-            border-radius: 10px;
             min-width: 140px;
         }
 
@@ -207,11 +172,10 @@
             grid-template-columns: repeat(10, 1fr);
             gap: 6px;
             background: var(--panel);
-            border: 3px solid var(--accent);
-            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
             padding: 20px;
             width: 100%;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             flex: 1;
             height: fit-content;
             max-height: calc(100vh - 40px);
@@ -293,24 +257,11 @@
 
         .modal-content {
             background: var(--panel);
-            border: 3px solid var(--accent);
-            border-radius: 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
             padding: 40px;
             text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             animation: popIn 0.4s ease;
-        }
-
-        @keyframes popIn {
-            0% {
-                transform: scale(0.5);
-                opacity: 0;
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
         }
 
         .modal h2 {
@@ -326,38 +277,14 @@
         }
 
         .modal button {
-            background: var(--border);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-
-        .modal button:hover {
-            background: #6200ee;
-            transform: scale(1.05);
+            padding: 12px 28px;
+            font-size: 16px;
         }
 
         button.restart-btn {
-            background: var(--border);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 25px;
-            cursor: pointer;
             margin-top: 20px;
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-
-        button.restart-btn:hover {
-            background: #6200ee;
-            transform: scale(1.05);
+            padding: 10px 22px;
+            font-size: 15px;
         }
 
         @media (max-width: 900px) {
@@ -422,6 +349,7 @@
 </head>
 
 <body>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
     <h1>Find the Letter!</h1>
 
     <div class="setup-container" id="setupPanel">
@@ -720,6 +648,20 @@
                 setTimeout(calculateOptimalGridSize, 100);
             }
         });
+    </script>
+    <script>
+    (function(){
+        var t=localStorage.getItem("ui-theme")||"dark";
+        document.documentElement.dataset.theme=t;
+        var btn=document.getElementById("theme-toggle");
+        btn.textContent=t==="dark"?"☀":"☾";
+        btn.addEventListener("click",function(){
+            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
+            document.documentElement.dataset.theme=t;
+            localStorage.setItem("ui-theme",t);
+            btn.textContent=t==="dark"?"☀":"☾";
+        });
+    })();
     </script>
 </body>
 

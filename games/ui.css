@@ -1,0 +1,200 @@
+/* ============================================================
+   ui.css — shared design tokens and base components
+   Used by: all games in the collection
+   ============================================================ */
+
+/* ── Dark theme tokens (default) ─────────────────────────── */
+:root {
+    --bg:         #121212;
+    --panel:      #1e1e1e;
+    --accent:     #a78bfa;
+    --accent2:    #34d399;
+    --danger:     #f87171;
+    --text:       #e5e5e5;
+    --border:     #333;
+    --btn-bg:     #3a3a3a;
+    --btn-bg-alt: #2a2a2a;
+    --btn-hover:  #4a4a4a;
+    --muted:      #666;
+}
+
+/* ── Light theme tokens ──────────────────────────────────── */
+[data-theme="light"] {
+    --bg:         #f5f5f5;
+    --panel:      #ffffff;
+    --accent:     #7c3aed;
+    --accent2:    #059669;
+    --danger:     #dc2626;
+    --text:       #1a1a1a;
+    --border:     #d1d1d1;
+    --btn-bg:     #e8e8e8;
+    --btn-bg-alt: #f0f0f0;
+    --btn-hover:  #d8d8d8;
+    --muted:      #888;
+}
+
+/* ── Reset & base ────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Headings ────────────────────────────────────────────── */
+h1 {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin: 10px 0 4px;
+}
+
+/* ── Buttons & selects ───────────────────────────────────── */
+button, select {
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text);
+    background: var(--btn-bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 7px 12px;
+    transition: background 0.15s;
+}
+
+button {
+    background: var(--btn-bg);
+}
+
+button:hover:not(:disabled) {
+    background: var(--btn-hover);
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Layout primitives ───────────────────────────────────── */
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    display: inline-block;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 2px 0 6px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.stats {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 2px 0 6px;
+    flex-shrink: 0;
+}
+
+.stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+/* ── Tool bar (nonograms fill/mark/erase) ────────────────── */
+.tools {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    margin: 2px 0 6px;
+    flex-shrink: 0;
+}
+
+.tool {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tool .swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+}
+
+.tool.active {
+    background: var(--btn-hover);
+    border-color: var(--border);
+}
+
+/* ── Status messages ─────────────────────────────────────── */
+.message {
+    min-height: 20px;
+    color: var(--accent2);
+    font-weight: 600;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.note {
+    color: var(--muted);
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+/* ── Theme toggle button ─────────────────────────────────── */
+.theme-toggle {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    z-index: 9999;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 5px;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+}
+
+.theme-toggle:hover:not(:disabled) {
+    opacity: 1;
+}
+
+/* ── Animations (canonical shared versions) ──────────────── */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-6px); }
+    40%       { transform: translateX(6px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+}
+
+@keyframes pop {
+    0%   { transform: scale(0.9); }
+    50%  { transform: scale(1.07); }
+    100% { transform: scale(1); }
+}
+
+@keyframes popIn {
+    0%   { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1);   opacity: 1; }
+}
