@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cryptograms</title>
+    <link rel="stylesheet" href="ui.css">
+    <style>
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 { margin: 8px 0 4px; font-size: 1.4rem; flex-shrink: 0; }
+        .controls { gap: 8px; }
+        .stats { gap: 6px; }
+        .stat { padding: 3px 9px; font-size: 12px; }
+        .game-area {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 10px;
+        }
+        .cipher-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: flex-end;
+            padding: 12px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            max-width: 100%;
+            width: min(680px, 100%);
+            margin-bottom: 8px;
+        }
+        .word { display: inline-flex; gap: 2px; }
+        .letter-pair {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: clamp(24px, 6.5vw, 34px);
+            min-height: 44px;
+            justify-content: flex-end;
+            cursor: pointer;
+            border-radius: 3px;
+            padding: 2px;
+        }
+        .letter-pair .cipher {
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.1;
+            user-select: none;
+        }
+        .letter-pair .guess {
+            font-size: clamp(15px, 4.5vw, 20px);
+            font-weight: 700;
+            min-height: 24px;
+            line-height: 1.2;
+            color: var(--text);
+            border-bottom: 2px solid transparent;
+            width: 100%;
+            text-align: center;
+        }
+        .letter-pair.selected { background: rgba(167, 139, 250, 0.2); }
+        .letter-pair.selected .guess { border-bottom-color: var(--accent); }
+        .letter-pair.revealed .guess { color: var(--accent2); text-decoration: underline; }
+        .letter-pair.correct .guess { color: var(--accent2); }
+        .letter-pair.punct { cursor: default; }
+        .letter-pair.punct .guess { border-bottom-color: transparent; color: var(--text); }
+        .alpha-keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+            padding: 8px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            max-width: min(680px, 100%);
+            width: 100%;
+            margin-bottom: 6px;
+        }
+        .alpha-keyboard button {
+            width: clamp(30px, 7vw, 40px);
+            height: clamp(36px, 8vw, 44px);
+            padding: 0;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 4px;
+        }
+        .alpha-keyboard button:disabled { opacity: 0.35; }
+        .alpha-keyboard button.used { color: var(--muted); }
+        .alpha-keyboard button.current { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .mapping-panel, .freq-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+            padding: 6px 10px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            max-width: min(680px, 100%);
+            width: 100%;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        .mapping-panel .map-entry { display: flex; flex-direction: column; align-items: center; min-width: 22px; }
+        .mapping-panel .map-entry b { font-size: 12px; color: var(--muted); }
+        .mapping-panel .map-entry span { font-weight: 700; min-height: 18px; }
+        .freq-panel .freq-entry { display: flex; flex-direction: column; align-items: center; min-width: 24px; }
+        .freq-panel .freq-entry b { font-size: 12px; }
+        .freq-panel .freq-entry span { font-size: 11px; color: var(--muted); }
+        .hidden { display: none !important; }
+        .message { margin-top: 4px; }
+        .note { color: #666; font-size: 12px; flex-shrink: 0; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 28px;
+            text-align: center;
+            animation: popIn 0.3s ease;
+            max-width: 92vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { color: var(--accent2); margin: 0 0 10px; }
+        .modal-content p { color: var(--text); font-size: 15px; margin: 6px 0; }
+        .modal-content .quote { font-style: italic; font-size: 16px; }
+        .modal-content .controls { margin-top: 14px; }
+        #live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.1rem; margin: 6px 0 2px; }
+            .stats { gap: 4px; margin: 2px 0 4px; }
+            .stat { padding: 2px 6px; font-size: 11px; }
+            .panel { padding: 4px 8px; }
+            select, button { font-size: 12px; padding: 5px 9px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
+    <h1>Cryptograms</h1>
+    <div class="controls">
+        <div class="panel">
+            <label for="diff-select">Difficulty:</label>
+            <select id="diff-select">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+            <button id="new-btn">New Puzzle</button>
+            <button id="restart-btn">Restart</button>
+            <button id="check-btn">Check</button>
+            <button id="hint-btn">Hint</button>
+            <button id="clear-btn">Clear Letter</button>
+            <button id="rules-btn">Rules</button>
+        </div>
+    </div>
+    <div class="stats">
+        <div class="stat">⏱ <span id="timer">0:00</span></div>
+        <div class="stat">Hints: <span id="hint-count">0</span></div>
+        <div class="stat">Checks: <span id="check-count">0</span></div>
+        <div class="stat">Seed: <span id="seed-display">–</span></div>
+    </div>
+    <div class="game-area">
+        <div class="cipher-display" id="cipher-display" role="group" aria-label="Encrypted text"></div>
+        <div class="alpha-keyboard" id="alpha-keyboard" role="group" aria-label="Plaintext alphabet"></div>
+        <div class="mapping-panel" id="mapping-panel"></div>
+        <div class="freq-panel" id="freq-panel"></div>
+    </div>
+    <div class="controls" style="margin-top:2px">
+        <div class="panel">
+            <label for="seed-input">Seed:</label>
+            <input id="seed-input" type="number" style="width:90px;padding:5px;border:1px solid var(--border);border-radius:5px;background:var(--btn-bg-alt);color:var(--text)">
+            <button id="seed-btn">Load</button>
+            <button id="freq-btn">Frequency</button>
+        </div>
+    </div>
+    <div id="message" class="message">Press New Puzzle to start.</div>
+    <div id="note" class="note">Each cipher letter maps to one plaintext letter. Tap a letter, then choose its plaintext on the keyboard.</div>
+    <div id="live" aria-live="polite"></div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content" id="modal-content"></div>
+    </div>
+
+    <script>
+    'use strict';
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // ─────────────────────── Audio ───────────────────────
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(freq = 700, dur = 0.1, vol = 0.25) {
+            const o = audioContext.createOscillator();
+            const g = audioContext.createGain();
+            o.connect(g); g.connect(audioContext.destination);
+            o.type = 'sine'; o.frequency.value = freq;
+            g.gain.setValueAtTime(vol, audioContext.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
+            o.start(); o.stop(audioContext.currentTime + dur);
+        }
+        function successSound() { beep(600, 0.07, 0.25); setTimeout(() => beep(900, 0.07, 0.2), 80); }
+        function errorSound() { beep(180, 0.14, 0.18); }
+        function winSound() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.12, 0.25), i * 120)); }
+
+        // ─────────────────────── Seeded PRNG (Mulberry32) ───────────────────────
+        function makePRNG(seed) {
+            let s = seed >>> 0;
+            return function () {
+                s += 0x6D2B79F5;
+                let t = Math.imul(s ^ (s >>> 15), 1 | s);
+                t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+        function shuffle(arr, rand) {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(rand() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        // ─────────────────────── DOM refs ───────────────────────
+        const diffSelect = document.getElementById('diff-select');
+        const newBtn = document.getElementById('new-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const checkBtn = document.getElementById('check-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const rulesBtn = document.getElementById('rules-btn');
+        const seedInput = document.getElementById('seed-input');
+        const seedBtn = document.getElementById('seed-btn');
+        const freqBtn = document.getElementById('freq-btn');
+        const cipherDisplay = document.getElementById('cipher-display');
+        const alphaKeyboard = document.getElementById('alpha-keyboard');
+        const mappingPanel = document.getElementById('mapping-panel');
+        const freqPanel = document.getElementById('freq-panel');
+        const messageEl = document.getElementById('message');
+        const timerEl = document.getElementById('timer');
+        const hintCountEl = document.getElementById('hint-count');
+        const checkCountEl = document.getElementById('check-count');
+        const seedDisplayEl = document.getElementById('seed-display');
+        const liveEl = document.getElementById('live');
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modal-content');
+
+        // ─────────────────────── Content bundle ───────────────────────
+        const CONTENT = [
+            // Easy
+            { id: 'q001', text: 'A SMALL STEP CAN CHANGE A LONG JOURNEY.', author: 'Original', difficulty: 'easy', category: 'inspiration' },
+            { id: 'q002', text: 'KIND WORDS OPEN MANY DOORS IN LIFE.', author: 'Original', difficulty: 'easy', category: 'wisdom' },
+            { id: 'q003', text: 'EARLY TO BED MAKES A HEALTHY MIND.', author: 'Original', difficulty: 'easy', category: 'health' },
+            { id: 'q004', text: 'THE SUN ALWAYS RISES AFTER THE RAIN.', author: 'Original', difficulty: 'easy', category: 'nature' },
+            { id: 'q005', text: 'A SHARED LAUGH BRINGS PEOPLE CLOSER TOGETHER.', author: 'Original', difficulty: 'easy', category: 'friendship' },
+            { id: 'q006', text: 'PRACTICE MAKES SKILLS STRONGER EACH DAY.', author: 'Original', difficulty: 'easy', category: 'learning' },
+            { id: 'q007', text: 'FRESH AIR AND WATER KEEP THE BODY WELL.', author: 'Original', difficulty: 'easy', category: 'health' },
+            { id: 'q008', text: 'GOOD BOOKS ARE QUIET FRIENDS FOR LIFE.', author: 'Original', difficulty: 'easy', category: 'books' },
+            { id: 'q009', text: 'A CLEAR MIND MAKES BETTER CHOICES EASY.', author: 'Original', difficulty: 'easy', category: 'wisdom' },
+            { id: 'q010', text: 'HONEST WORDS BUILD TRUST BETWEEN PEOPLE.', author: 'Original', difficulty: 'easy', category: 'wisdom' },
+            { id: 'q011', text: 'THE BEST TIME TO PLANT A TREE WAS YEARS AGO.', author: 'Original', difficulty: 'easy', category: 'nature' },
+            { id: 'q012', text: 'MUSIC SOOTHES THE HEART WHEN WORDS FAIL.', author: 'Original', difficulty: 'easy', category: 'music' },
+            { id: 'q013', text: 'WALK OFTEN AND THE WORLD OPENS WIDER.', author: 'Original', difficulty: 'easy', category: 'health' },
+            { id: 'q014', text: 'PATIENCE TURNS SMALL EFFORTS INTO GREAT RESULTS.', author: 'Original', difficulty: 'easy', category: 'inspiration' },
+            { id: 'q015', text: 'EVERY PROBLEM HIDES A CHANCE TO GROW.', author: 'Original', difficulty: 'easy', category: 'inspiration' },
+            { id: 'q016', text: 'SHARING FOOD MAKES EVERY MEAL A FEAST.', author: 'Original', difficulty: 'easy', category: 'friendship' },
+            { id: 'q017', text: 'RAINBOWS APPEAR AFTER STORMS PASS AWAY.', author: 'Original', difficulty: 'easy', category: 'nature' },
+            { id: 'q018', text: 'CURIOSITY IS THE ENGINE OF DISCOVERY.', author: 'Original', difficulty: 'easy', category: 'learning' },
+            { id: 'q019', text: 'A CALM HEART WEATHERS EVERY STORM.', author: 'Original', difficulty: 'easy', category: 'wisdom' },
+            { id: 'q020', text: 'SMALL HABITS SHAPE THE PATH AHEAD.', author: 'Original', difficulty: 'easy', category: 'wisdom' },
+            // Medium
+            { id: 'q021', text: 'THE SECRET OF GETTING AHEAD IS GETTING STARTED WITH COURAGE.', author: 'Original', difficulty: 'medium', category: 'inspiration' },
+            { id: 'q022', text: 'WHAT WE ACHIEVE TOMORROW GROWS FROM WHAT WE LEARN TODAY.', author: 'Original', difficulty: 'medium', category: 'learning' },
+            { id: 'q023', text: 'A GARDEN FLOURISHES WHEN EVERY SEED IS GIVEN CARE.', author: 'Original', difficulty: 'medium', category: 'nature' },
+            { id: 'q024', text: 'THE STRONGEST BRIDGES ARE BUILT FROM SIMPLE HONESTY.', author: 'Original', difficulty: 'medium', category: 'wisdom' },
+            { id: 'q025', text: 'NO WIND FAVORS A SHIP THAT NEVER RAISES ITS SAIL.', author: 'Original', difficulty: 'medium', category: 'inspiration' },
+            { id: 'q026', text: 'CHANGE BEGINS THE MOMENT WE CHOOSE TO LOOK AHEAD.', author: 'Original', difficulty: 'medium', category: 'inspiration' },
+            { id: 'q027', text: 'KNOWLEDGE GAINED WITHOUT EFFORT IS EASILY FORGOTTEN.', author: 'Original', difficulty: 'medium', category: 'learning' },
+            { id: 'q028', text: 'A FRIEND LISTENS WITHOUT JUDGMENT AND SPEAKS WITH KINDNESS.', author: 'Original', difficulty: 'medium', category: 'friendship' },
+            { id: 'q029', text: 'MOUNTAINS ARE CROSSED ONE STEADY STEP AT A TIME.', author: 'Original', difficulty: 'medium', category: 'inspiration' },
+            { id: 'q030', text: 'THE RIVER REMEMBERS EVERY STONE IT CARRIES DOWNSTREAM.', author: 'Original', difficulty: 'medium', category: 'nature' },
+            { id: 'q031', text: 'MORNING LIGHT REFRESHES THE SOUL AND CLEARS THE PATH.', author: 'Original', difficulty: 'medium', category: 'nature' },
+            { id: 'q032', text: 'TRUE MASTERY COMES FROM REPEATING SIMPLE THINGS WELL.', author: 'Original', difficulty: 'medium', category: 'learning' },
+            { id: 'q033', text: 'THE MOST PRECIOUS GIFTS ARE MOMENTS WE SHARE WITH OTHERS.', author: 'Original', difficulty: 'medium', category: 'friendship' },
+            { id: 'q034', text: 'PATIENCE MEASURES DISTANCE THAT RUSHING CANNOT COVER.', author: 'Original', difficulty: 'medium', category: 'wisdom' },
+            { id: 'q035', text: 'EVERY GREAT JOURNEY STARTS FROM A QUIET DECISION.', author: 'Original', difficulty: 'medium', category: 'inspiration' },
+            // Hard
+            { id: 'q036', text: 'THE QUIET BEAUTY OF A WINTER MORNING HOLDS PROMISES OF RENEWAL AND HOPE FOR ALL WHO WITNESS ITS STILLNESS.', author: 'Original', difficulty: 'hard', category: 'nature' },
+            { id: 'q037', text: 'HISTORY REMINDS US THAT PROGRESS IS NOT A STRAIGHT LINE BUT A PATH OF TRIALS, MISTAKES, AND QUIET VICTORIES.', author: 'Original', difficulty: 'hard', category: 'history' },
+            { id: 'q038', text: 'CURIOSITY TRANSFORMS AN ORDINARY DAY INTO AN EXPEDITION WHERE EVERY DETAIL BECOMES A FRAGMENT OF A LARGER STORY.', author: 'Original', difficulty: 'hard', category: 'learning' },
+            { id: 'q039', text: 'THE COURAGE TO QUESTION WHAT WE BELIEVE OPENS DOORS THAT HABIT AND COMFORT HAVE LONG KEPT CLOSED.', author: 'Original', difficulty: 'hard', category: 'wisdom' },
+            { id: 'q040', text: 'A WELLSPENT EVENING IN GOOD COMPANY OUTWEIGHS A LIFETIME OF CHASING TREASURES THAT VANISH AT SUNRISE.', author: 'Original', difficulty: 'hard', category: 'friendship' },
+            { id: 'q041', text: 'PERSEVERANCE IS THE QUIET ARCHITECT OF SUCCESS, SHAPING EVERY HABIT AND DECISION INTO A FOUNDATION FOR TOMORROW.', author: 'Original', difficulty: 'hard', category: 'inspiration' },
+            { id: 'q042', text: 'THE MOST MEMORABLE LANDSCAPES ARE NOT THE GRANDEST BUT THOSE THAT HAVE ENDURED THE SLOW WEATHERING OF TIME.', author: 'Original', difficulty: 'hard', category: 'nature' },
+            { id: 'q043', text: 'WISDOM IS NOT FOUND IN THE CLAMOR OF MANY VOICES BUT IN THE STEADY HARMONY OF LISTENING AND REFLECTION.', author: 'Original', difficulty: 'hard', category: 'wisdom' },
+            { id: 'q044', text: 'EVERY GENERATION INHERITS A WORLD SHAPED BY CHOICES, AND THE TASK IS TO LEAVE BEHIND A CLEARER PATH THAN BEFORE.', author: 'Original', difficulty: 'hard', category: 'history' },
+            { id: 'q045', text: 'THE BEAUTY OF LEARNING IS THAT NOBODY CAN TAKE IT AWAY, AND NO AMOUNT OF CHANGE CAN ERASE ITS VALUE.', author: 'Original', difficulty: 'hard', category: 'learning' },
+            { id: 'q046', text: 'FRIENDSHIP FLOURISHES WHEN SMALL ACTS OF ATTENTION ACCUMULATE INTO A BOND STRONGER THAN ANY DISTANCE.', author: 'Original', difficulty: 'hard', category: 'friendship' },
+            { id: 'q047', text: 'AN EMPTY ROOM CAN HOLD THE WEIGHT OF A THOUSAND MEMORIES IF THE HEART LEARNS TO LISTEN TO SILENCE.', author: 'Original', difficulty: 'hard', category: 'wisdom' },
+            { id: 'q048', text: 'DISCOVERY RARELY ARRIVES AS A FLASH; MORE OFTEN IT GROWS FROM HOURS OF PATIENT QUESTIONING AND CALM OBSERVATION.', author: 'Original', difficulty: 'hard', category: 'learning' },
+            { id: 'q049', text: 'THE MOST DURABLE LEGACY IS NOT A MONUMENT BUT THE EXAMPLE OF HOW WE TREATED ONE ANOTHER DAY BY DAY.', author: 'Original', difficulty: 'hard', category: 'wisdom' },
+            { id: 'q050', text: 'STARLIGHT TRAVELS FOR AGES BEFORE REACHING US, A QUIET REMINDER THAT PATIENCE AND DISTANCE ARE PARTNERS IN DISCOVERY.', author: 'Original', difficulty: 'hard', category: 'nature' }
+        ];
+        const CONTENT_VERSION = 1;
+
+        // ─────────────────────── Cipher generation ───────────────────────
+        function generateCipher(rand) {
+            const plain = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+            const cipher = shuffle(plain, rand);
+            // Repair fixed points so the substitution is a derangement:
+            // ensure cipher[i] !== plain[i] for every position.
+            for (let i = 0; i < 26; i++) {
+                if (cipher[i] === plain[i]) {
+                    for (let j = i + 1; j < 26; j++) {
+                        if (cipher[j] !== plain[i] && cipher[i] !== plain[j]) {
+                            const t = cipher[i]; cipher[i] = cipher[j]; cipher[j] = t;
+                            break;
+                        }
+                    }
+                }
+            }
+            const encode = {}, decode = {};
+            for (let i = 0; i < 26; i++) {
+                encode[plain[i]] = cipher[i];
+                decode[cipher[i]] = plain[i];
+            }
+            return { encode, decode };
+        }
+
+        function encrypt(text, encode) {
+            let out = '';
+            for (const ch of text) {
+                const up = ch.toUpperCase();
+                if (/[A-Z]/.test(up)) out += encode[up];
+                else out += ch;
+            }
+            return out;
+        }
+
+        // ─────────────────────── State ───────────────────────
+        let difficulty = 'easy', seed = 1;
+        let source = null, ciphertext = '', decode = {}, guesses = {}, revealed = new Set();
+        let selectedCipher = null, hintsUsed = 0, checksUsed = 0, hintLevel = 0;
+        let gameOver = false, complete = false, guessChanges = 0;
+        let startTime = 0, elapsed = 0, timerId = null, showFreq = false, currentWordPattern = null;
+
+        // ─────────────────────── Puzzle setup ───────────────────────
+        function pickSource(diff, rand) {
+            const pool = CONTENT.filter(c => c.difficulty === diff);
+            return pool[Math.floor(rand() * pool.length)];
+        }
+
+        function setupPuzzle(diff, sd) {
+            const rand = makePRNG(sd);
+            const src = pickSource(diff, rand);
+            source = src;
+            const cip = generateCipher(rand);
+            decode = cip.decode;
+            ciphertext = encrypt(src.text, cip.encode);
+            guesses = {};
+            revealed = new Set();
+            selectedCipher = null;
+            hintsUsed = 0; checksUsed = 0; hintLevel = 0; guessChanges = 0;
+            gameOver = false; complete = false;
+            // Easy mode: reveal up to two most frequent useful letters
+            if (diff === 'easy') {
+                const freq = letterFrequency();
+                const sorted = Object.keys(freq).sort((a, b) => freq[b] - freq[a]);
+                const count = Math.min(2, sorted.length);
+                for (let i = 0; i < count; i++) {
+                    const ch = sorted[i];
+                    guesses[ch] = decode[ch];
+                    revealed.add(ch);
+                }
+            }
+        }
+
+        function usedCipherLetters() {
+            const used = new Set();
+            for (const ch of ciphertext) {
+                if (/[A-Z]/.test(ch)) used.add(ch);
+            }
+            return [...used];
+        }
+
+        function unresolvedCount() {
+            return usedCipherLetters().filter(ch => !(guesses[ch] && guesses[ch] !== undefined && guesses[ch] !== null)).length;
+        }
+
+        function letterFrequency() {
+            const freq = {};
+            for (const ch of ciphertext) {
+                if (/[A-Z]/.test(ch)) freq[ch] = (freq[ch] || 0) + 1;
+            }
+            return freq;
+        }
+
+        // ─────────────────────── Rendering: cipher display ───────────────────────
+        function renderCipher() {
+            cipherDisplay.innerHTML = '';
+            currentWordPattern = null;
+            const words = ciphertext.split(' ');
+            const wordEls = [];
+            for (const w of words) {
+                const word = document.createElement('div');
+                word.className = 'word';
+                let idx = 0;
+                while (idx < w.length) {
+                    const ch = w[idx];
+                    if (/[A-Z]/.test(ch)) {
+                        const pair = document.createElement('div');
+                        pair.className = 'letter-pair';
+                        pair.dataset.cipher = ch;
+                        const cEl = document.createElement('span');
+                        cEl.className = 'cipher';
+                        cEl.textContent = ch;
+                        const gEl = document.createElement('span');
+                        gEl.className = 'guess';
+                        gEl.textContent = (guesses[ch] && !revealed.has(ch)) ? guesses[ch] : (revealed.has(ch) ? decode[ch] : '');
+                        if (revealed.has(ch)) pair.classList.add('revealed');
+                        pair.appendChild(cEl);
+                        pair.appendChild(gEl);
+                        pair.setAttribute('role', 'button');
+                        pair.setAttribute('aria-label', 'Cipher letter ' + ch + (guesses[ch] ? ', guessed as ' + guesses[ch] : ', unassigned'));
+                        pair.addEventListener('click', () => selectLetter(ch));
+                        word.appendChild(pair);
+                        wordEls.push(pair);
+                    } else {
+                        // Punctuation / apostrophe / hyphen — render as plain pair, non-interactive
+                        const pair = document.createElement('div');
+                        pair.className = 'letter-pair punct';
+                        const cEl = document.createElement('span');
+                        cEl.className = 'cipher';
+                        cEl.textContent = ch;
+                        const gEl = document.createElement('span');
+                        gEl.className = 'guess';
+                        gEl.textContent = ch;
+                        pair.appendChild(cEl);
+                        pair.appendChild(gEl);
+                        word.appendChild(pair);
+                    }
+                    idx++;
+                }
+                cipherDisplay.appendChild(word);
+            }
+            // Correctness coloring (Easy mode only, live)
+            if (difficulty === 'easy') {
+                for (const pair of cipherDisplay.querySelectorAll('.letter-pair:not(.punct)')) {
+                    const ch = pair.dataset.cipher;
+                    if (guesses[ch] && guesses[ch] === decode[ch]) pair.classList.add('correct');
+                }
+            }
+        }
+
+        function updateHighlights() {
+            for (const pair of cipherDisplay.querySelectorAll('.letter-pair')) {
+                pair.classList.toggle('selected', selectedCipher !== null && pair.dataset.cipher === selectedCipher);
+            }
+            // Keyboard current
+            for (const btn of alphaKeyboard.querySelectorAll('button')) {
+                const letter = btn.dataset.plain;
+                btn.classList.toggle('current', selectedCipher !== null && guesses[selectedCipher] === letter);
+            }
+        }
+
+        function selectLetter(ch) {
+            if (gameOver) return;
+            if (audioContext.state === 'suspended') audioContext.resume();
+            selectedCipher = (selectedCipher === ch) ? null : ch;
+            updateHighlights();
+            renderMapping();
+            if (selectedCipher) {
+                announce('Selected cipher letter ' + selectedCipher + (guesses[selectedCipher] ? ', guessed as ' + guesses[selectedCipher] : ', unassigned'));
+                showWordPattern(selectedCipher);
+            }
+        }
+
+        // ─────────────────────── Rendering: keyboard & panels ───────────────────────
+        function renderKeyboard() {
+            alphaKeyboard.innerHTML = '';
+            for (let i = 0; i < 26; i++) {
+                const letter = String.fromCharCode(65 + i);
+                const btn = document.createElement('button');
+                btn.textContent = letter;
+                btn.dataset.plain = letter;
+                btn.setAttribute('aria-label', 'Plaintext letter ' + letter);
+                btn.addEventListener('click', () => {
+                    if (audioContext.state === 'suspended') audioContext.resume();
+                    assignGuess(letter);
+                });
+                alphaKeyboard.appendChild(btn);
+            }
+            updateKeyboard();
+        }
+
+        function updateKeyboard() {
+            for (const btn of alphaKeyboard.querySelectorAll('button')) {
+                const letter = btn.dataset.plain;
+                // Disable letters already assigned to a different cipher letter
+                let usedElsewhere = false;
+                for (const ch in guesses) {
+                    if (ch !== selectedCipher && guesses[ch] === letter) { usedElsewhere = true; break; }
+                }
+                btn.disabled = usedElsewhere;
+                btn.classList.toggle('used', usedElsewhere);
+            }
+            updateHighlights();
+        }
+
+        function renderMapping() {
+            mappingPanel.innerHTML = '';
+            const letters = usedCipherLetters();
+            for (const ch of letters) {
+                const entry = document.createElement('div');
+                entry.className = 'map-entry';
+                const c = document.createElement('b');
+                c.textContent = ch;
+                const g = document.createElement('span');
+                g.textContent = guesses[ch] || '_';
+                if (revealed.has(ch)) g.style.color = 'var(--accent2)';
+                entry.appendChild(c);
+                entry.appendChild(g);
+                mappingPanel.appendChild(entry);
+            }
+        }
+
+        function renderFreq() {
+            freqPanel.classList.toggle('hidden', !showFreq);
+            if (!showFreq) return;
+            freqPanel.innerHTML = '';
+            const freq = letterFrequency();
+            const sorted = Object.keys(freq).sort((a, b) => freq[b] - freq[a]);
+            for (const ch of sorted) {
+                const e = document.createElement('div');
+                e.className = 'freq-entry';
+                const b = document.createElement('b');
+                b.textContent = ch;
+                const s = document.createElement('span');
+                s.textContent = freq[ch];
+                e.appendChild(b);
+                e.appendChild(s);
+                freqPanel.appendChild(e);
+            }
+        }
+
+        function showWordPattern(cipherCh) {
+            // Show repeated-letter pattern of the first word containing cipherCh
+            const words = ciphertext.split(' ');
+            for (const w of words) {
+                if (w.includes(cipherCh) && /[A-Z]/.test(w)) {
+                    const pattern = [];
+                    const map = {};
+                    let next = 0;
+                    for (const ch of w) {
+                        if (!/[A-Z]/.test(ch)) { pattern.push('·'); continue; }
+                        if (map[ch] === undefined) map[ch] = next++;
+                        pattern.push(map[ch]);
+                    }
+                    messageEl.textContent = 'Word pattern (' + w + '): ' + pattern.join('-');
+                    messageEl.style.color = 'var(--text)';
+                    return;
+                }
+            }
+        }
+
+        // ─────────────────────── Guess handling ───────────────────────
+        function assignGuess(letter) {
+            if (gameOver || !selectedCipher) { announce('Select a cipher letter first'); return; }
+            const ch = selectedCipher;
+            if (revealed.has(ch)) { announce('This letter was revealed by a hint and cannot be changed'); return; }
+            if (guesses[ch] === letter) {
+                guesses[ch] = null; // toggle off
+                delete guesses[ch];
+            } else {
+                // Enforce one-to-one: no other cipher letter may already use this plaintext
+                let conflict = null;
+                for (const k in guesses) {
+                    if (guesses[k] === letter) conflict = k;
+                }
+                if (conflict && conflict !== ch) {
+                    messageEl.textContent = 'Letter ' + letter + ' is already assigned to cipher ' + conflict + '.';
+                    messageEl.style.color = 'var(--danger)';
+                    errorSound();
+                    return;
+                }
+                guesses[ch] = letter;
+                guessChanges++;
+                successSound();
+                if (difficulty === 'easy' && letter === decode[ch]) {
+                    messageEl.textContent = 'Correct!';
+                    messageEl.style.color = 'var(--accent2)';
+                }
+            }
+            renderCipher();
+            updateKeyboard();
+            renderMapping();
+            announce('Cipher ' + ch + ' assigned to ' + letter + '.');
+            checkComplete();
+        }
+
+        function clearSelected() {
+            if (gameOver || !selectedCipher) return;
+            if (revealed.has(selectedCipher)) { announce('Revealed letters cannot be cleared'); return; }
+            delete guesses[selectedCipher];
+            renderCipher();
+            updateKeyboard();
+            renderMapping();
+            announce('Cleared mapping for ' + selectedCipher + '.');
+        }
+
+        // ─────────────────────── Check ───────────────────────
+        function doCheck() {
+            if (gameOver) return;
+            if (audioContext.state === 'suspended') audioContext.resume();
+            checksUsed++;
+            checkCountEl.textContent = checksUsed;
+            const unresolved = unresolvedCount();
+            if (unresolved > 0) {
+                messageEl.textContent = 'The puzzle is not complete. ' + unresolved + ' letter mapping' + (unresolved === 1 ? '' : 's') + ' remain.';
+                messageEl.style.color = 'var(--accent2)';
+                return;
+            }
+            let wrong = 0, wrongCh = null;
+            for (const ch of usedCipherLetters()) {
+                if (guesses[ch] !== decode[ch]) { wrong++; if (!wrongCh) wrongCh = ch; }
+            }
+            if (wrong > 0) {
+                messageEl.textContent = 'Some mappings are incorrect.';
+                messageEl.style.color = 'var(--danger)';
+                errorSound();
+                if (checksUsed >= 3) {
+                    // Soft reveal: point at one wrong mapping
+                    messageEl.textContent += ' Check cipher letter ' + wrongCh + '.';
+                }
+            } else {
+                complete = true; gameOver = true;
+                clearInterval(timerId);
+                elapsed = Math.round((performance.now() - startTime) / 1000);
+                saveBest();
+                winSound();
+                showModal(`
+                    <h2>Solved!</h2>
+                    <p class="quote">"${source.text}"</p>
+                    <p>— ${difficulty === 'hard' ? source.author : source.author}</p>
+                    <p><b>Time:</b> ${fmtTime(elapsed)} · <b>Hints:</b> ${hintsUsed} · <b>Checks:</b> ${checksUsed}</p>
+                    <p><b>Difficulty:</b> ${cap(difficulty)} · <b>Seed:</b> ${seed}</p>
+                    <div class="controls">
+                        <button id="copy-btn">Copy Result</button>
+                        <button id="again-btn">New Puzzle</button>
+                    </div>
+                `);
+                document.getElementById('again-btn').addEventListener('click', () => { hideModal(); newPuzzle(); });
+                document.getElementById('copy-btn').addEventListener('click', copyResult);
+            }
+        }
+
+        function copyResult() {
+            const text = [
+                'Cryptograms',
+                'Difficulty: ' + cap(difficulty),
+                'Solved in ' + fmtTime(elapsed),
+                'Hints: ' + hintsUsed,
+                'Checks: ' + checksUsed,
+                'Seed: ' + seed
+            ].join('\n');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    messageEl.textContent = 'Result copied to clipboard.';
+                    messageEl.style.color = 'var(--accent2)';
+                }).catch(() => fallbackCopy(text));
+            } else fallbackCopy(text);
+        }
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); messageEl.textContent = 'Result copied.'; } catch (e) { /* ignore */ }
+            ta.remove();
+        }
+
+        function saveBest() {
+            try {
+                const key = 'cg.best.' + difficulty;
+                const prev = localStorage.getItem(key);
+                const cur = { time: elapsed, hints: hintsUsed, checks: checksUsed };
+                if (prev === null || elapsed < Number(JSON.parse(prev).time)) {
+                    localStorage.setItem(key, JSON.stringify(cur));
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        // ─────────────────────── Hints ───────────────────────
+        function doHint() {
+            if (gameOver) return;
+            if (audioContext.state === 'suspended') audioContext.resume();
+            const freq = letterFrequency();
+            const sorted = Object.keys(freq).sort((a, b) => freq[b] - freq[a]);
+            if (hintLevel === 0) {
+                // Level 1: identify most frequent unresolved cipher letter
+                const un = sorted.find(ch => !guesses[ch]);
+                if (un) {
+                    messageEl.textContent = 'The symbol ' + un + ' appears ' + freq[un] + ' times.';
+                    messageEl.style.color = 'var(--accent2)';
+                } else {
+                    messageEl.textContent = 'All letters assigned — press Check.';
+                }
+            } else if (hintLevel === 1) {
+                // Level 2: whether current selected guess is correct
+                if (selectedCipher && guesses[selectedCipher]) {
+                    const ok = guesses[selectedCipher] === decode[selectedCipher];
+                    messageEl.textContent = ok ? selectedCipher + ' → ' + guesses[selectedCipher] + ' is correct.' :
+                        selectedCipher + ' → ' + guesses[selectedCipher] + ' is incorrect.';
+                    messageEl.style.color = ok ? 'var(--accent2)' : 'var(--danger)';
+                    if (ok) successSound(); else errorSound();
+                } else {
+                    messageEl.textContent = 'Select a letter with a guess first, then ask for a hint.';
+                }
+            } else if (hintLevel === 2) {
+                // Level 3: reveal one high-value mapping
+                const un = sorted.find(ch => !guesses[ch] && !revealed.has(ch));
+                if (un) {
+                    guesses[un] = decode[un];
+                    revealed.add(un);
+                    renderCipher();
+                    updateKeyboard();
+                    renderMapping();
+                    messageEl.textContent = 'Revealed: ' + un + ' → ' + decode[un] + '.';
+                    messageEl.style.color = 'var(--accent2)';
+                    successSound();
+                } else {
+                    messageEl.textContent = 'No unrevealed letters left.';
+                }
+            } else {
+                // Level 4: reveal one word
+                const words = ciphertext.split(' ').filter(w => /[A-Z]/.test(w) && w.length >= 3);
+                let revealedWord = false;
+                for (const w of words) {
+                    const allUnknown = [...w].every(ch => !/[A-Z]/.test(ch) || !guesses[ch]);
+                    if (allUnknown) {
+                        for (const ch of w) {
+                            if (!/[A-Z]/.test(ch)) continue;
+                            guesses[ch] = decode[ch];
+                            revealed.add(ch);
+                        }
+                        revealedWord = true;
+                        break;
+                    }
+                }
+                if (revealedWord) {
+                    renderCipher();
+                    updateKeyboard();
+                    renderMapping();
+                    messageEl.textContent = 'Revealed one full word.';
+                    messageEl.style.color = 'var(--accent2)';
+                    successSound();
+                } else {
+                    messageEl.textContent = 'No fully unrevealed word remains.';
+                }
+            }
+            hintsUsed++;
+            hintCountEl.textContent = hintsUsed;
+            hintLevel++;
+        }
+
+        // ─────────────────────── Completion ───────────────────────
+        function checkComplete() {
+            if (complete) return;
+            if (unresolvedCount() === 0) {
+                let allCorrect = true;
+                for (const ch of usedCipherLetters()) {
+                    if (guesses[ch] !== decode[ch]) { allCorrect = false; break; }
+                }
+                if (allCorrect) {
+                    complete = true; gameOver = true;
+                    clearInterval(timerId);
+                    elapsed = Math.round((performance.now() - startTime) / 1000);
+                    saveBest();
+                    winSound();
+                    showModal(`
+                        <h2>Solved!</h2>
+                        <p class="quote">"${source.text}"</p>
+                        <p>— ${source.author}</p>
+                        <p><b>Time:</b> ${fmtTime(elapsed)} · <b>Hints:</b> ${hintsUsed} · <b>Checks:</b> ${checksUsed}</p>
+                        <p><b>Difficulty:</b> ${cap(difficulty)} · <b>Seed:</b> ${seed}</p>
+                        <div class="controls">
+                            <button id="copy-btn">Copy Result</button>
+                            <button id="again-btn">New Puzzle</button>
+                        </div>
+                    `);
+                    document.getElementById('again-btn').addEventListener('click', () => { hideModal(); newPuzzle(); });
+                    document.getElementById('copy-btn').addEventListener('click', copyResult);
+                }
+            }
+        }
+
+        // ─────────────────────── Timer / helpers ───────────────────────
+        function fmtTime(s) {
+            s = Math.max(0, Math.floor(s));
+            const m = Math.floor(s / 60), r = s % 60;
+            return m + ':' + String(r).padStart(2, '0');
+        }
+        function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+        function updateTimer() {
+            if (!complete) {
+                elapsed = Math.floor((performance.now() - startTime) / 1000);
+                timerEl.textContent = fmtTime(elapsed);
+            }
+        }
+
+        // ─────────────────────── Modal ───────────────────────
+        function showModal(html) {
+            modalContent.innerHTML = html;
+            modal.classList.add('show');
+        }
+        function hideModal() { modal.classList.remove('show'); }
+        modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+        // ─────────────────────── New game / load ───────────────────────
+        function newPuzzle() {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            difficulty = diffSelect.value;
+            const sd = seed || Math.floor(Math.random() * 1000000);
+            seed = sd;
+            seedInput.value = sd;
+            seedDisplayEl.textContent = sd;
+            try {
+                setupPuzzle(difficulty, seed);
+            } catch (e) {
+                setupPuzzle('easy', 1);
+            }
+            hintCountEl.textContent = 0;
+            checkCountEl.textContent = 0;
+            messageEl.textContent = difficulty === 'hard' ? 'Hard: decode the cipher.' : 'Decode the cipher text below.';
+            messageEl.style.color = 'var(--accent2)';
+            startTime = performance.now();
+            clearInterval(timerId);
+            timerId = setInterval(updateTimer, 1000);
+            renderCipher();
+            renderKeyboard();
+            renderMapping();
+            renderFreq();
+            updateTimer();
+        }
+
+        function readURL() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('seed')) seed = parseInt(params.get('seed'), 10) || seed;
+            if (params.get('difficulty')) diffSelect.value = params.get('difficulty');
+        }
+
+        // ─────────────────────── Events ───────────────────────
+        newBtn.addEventListener('click', () => { seed = Math.floor(Math.random() * 1000000); newPuzzle(); });
+        restartBtn.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            setupPuzzle(difficulty, seed);
+            hintCountEl.textContent = 0; checkCountEl.textContent = 0;
+            renderCipher(); renderKeyboard(); renderMapping(); renderFreq();
+            messageEl.textContent = 'Puzzle restarted.';
+            messageEl.style.color = 'var(--accent2)';
+        });
+        checkBtn.addEventListener('click', doCheck);
+        hintBtn.addEventListener('click', doHint);
+        clearBtn.addEventListener('click', clearSelected);
+        seedBtn.addEventListener('click', () => {
+            const v = parseInt(seedInput.value, 10);
+            if (v) { seed = v; newPuzzle(); }
+        });
+        freqBtn.addEventListener('click', () => {
+            showFreq = !showFreq;
+            renderFreq();
+            freqBtn.classList.toggle('used', showFreq);
+        });
+        rulesBtn.addEventListener('click', () => showModal(`
+            <h2>Rules</h2>
+            <p>Every ciphertext letter represents exactly one plaintext letter, and the mapping never changes.</p>
+            <p>Two ciphertext letters can never represent the same plaintext letter.</p>
+            <p>Spaces and punctuation are not encrypted.</p>
+            <p>Tap a cipher letter, then choose its plaintext on the keyboard. The puzzle is solved when every used cipher letter is correctly decoded.</p>
+            <div class="controls"><button id="close-rules">Close</button></div>
+        `));
+        modalContent.addEventListener('click', (e) => {
+            if (e.target.id === 'close-rules') hideModal();
+        });
+        diffSelect.addEventListener('change', () => {
+            seed = Math.floor(Math.random() * 1000000);
+            try { localStorage.setItem('cg.prefs', JSON.stringify({ difficulty: diffSelect.value })); } catch (e) { /* ignore */ }
+            newPuzzle();
+        });
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (modal.classList.contains('show')) { if (e.key === 'Escape') hideModal(); return; }
+            if (/^[a-z]$/i.test(e.key)) {
+                const letter = e.key.toUpperCase();
+                const btn = alphaKeyboard.querySelector('button[data-plain="' + letter + '"]');
+                if (btn && !btn.disabled) { assignGuess(letter); return; }
+            }
+            if (e.key === 'Backspace' || e.key === 'Delete') { clearSelected(); return; }
+            if (e.key === 'Escape') { selectedCipher = null; updateHighlights(); return; }
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                const letters = usedCipherLetters();
+                if (!letters.length) return;
+                const cur = letters.indexOf(selectedCipher);
+                const next = e.key === 'ArrowRight'
+                    ? (cur + 1) % letters.length
+                    : (cur - 1 + letters.length) % letters.length;
+                selectLetter(letters[next]);
+            }
+        });
+
+        function announce(msg) { liveEl.textContent = msg; }
+
+        // ─────────────────────── Init ───────────────────────
+        readURL();
+        seed = seed || Math.floor(Math.random() * 1000000);
+        try {
+            const prefs = JSON.parse(localStorage.getItem('cg.prefs') || 'null');
+            if (prefs && prefs.difficulty) diffSelect.value = prefs.difficulty;
+            if (prefs && prefs.showFrequency) showFreq = true;
+        } catch (e) { /* ignore */ }
+        newPuzzle();
+    });
+    </script>
+    <script>
+    (function(){
+        var t=localStorage.getItem("ui-theme")||"dark";
+        document.documentElement.dataset.theme=t;
+        var btn=document.getElementById("theme-toggle");
+        btn.textContent=t==="dark"?"☀":"☾";
+        btn.addEventListener("click",function(){
+            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
+            document.documentElement.dataset.theme=t;
+            localStorage.setItem("ui-theme",t);
+            btn.textContent=t==="dark"?"☀":"☾";
+        });
+    })();
+    </script>
+</body>
+</html>

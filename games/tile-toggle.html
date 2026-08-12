@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tile Toggle</title>
+    <link rel="stylesheet" href="ui.css">
+    <style>
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 { margin: 8px 0 4px; font-size: 1.4rem; flex-shrink: 0; }
+        .controls { gap: 8px; }
+        .stats { gap: 6px; }
+        .stat { padding: 3px 9px; font-size: 12px; }
+        .game-area {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+        }
+        .board-wrap {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            display: inline-block;
+        }
+        .board {
+            display: grid;
+            gap: 5px;
+        }
+        .tile {
+            width: clamp(44px, 13vw, 72px);
+            height: clamp(44px, 13vw, 72px);
+            padding: 0;
+            border-radius: 8px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--border);
+            transition: background 0.12s, border-color 0.12s, transform 0.12s;
+            touch-action: manipulation;
+        }
+        .tile[data-on="0"] {
+            background: var(--btn-bg-alt);
+            color: var(--muted);
+            border-color: #3a3a3a;
+        }
+        .tile[data-on="1"] {
+            background: var(--accent);
+            color: #fff;
+            border-color: #7c6bcf;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+        }
+        .tile[data-on="1"] .icon { text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+        .tile:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
+        .tile.preview { background: rgba(167, 139, 250, 0.35); border-color: var(--accent); }
+        .tile.hinted { animation: pulse 0.8s infinite; }
+        .tile.flip { animation: tile-flip 0.15s ease; }
+        @keyframes tile-flip {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.85); }
+            100% { transform: scale(1); }
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+            50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .tile.flip, .tile.hinted { animation: none; }
+            .tile { transition: none; }
+        }
+        .message { margin-top: 4px; }
+        .note { color: #666; font-size: 12px; flex-shrink: 0; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 28px;
+            text-align: center;
+            animation: popIn 0.3s ease;
+            max-width: 92vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { color: var(--accent2); margin: 0 0 10px; }
+        .modal-content p { color: var(--text); font-size: 15px; margin: 6px 0; }
+        .modal-content .stars { font-size: 28px; margin: 6px 0; }
+        .modal-content .controls { margin-top: 14px; }
+        #live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.1rem; margin: 6px 0 2px; }
+            .stats { gap: 4px; margin: 2px 0 4px; }
+            .stat { padding: 2px 6px; font-size: 11px; }
+            .panel { padding: 4px 8px; }
+            select, button { font-size: 12px; padding: 5px 9px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
+    <h1>Tile Toggle</h1>
+    <div class="controls">
+        <div class="panel">
+            <label for="diff-select">Difficulty:</label>
+            <select id="diff-select">
+                <option value="easy">Easy · 3×3</option>
+                <option value="medium">Medium · 4×4</option>
+                <option value="hard">Hard · 5×5</option>
+            </select>
+            <button id="new-btn">New Puzzle</button>
+            <button id="undo-btn">Undo</button>
+            <button id="restart-btn">Restart</button>
+            <button id="hint-btn">Hint</button>
+            <button id="rules-btn">Rules</button>
+        </div>
+    </div>
+    <div class="stats">
+        <div class="stat">⏱ <span id="timer">0:00</span></div>
+        <div class="stat">Moves: <span id="moves">0</span></div>
+        <div class="stat">Min: <span id="min-moves">–</span></div>
+        <div class="stat">Hints: <span id="hint-count">0</span></div>
+        <div class="stat">Seed: <span id="seed-display">–</span></div>
+    </div>
+    <div class="game-area">
+        <div id="board-wrap" class="board-wrap"></div>
+    </div>
+    <div class="controls" style="margin-top:2px">
+        <div class="panel">
+            <label for="seed-input">Seed:</label>
+            <input id="seed-input" type="number" style="width:90px;padding:5px;border:1px solid var(--border);border-radius:5px;background:var(--btn-bg-alt);color:var(--text)">
+            <button id="seed-btn">Load</button>
+        </div>
+    </div>
+    <div id="message" class="message">Press New Puzzle to start.</div>
+    <div id="note" class="note">Tap a tile to toggle it and its neighbors. Turn every tile off to win.</div>
+    <div id="live" aria-live="polite"></div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content" id="modal-content"></div>
+    </div>
+
+    <script>
+    'use strict';
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // ─────────────────────── Audio ───────────────────────
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(freq = 700, dur = 0.1, vol = 0.25) {
+            const o = audioContext.createOscillator();
+            const g = audioContext.createGain();
+            o.connect(g); g.connect(audioContext.destination);
+            o.type = 'sine'; o.frequency.value = freq;
+            g.gain.setValueAtTime(vol, audioContext.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
+            o.start(); o.stop(audioContext.currentTime + dur);
+        }
+        function successSound() { beep(600, 0.07, 0.25); setTimeout(() => beep(900, 0.07, 0.2), 80); }
+        function errorSound() { beep(180, 0.14, 0.18); }
+        function winSound() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.12, 0.25), i * 120)); }
+
+        // ─────────────────────── Seeded PRNG (Mulberry32) ───────────────────────
+        function makePRNG(seed) {
+            let s = seed >>> 0;
+            return function () {
+                s += 0x6D2B79F5;
+                let t = Math.imul(s ^ (s >>> 15), 1 | s);
+                t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+        function shuffle(arr, rand) {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(rand() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        // ─────────────────────── DOM refs ───────────────────────
+        const diffSelect = document.getElementById('diff-select');
+        const newBtn = document.getElementById('new-btn');
+        const undoBtn = document.getElementById('undo-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const rulesBtn = document.getElementById('rules-btn');
+        const seedInput = document.getElementById('seed-input');
+        const seedBtn = document.getElementById('seed-btn');
+        const boardWrap = document.getElementById('board-wrap');
+        const messageEl = document.getElementById('message');
+        const timerEl = document.getElementById('timer');
+        const movesEl = document.getElementById('moves');
+        const minMovesEl = document.getElementById('min-moves');
+        const hintCountEl = document.getElementById('hint-count');
+        const seedDisplayEl = document.getElementById('seed-display');
+        const liveEl = document.getElementById('live');
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modal-content');
+
+        // ─────────────────────── Constants ───────────────────────
+        const CROSS_OFFSETS = [[0,0],[-1,0],[1,0],[0,-1],[0,1]];
+        const DIFF = {
+            easy:   { size: 3, minMoves: 2,  maxMoves: 4,  label: 'Easy' },
+            medium: { size: 5, minMoves: 6,  maxMoves: 12, label: 'Medium' },
+            hard:   { size: 5, minMoves: 10, maxMoves: 99, label: 'Hard' }
+        };
+        const FALLBACK_PUZZLES = {
+            '3': [1,1,0, 0,1,1, 1,0,1],
+            '4': [1,0,1,0, 0,1,0,1, 1,0,1,0, 0,1,0,1],
+            '5': [1,0,1,0,1, 0,1,0,1,0, 1,0,1,0,1, 0,1,0,1,0, 1,0,1,0,1]
+        };
+
+        // ─────────────────────── State ───────────────────────
+        let size = 3, difficulty = 'easy', seed = 1;
+        let initialBoard = null, currentBoard = null, moveHistory = [], moveCount = 0;
+        let minimumMoves = 0, hintsUsed = 0, restarts = 0;
+        let gameOver = false, complete = false, hintStage = 0;
+        let startTime = 0, elapsed = 0, timerId = null;
+        let tileEls = [], hintedTile = null, previewTile = null;
+
+        // ─────────────────────── Board model ───────────────────────
+        function idx(r, c) { return r * size + c; }
+        function cloneBoard(b) { return Uint8Array.from(b); }
+        function allOff(b) { for (let i = 0; i < b.length; i++) if (b[i] === 1) return false; return true; }
+
+        // Apply one move (XOR toggle). Returns list of affected indices.
+        function applyMove(b, r, c) {
+            const affected = [];
+            for (const [dr, dc] of CROSS_OFFSETS) {
+                const nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+                    const i = idx(nr, nc);
+                    b[i] ^= 1;
+                    affected.push(i);
+                }
+            }
+            return affected;
+        }
+
+        // ─────────────────────── Row-chasing solver ───────────────────────
+        // For the Cross rule (no wrapping): enumerate all 2^size first-row move
+        // patterns; every subsequent row's moves are then forced by the constraint
+        // that each cell above must be Off before we advance. A solution exists iff
+        // the final row ends up all Off. Returns the move list of the shortest
+        // solution, or null if the board is unsolvable.
+        function solve(board, n) {
+            let best = null;
+            for (let mask = 0; mask < (1 << n); mask++) {
+                const work = cloneBoard(board);
+                const moves = [];
+                // Apply first-row moves encoded in the mask
+                for (let c = 0; c < n; c++) {
+                    if ((mask >> c) & 1) {
+                        applyMove(work, 0, c);
+                        moves.push([0, c]);
+                    }
+                }
+                // Force moves for rows 1..n-1 to clear the row above
+                for (let r = 1; r < n; r++) {
+                    for (let c = 0; c < n; c++) {
+                        if (work[idx(r - 1, c)] === 1) {
+                            applyMove(work, r, c);
+                            moves.push([r, c]);
+                        }
+                    }
+                }
+                // Check last row is cleared
+                let solved = true;
+                for (let c = 0; c < n; c++) {
+                    if (work[idx(n - 1, c)] === 1) { solved = false; break; }
+                }
+                if (solved && (best === null || moves.length < best.length)) {
+                    best = moves;
+                }
+            }
+            return best;
+        }
+
+        // ─────────────────────── Puzzle generator ───────────────────────
+        function generatePuzzle(diff, sd) {
+            const cfg = DIFF[diff];
+            const n = cfg.size;
+            const rand = makePRNG(sd);
+            for (let attempt = 0; attempt < 120; attempt++) {
+                const b = new Uint8Array(n * n);
+                // Shuffle position list; apply each position at most once
+                const positions = shuffle([...Array(n * n).keys()], rand);
+                const scrambleCount = cfg.minMoves + Math.floor(rand() * Math.max(1, (cfg.maxMoves - cfg.minMoves)));
+                for (let i = 0; i < Math.min(scrambleCount, positions.length); i++) {
+                    const p = positions[i];
+                    applyMove(b, Math.floor(p / n), p % n);
+                }
+                if (allOff(b)) continue; // reject solved board
+                const sol = solve(b, n);
+                if (!sol) continue;
+                const minLen = sol.length;
+                if (minLen < cfg.minMoves || minLen > cfg.maxMoves) continue;
+                return { board: b, minimumMoves: minLen, solution: sol };
+            }
+            // Fallback: bundled puzzle for this size
+            const fb = FALLBACK_PUZZLES[String(cfg.size)];
+            const b = new Uint8Array(fb);
+            const sol = solve(b, n);
+            return { board: b, minimumMoves: sol ? sol.length : fb.length, solution: sol };
+        }
+
+        // ─────────────────────── Rendering ───────────────────────
+        function renderBoard() {
+            boardWrap.innerHTML = '';
+            const b = document.createElement('div');
+            b.className = 'board';
+            b.style.gridTemplateColumns = `repeat(${size}, clamp(44px, 13vw, 72px))`;
+            b.style.gridTemplateRows = `repeat(${size}, clamp(44px, 13vw, 72px))`;
+            boardWrap.appendChild(b);
+            tileEls = [];
+            for (let r = 0; r < size; r++) {
+                tileEls[r] = [];
+                for (let c = 0; c < size; c++) {
+                    const t = document.createElement('button');
+                    t.className = 'tile';
+                    t.dataset.r = r;
+                    t.dataset.c = c;
+                    t.setAttribute('aria-pressed', String(currentBoard[idx(r, c)] === 1));
+                    t.setAttribute('aria-label', `Row ${r + 1}, column ${c + 1}, ${currentBoard[idx(r, c)] === 1 ? 'on' : 'off'}`);
+                    t.innerHTML = '<span class="icon">●</span>';
+                    updateTile(t, r, c);
+                    t.addEventListener('click', () => onTile(r, c));
+                    t.addEventListener('pointerenter', () => { if (previewTile) doPreview(r, c); });
+                    t.addEventListener('pointerleave', () => clearPreview());
+                    b.appendChild(t);
+                    tileEls[r][c] = t;
+                }
+            }
+        }
+
+        function updateTile(t, r, c) {
+            const on = currentBoard[idx(r, c)] === 1;
+            t.dataset.on = on ? '1' : '0';
+            t.setAttribute('aria-pressed', String(on));
+            t.setAttribute('aria-label', `Row ${r + 1}, column ${c + 1}, ${on ? 'on' : 'off'}`);
+            t.querySelector('.icon').textContent = on ? '●' : '○';
+        }
+
+        function updateAllTiles() {
+            for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) updateTile(tileEls[r][c], r, c);
+        }
+
+        // ─────────────────────── Move handling ───────────────────────
+        function onTile(r, c) {
+            if (gameOver) return;
+            if (audioContext.state === 'suspended') audioContext.resume();
+            const affected = applyMove(currentBoard, r, c);
+            moveHistory.push([r, c]);
+            moveCount++;
+            movesEl.textContent = moveCount;
+            successSound();
+            // Animate affected tiles
+            for (const i of affected) {
+                const tr = Math.floor(i / size), tc = i % size;
+                updateTile(tileEls[tr][tc], tr, tc);
+                const el = tileEls[tr][tc];
+                el.classList.remove('flip');
+                void el.offsetWidth; // restart animation
+                el.classList.add('flip');
+            }
+            clearHinted();
+            checkComplete();
+        }
+
+        function doUndo() {
+            if (gameOver) return;
+            if (!moveHistory.length) {
+                messageEl.textContent = 'No moves to undo.';
+                messageEl.style.color = 'var(--accent2)';
+                return;
+            }
+            const last = moveHistory.pop();
+            applyMove(currentBoard, last[0], last[1]); // same move is its own inverse
+            moveCount = Math.max(0, moveCount - 1);
+            movesEl.textContent = moveCount;
+            updateAllTiles();
+            clearHinted();
+            successSound();
+        }
+
+        function doRestart() {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            currentBoard = cloneBoard(initialBoard);
+            moveHistory = [];
+            moveCount = 0;
+            restarts++;
+            movesEl.textContent = 0;
+            clearHinted();
+            updateAllTiles();
+            messageEl.textContent = 'Restarted (restarts: ' + restarts + ').';
+            messageEl.style.color = 'var(--accent2)';
+        }
+
+        // ─────────────────────── Hints ───────────────────────
+        function clearHinted() {
+            for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+                const el = tileEls[r] && tileEls[r][c];
+                if (el) { el.classList.remove('hinted'); }
+            }
+            hintedTile = null;
+            hintStage = 0;
+        }
+
+        function doPreview(r, c) {
+            if (gameOver) return;
+            clearPreview();
+            previewTile = [r, c];
+            for (const [dr, dc] of CROSS_OFFSETS) {
+                const nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+                    tileEls[nr][nc].classList.add('preview');
+                }
+            }
+        }
+        function clearPreview() {
+            if (!previewTile) return;
+            for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+                tileEls[r][c].classList.remove('preview');
+            }
+            previewTile = null;
+        }
+
+        function doHint() {
+            if (gameOver) return;
+            if (audioContext.state === 'suspended') audioContext.resume();
+            if (hintStage === 0) {
+                // Stage 1: preview mode is always on via hover; explain it
+                messageEl.textContent = 'Hint: hover any tile (or tap Hint then a tile) to preview which tiles it toggles.';
+                messageEl.style.color = 'var(--accent2)';
+                hintStage = 1;
+            } else if (hintStage === 1) {
+                // Stage 2: recommend one move from a solution of the CURRENT board
+                const sol = solve(currentBoard, size);
+                if (!sol || !sol.length) {
+                    messageEl.textContent = 'No move found — the board may be unsolvable; restart.';
+                    messageEl.style.color = 'var(--danger)';
+                    return;
+                }
+                const [mr, mc] = sol[0];
+                hintedTile = [mr, mc];
+                tileEls[mr][mc].classList.add('hinted');
+                messageEl.textContent = 'Hint: tap the highlighted tile (row ' + (mr + 1) + ', column ' + (mc + 1) + ').';
+                messageEl.style.color = 'var(--accent2)';
+                hintStage = 2;
+            } else {
+                // Stage 3: apply the recommended move automatically
+                if (hintedTile) {
+                    onTile(hintedTile[0], hintedTile[1]);
+                    messageEl.textContent = 'Applied the recommended move.';
+                    messageEl.style.color = 'var(--accent2)';
+                    clearHinted();
+                } else {
+                    const sol = solve(currentBoard, size);
+                    if (sol && sol.length) onTile(sol[0][0], sol[0][1]);
+                    clearHinted();
+                }
+            }
+            hintsUsed++;
+            hintCountEl.textContent = hintsUsed;
+        }
+
+        // ─────────────────────── Completion ───────────────────────
+        function checkComplete() {
+            if (complete) return;
+            if (allOff(currentBoard)) {
+                complete = true; gameOver = true;
+                clearInterval(timerId);
+                elapsed = Math.round((performance.now() - startTime) / 1000);
+                const aboveMin = Math.max(0, moveCount - minimumMoves);
+                let stars = 1;
+                if (hintsUsed === 0 && moveCount === minimumMoves) stars = 3;
+                else if (hintsUsed <= 1 && aboveMin <= 2) stars = 2;
+                saveBest(stars);
+                winSound();
+                const starStr = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+                showModal(`
+                    <h2>Solved!</h2>
+                    <div class="stars">${starStr}</div>
+                    <p><b>Time:</b> ${fmtTime(elapsed)}</p>
+                    <p><b>Moves:</b> ${moveCount} (minimum ${minimumMoves}, ${aboveMin} above)</p>
+                    <p><b>Hints:</b> ${hintsUsed} · <b>Restarts:</b> ${restarts}</p>
+                    <p><b>Difficulty:</b> ${DIFF[difficulty].label} · ${size}×${size} · <b>Seed:</b> ${seed}</p>
+                    <div class="controls">
+                        <button id="replay-btn">Replay</button>
+                        <button id="new-btn2">New Puzzle</button>
+                        <button id="copy-btn">Copy Result</button>
+                    </div>
+                `);
+                document.getElementById('replay-btn').addEventListener('click', () => { hideModal(); doRestart(); });
+                document.getElementById('new-btn2').addEventListener('click', () => { hideModal(); newPuzzle(); });
+                document.getElementById('copy-btn').addEventListener('click', copyResult);
+            }
+        }
+
+        function saveBest(stars) {
+            try {
+                const key = 'tt.best.' + size + '_' + difficulty;
+                const prev = localStorage.getItem(key);
+                const cur = { time: elapsed, moves: moveCount, hints: hintsUsed, stars };
+                if (prev === null || elapsed < Number(JSON.parse(prev).time)) {
+                    localStorage.setItem(key, JSON.stringify(cur));
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        function copyResult() {
+            const text = [
+                'Tile Toggle',
+                'Board: ' + size + 'x' + size,
+                'Difficulty: ' + DIFF[difficulty].label,
+                'Moves: ' + moveCount,
+                'Minimum: ' + minimumMoves,
+                'Time: ' + fmtTime(elapsed),
+                'Hints: ' + hintsUsed,
+                'Seed: ' + seed
+            ].join('\n');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    messageEl.textContent = 'Result copied to clipboard.';
+                    messageEl.style.color = 'var(--accent2)';
+                }).catch(() => fallbackCopy(text));
+            } else fallbackCopy(text);
+        }
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); messageEl.textContent = 'Result copied.'; } catch (e) { /* ignore */ }
+            ta.remove();
+        }
+
+        // ─────────────────────── Timer / helpers ───────────────────────
+        function fmtTime(s) {
+            s = Math.max(0, Math.floor(s));
+            const m = Math.floor(s / 60), r = s % 60;
+            return m + ':' + String(r).padStart(2, '0');
+        }
+        function updateTimer() {
+            if (!complete) {
+                elapsed = Math.floor((performance.now() - startTime) / 1000);
+                timerEl.textContent = fmtTime(elapsed);
+            }
+        }
+
+        // ─────────────────────── Modal ───────────────────────
+        function showModal(html) {
+            modalContent.innerHTML = html;
+            modal.classList.add('show');
+        }
+        function hideModal() { modal.classList.remove('show'); }
+        modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+        // ─────────────────────── New game / load ───────────────────────
+        function newPuzzle() {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            difficulty = diffSelect.value;
+            size = DIFF[difficulty].size;
+            const sd = seed || Math.floor(Math.random() * 1000000);
+            seed = sd;
+            seedInput.value = sd;
+            seedDisplayEl.textContent = sd;
+            let puz;
+            try {
+                puz = generatePuzzle(difficulty, seed);
+            } catch (e) {
+                puz = generatePuzzle('easy', seed);
+            }
+            initialBoard = puz.board;
+            currentBoard = cloneBoard(initialBoard);
+            minimumMoves = puz.minimumMoves;
+            moveHistory = [];
+            moveCount = 0;
+            hintsUsed = 0;
+            restarts = 0;
+            gameOver = false;
+            complete = false;
+            hintStage = 0;
+            movesEl.textContent = 0;
+            hintCountEl.textContent = 0;
+            minMovesEl.textContent = minimumMoves;
+            messageEl.textContent = DIFF[difficulty].label + ' · ' + size + '×' + size + ': turn every tile off!';
+            messageEl.style.color = 'var(--accent2)';
+            startTime = performance.now();
+            clearInterval(timerId);
+            timerId = setInterval(updateTimer, 1000);
+            renderBoard();
+            updateTimer();
+        }
+
+        function readURL() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('seed')) seed = parseInt(params.get('seed'), 10) || seed;
+            if (params.get('difficulty')) diffSelect.value = params.get('difficulty');
+        }
+
+        // ─────────────────────── Events ───────────────────────
+        newBtn.addEventListener('click', () => { seed = Math.floor(Math.random() * 1000000); newPuzzle(); });
+        undoBtn.addEventListener('click', doUndo);
+        restartBtn.addEventListener('click', doRestart);
+        hintBtn.addEventListener('click', doHint);
+        seedBtn.addEventListener('click', () => {
+            const v = parseInt(seedInput.value, 10);
+            if (v) { seed = v; newPuzzle(); }
+        });
+        rulesBtn.addEventListener('click', () => showModal(`
+            <h2>Rules</h2>
+            <p>Tiles are On or Off. The goal is to turn every tile Off.</p>
+            <p>Tapping a tile toggles that tile and its orthogonal neighbors (above, below, left, right).</p>
+            <p>Applying the same move twice cancels it out.</p>
+            <p>Hover or tap any tile to preview which tiles it affects.</p>
+            <div class="controls"><button id="close-rules">Close</button></div>
+        `));
+        modalContent.addEventListener('click', (e) => {
+            if (e.target.id === 'close-rules') hideModal();
+        });
+        diffSelect.addEventListener('change', () => {
+            seed = Math.floor(Math.random() * 1000000);
+            try { localStorage.setItem('tt.prefs', JSON.stringify({ difficulty: diffSelect.value })); } catch (e) { /* ignore */ }
+            newPuzzle();
+        });
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (modal.classList.contains('show')) { if (e.key === 'Escape') hideModal(); return; }
+            if (e.key === 'h' || e.key === 'H') { doHint(); return; }
+        });
+
+        function announce(msg) { liveEl.textContent = msg; }
+
+        // ─────────────────────── Init ───────────────────────
+        readURL();
+        seed = seed || Math.floor(Math.random() * 1000000);
+        try {
+            const prefs = JSON.parse(localStorage.getItem('tt.prefs') || 'null');
+            if (prefs && prefs.difficulty) diffSelect.value = prefs.difficulty;
+        } catch (e) { /* ignore */ }
+        newPuzzle();
+    });
+    </script>
+    <script>
+    (function(){
+        var t=localStorage.getItem("ui-theme")||"dark";
+        document.documentElement.dataset.theme=t;
+        var btn=document.getElementById("theme-toggle");
+        btn.textContent=t==="dark"?"☀":"☾";
+        btn.addEventListener("click",function(){
+            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
+            document.documentElement.dataset.theme=t;
+            localStorage.setItem("ui-theme",t);
+            btn.textContent=t==="dark"?"☀":"☾";
+        });
+    })();
+    </script>
+</body>
+</html>

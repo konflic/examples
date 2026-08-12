@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Truth-Tellers</title>
+    <link rel="stylesheet" href="ui.css">
+    <style>
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 { margin: 8px 0 4px; font-size: 1.4rem; flex-shrink: 0; }
+        .controls { gap: 8px; }
+        .stats { gap: 6px; }
+        .stat { padding: 3px 9px; font-size: 12px; }
+        .cards-area {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-content: flex-start;
+            align-items: flex-start;
+            padding: 8px 10px;
+        }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            width: min(230px, 100%);
+            text-align: center;
+            transition: border-color 0.2s;
+            flex-shrink: 0;
+        }
+        .card.contradiction { border-color: var(--danger); animation: shake 0.4s; }
+        .card.revealed { border-color: var(--accent); }
+        .card .avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 6px;
+        }
+        .card .name { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+        .card .statement {
+            font-size: 13px;
+            font-style: italic;
+            color: var(--text);
+            min-height: 34px;
+            margin-bottom: 8px;
+            line-height: 1.35;
+        }
+        .role-btns {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .role-btns button {
+            font-size: 12px;
+            padding: 6px 10px;
+            flex: 1;
+            max-width: 90px;
+        }
+        .role-btns button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .role-btns button.active.liar { background: var(--danger); border-color: var(--danger); }
+        .message { margin-top: 4px; }
+        .note { color: #666; font-size: 12px; flex-shrink: 0; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 28px;
+            text-align: center;
+            animation: popIn 0.3s ease;
+            max-width: 92vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { color: var(--accent2); margin: 0 0 10px; }
+        .modal-content p { color: var(--text); font-size: 15px; margin: 6px 0; }
+        .modal-content .controls { margin-top: 14px; }
+        #live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.1rem; margin: 6px 0 2px; }
+            .stats { gap: 4px; margin: 2px 0 4px; }
+            .stat { padding: 2px 6px; font-size: 11px; }
+            .panel { padding: 4px 8px; }
+            select, button { font-size: 12px; padding: 5px 9px; }
+            .card { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
+    <h1>Truth-Tellers</h1>
+    <div class="controls">
+        <div class="panel">
+            <label for="diff-select">Difficulty:</label>
+            <select id="diff-select">
+                <option value="easy">Easy · 3–4</option>
+                <option value="medium">Medium · 5–6</option>
+                <option value="hard">Hard · 7–8</option>
+            </select>
+            <button id="new-btn">New Puzzle</button>
+            <button id="check-btn">Check</button>
+            <button id="hint-btn">Hint</button>
+            <button id="reset-btn">Reset</button>
+            <button id="rules-btn">Rules</button>
+        </div>
+    </div>
+    <div class="stats">
+        <div class="stat">⏱ <span id="timer">0:00</span></div>
+        <div class="stat">Checks: <span id="checks">0</span></div>
+        <div class="stat">Hints: <span id="hint-count">0</span></div>
+        <div class="stat">Seed: <span id="seed-display">–</span></div>
+    </div>
+    <div class="cards-area" id="cards-area"></div>
+    <div class="controls" style="margin-top:2px">
+        <div class="panel">
+            <label for="seed-input">Seed:</label>
+            <input id="seed-input" type="number" style="width:90px;padding:5px;border:1px solid var(--border);border-radius:5px;background:var(--btn-bg-alt);color:var(--text)">
+            <button id="seed-btn">Load</button>
+        </div>
+    </div>
+    <div id="message" class="message">Press New Puzzle to start.</div>
+    <div id="note" class="note">Each character is a Truth-Teller or a Liar. Truth-tellers always tell the truth; liars always lie.</div>
+    <div id="live" aria-live="polite"></div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content" id="modal-content"></div>
+    </div>
+
+    <script>
+    'use strict';
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // ─────────────────────── Audio ───────────────────────
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(freq = 700, dur = 0.1, vol = 0.25) {
+            const o = audioContext.createOscillator();
+            const g = audioContext.createGain();
+            o.connect(g); g.connect(audioContext.destination);
+            o.type = 'sine'; o.frequency.value = freq;
+            g.gain.setValueAtTime(vol, audioContext.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
+            o.start(); o.stop(audioContext.currentTime + dur);
+        }
+        function successSound() { beep(600, 0.07, 0.25); setTimeout(() => beep(900, 0.07, 0.2), 80); }
+        function errorSound() { beep(180, 0.14, 0.18); }
+        function winSound() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.12, 0.25), i * 120)); }
+
+        // ─────────────────────── Seeded PRNG ───────────────────────
+        function makePRNG(seed) {
+            let s = seed >>> 0;
+            return function () {
+                s += 0x6D2B79F5;
+                let t = Math.imul(s ^ (s >>> 15), 1 | s);
+                t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+        function shuffle(arr, rand) {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(rand() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        // ─────────────────────── DOM refs ───────────────────────
+        const diffSelect = document.getElementById('diff-select');
+        const newBtn = document.getElementById('new-btn');
+        const checkBtn = document.getElementById('check-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const rulesBtn = document.getElementById('rules-btn');
+        const seedInput = document.getElementById('seed-input');
+        const seedBtn = document.getElementById('seed-btn');
+        const cardsArea = document.getElementById('cards-area');
+        const messageEl = document.getElementById('message');
+        const timerEl = document.getElementById('timer');
+        const checksEl = document.getElementById('checks');
+        const hintCountEl = document.getElementById('hint-count');
+        const seedDisplayEl = document.getElementById('seed-display');
+        const liveEl = document.getElementById('live');
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modal-content');
+
+        // ─────────────────────── Name pool ───────────────────────
+        const NAME_POOL = ['Ava', 'Ben', 'Cora', 'Dana', 'Evan', 'Faye', 'Gray', 'Hope', 'Ivan', 'Jade',
+                           'Kim', 'Leo', 'Max', 'Nora', 'Owen', 'Pia', 'Quinn', 'Rae', 'Seth', 'Tess'];
+
+        // ─────────────────────── Statement templates ───────────────────────
+        // Each template: id, difficulty tier (0 easy / 1 medium / 2 hard),
+        // min/max targets, evaluator, and text renderer. Logic is evaluated ONLY
+        // from the structured template — English text is presentation.
+        const TEMPLATES = {
+            TARGET_IS_TRUTHFUL: {
+                tier: 0, minArgs: 1, maxArgs: 1, selfRef: false,
+                eval: (roles, speaker, t) => roles[t[0]],
+                text: (names, speaker, t) => names[t[0]] + ' is a truth-teller.'
+            },
+            TARGET_IS_LIAR: {
+                tier: 0, minArgs: 1, maxArgs: 1, selfRef: false,
+                eval: (roles, speaker, t) => !roles[t[0]],
+                text: (names, speaker, t) => names[t[0]] + ' is a liar.'
+            },
+            SAME_TYPE: {
+                tier: 0, minArgs: 1, maxArgs: 1, selfRef: true,
+                eval: (roles, speaker, t) => roles[speaker] === roles[t[0]],
+                text: (names, speaker, t) => 'I am the same type as ' + names[t[0]] + '.'
+            },
+            DIFFERENT_TYPES: {
+                tier: 0, minArgs: 1, maxArgs: 1, selfRef: true,
+                eval: (roles, speaker, t) => roles[speaker] !== roles[t[0]],
+                text: (names, speaker, t) => 'I am a different type from ' + names[t[0]] + '.'
+            },
+            BOTH_TRUTHFUL: {
+                tier: 1, minArgs: 2, maxArgs: 2, selfRef: true,
+                eval: (roles, speaker, t) => roles[t[0]] && roles[t[1]],
+                text: (names, speaker, t) => names[t[0]] + ' and ' + names[t[1]] + ' are both truth-tellers.'
+            },
+            BOTH_LIARS: {
+                tier: 1, minArgs: 2, maxArgs: 2, selfRef: true,
+                eval: (roles, speaker, t) => !roles[t[0]] && !roles[t[1]],
+                text: (names, speaker, t) => names[t[0]] + ' and ' + names[t[1]] + ' are both liars.'
+            },
+            EXACTLY_ONE_TRUTHFUL: {
+                tier: 1, minArgs: 2, maxArgs: 2, selfRef: true,
+                eval: (roles, speaker, t) => roles[t[0]] !== roles[t[1]],
+                text: (names, speaker, t) => 'Exactly one of ' + names[t[0]] + ' and ' + names[t[1]] + ' is a truth-teller.'
+            },
+            AT_LEAST_ONE_TRUTHFUL: {
+                tier: 1, minArgs: 2, maxArgs: 2, selfRef: true,
+                eval: (roles, speaker, t) => roles[t[0]] || roles[t[1]],
+                text: (names, speaker, t) => 'At least one of ' + names[t[0]] + ' and ' + names[t[1]] + ' is a truth-teller.'
+            },
+            NEITHER_TRUTHFUL: {
+                tier: 1, minArgs: 2, maxArgs: 2, selfRef: true,
+                eval: (roles, speaker, t) => !roles[t[0]] && !roles[t[1]],
+                text: (names, speaker, t) => 'Neither ' + names[t[0]] + ' nor ' + names[t[1]] + ' is a truth-teller.'
+            },
+            EXACTLY_K_OF_GROUP: {
+                tier: 2, minArgs: 3, maxArgs: 3, selfRef: true,
+                eval: (roles, speaker, t, k) => t.filter(i => roles[i]).length === k,
+                text: (names, speaker, t, k) => 'Exactly ' + k + ' of ' + names[t[0]] + ', ' + names[t[1]] + ', and ' + names[t[2]] + ' are truth-tellers.'
+            }
+        };
+
+        // ─────────────────────── Difficulty config ───────────────────────
+        const DIFF = {
+            easy:   { min: 3, max: 4, maxTier: 0 },
+            medium: { min: 5, max: 6, maxTier: 1 },
+            hard:   { min: 7, max: 8, maxTier: 2 }
+        };
+
+        // ─────────────────────── State ───────────────────────
+        let difficulty = 'easy', seed = 1;
+        let characters = [], statements = [], hiddenRoles = {}, playerRoles = {};
+        let checksUsed = 0, hintsUsed = 0, gameOver = false, complete = false;
+        let startTime = 0, elapsed = 0, timerId = null, hintLevel = 0;
+
+        // ─────────────────────── Enumerator ───────────────────────
+        // Enumerate all 2^N role assignments and keep those satisfying every statement.
+        function allStatementsConsistent(roles) {
+            for (const st of statements) {
+                const tpl = TEMPLATES[st.template];
+                const truth = tpl.eval(roles, st.speaker, st.targets, st.k);
+                if (truth !== roles[st.speaker]) return false;
+            }
+            return true;
+        }
+
+        function enumerateSolutions() {
+            const n = characters.length;
+            const sols = [];
+            for (let mask = 0; mask < (1 << n); mask++) {
+                const roles = {};
+                for (let i = 0; i < n; i++) roles[characters[i].id] = ((mask >> i) & 1) === 1;
+                if (allStatementsConsistent(roles)) sols.push(mask);
+            }
+            return sols;
+        }
+
+        // ─────────────────────── Generator ───────────────────────
+        function statementText(st) {
+            const names = characters.map(c => c.name);
+            return TEMPLATES[st.template].text(names, st.speaker, st.targets, st.k);
+        }
+
+        function generateStatement(roles, speaker, maxTier, rand) {
+            const n = characters.length;
+            const validTemplates = Object.keys(TEMPLATES).filter(id => TEMPLATES[id].tier <= maxTier);
+            const shuffled = shuffle(validTemplates, rand);
+            for (const id of shuffled) {
+                const tpl = TEMPLATES[id];
+                const argCount = tpl.minArgs + Math.floor(rand() * (tpl.maxArgs - tpl.minArgs + 1));
+                // Build a random target list; disallow the speaker as target for
+                // non-self-referential templates.
+                const allowed = characters.map((_, i) => i).filter(i => tpl.selfRef || i !== speaker);
+                if (allowed.length < argCount) continue;
+                const targets = shuffle(allowed, rand).slice(0, argCount);
+                let k = null;
+                if (id === 'EXACTLY_K_OF_GROUP') {
+                    // k in 1..count-1 keeps it non-trivial
+                    k = 1 + Math.floor(rand() * (argCount - 1));
+                }
+                const truth = tpl.eval(roles, speaker, targets, k);
+                if (truth === roles[speaker]) {
+                    return { speaker, template: id, targets, k };
+                }
+            }
+            return null;
+        }
+
+        function generatePuzzle(diff, sd) {
+            const cfg = DIFF[diff];
+            const rand = makePRNG(sd);
+            const n = cfg.min + Math.floor(rand() * (cfg.max - cfg.min + 1));
+            const chosenNames = shuffle(NAME_POOL, rand).slice(0, n);
+            const chars = chosenNames.map((name, i) => ({ id: 'c' + i, name }));
+            const charIds = chars.map(c => c.id);
+
+            for (let attempt = 0; attempt < 300; attempt++) {
+                const roles = {};
+                charIds.forEach((id, i) => { roles[id] = rand() < 0.5; });
+                // Reject trivial: all same role, or only one of a role
+                const trues = charIds.filter(id => roles[id]).length;
+                if (trues === 0 || trues === n || trues === 1 || trues === n - 1) continue;
+
+                const stmts = [];
+                let ok = true;
+                for (const id of charIds) {
+                    const st = generateStatement(roles, id, cfg.maxTier, rand);
+                    if (!st) { ok = false; break; }
+                    stmts.push(st);
+                }
+                if (!ok) continue;
+
+                // Temporarily swap in to enumerate
+                const savedC = characters, savedS = statements;
+                characters = chars; statements = stmts;
+                const sols = enumerateSolutions();
+                characters = savedC; statements = savedS;
+                if (sols.length !== 1) continue;
+
+                // Quality checks
+                // 1. Every character referenced by someone's statement (avoid dead characters)
+                const referenced = new Set();
+                for (const st of stmts) {
+                    st.targets.forEach(i => referenced.add(charIds[i]));
+                }
+                if (referenced.size < n) continue;
+
+                // 2. Template variety
+                const counts = {};
+                stmts.forEach(st => { counts[st.template] = (counts[st.template] || 0) + 1; });
+                const maxCount = Math.max(...Object.values(counts));
+                if (maxCount / stmts.length > 0.6) continue;
+
+                return { characters: chars, statements: stmts, roles };
+            }
+            // Fallback: deterministic bundled puzzle
+            return FALLBACK_PUZZLES[diff];
+        }
+
+        const FALLBACK_PUZZLES = {
+            easy: {
+                characters: [
+                    { id: 'c0', name: 'Ava' }, { id: 'c1', name: 'Ben' }, { id: 'c2', name: 'Cora' }
+                ],
+                statements: [
+                    { speaker: 'c0', template: 'TARGET_IS_LIAR', targets: [1] },
+                    { speaker: 'c1', template: 'TARGET_IS_LIAR', targets: [2] },
+                    { speaker: 'c2', template: 'SAME_TYPE', targets: [0] }
+                ],
+                roles: { c0: false, c1: true, c2: false }
+            }
+        };
+
+        // ─────────────────────── Rendering ───────────────────────
+        function avatarColor(name) {
+            const palette = ['#6c5ce7', '#0984e3', '#00b894', '#e17055', '#d63031', '#e84393',
+                             '#6ab04c', '#4834d4', '#eb4d4b', '#22a6b3', '#f0932b', '#be2edd'];
+            let h = 0;
+            for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 997;
+            return palette[h % palette.length];
+        }
+
+        function renderCards() {
+            cardsArea.innerHTML = '';
+            characters.forEach((char, i) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.id = char.id;
+
+                const av = document.createElement('div');
+                av.className = 'avatar';
+                av.style.background = avatarColor(char.name);
+                av.textContent = char.name[0];
+
+                const nm = document.createElement('div');
+                nm.className = 'name';
+                nm.textContent = char.name;
+
+                const st = document.createElement('div');
+                st.className = 'statement';
+                st.textContent = '"' + statementText(statements[i]) + '"';
+
+                const btns = document.createElement('div');
+                btns.className = 'role-btns';
+                const roles = [
+                    { key: 'unknown', label: 'Unknown' },
+                    { key: 'truth', label: 'Truth' },
+                    { key: 'liar', label: 'Liar' }
+                ];
+                const btnEls = {};
+                roles.forEach(r => {
+                    const b = document.createElement('button');
+                    b.textContent = r.label;
+                    b.dataset.role = r.key;
+                    if (r.key === 'liar') b.classList.add('liar');
+                    b.addEventListener('click', () => cycleRole(char.id, card));
+                    btns.appendChild(b);
+                    btnEls[r.key] = b;
+                });
+
+                card.appendChild(av);
+                card.appendChild(nm);
+                card.appendChild(st);
+                card.appendChild(btns);
+                cardsArea.appendChild(card);
+                card._btnEls = btnEls;
+                updateCardUI(card, char.id);
+            });
+        }
+
+        function cycleRole(charId, card) {
+            if (gameOver) return;
+            if (audioContext.state === 'suspended') audioContext.resume();
+            const order = ['unknown', 'truth', 'liar'];
+            const cur = playerRoles[charId] || 'unknown';
+            const next = order[(order.indexOf(cur) + 1) % order.length];
+            playerRoles[charId] = next;
+            successSound();
+            updateCardUI(card, charId);
+            announce(charIdToName(charId) + ' is now ' + next + '.');
+            // Soft consistency live check for easy mode
+            if (difficulty === 'easy') {
+                const remaining = countConsistentSolutions();
+                if (remaining === 0 && !allUnknown()) {
+                    messageEl.textContent = 'These choices are inconsistent with the statements.';
+                    messageEl.style.color = 'var(--danger)';
+                } else if (remaining === 1) {
+                    messageEl.textContent = 'Only one assignment fits your choices so far.';
+                    messageEl.style.color = 'var(--accent2)';
+                } else {
+                    messageEl.textContent = remaining + ' assignments still fit your choices.';
+                    messageEl.style.color = 'var(--accent2)';
+                }
+            }
+        }
+
+        function charIdToName(id) {
+            const c = characters.find(ch => ch.id === id);
+            return c ? c.name : id;
+        }
+
+        function updateCardUI(card, charId) {
+            const role = playerRoles[charId] || 'unknown';
+            for (const key in card._btnEls) {
+                card._btnEls[key].classList.toggle('active', key === role);
+            }
+        }
+
+        function allUnknown() {
+            return characters.every(c => (playerRoles[c.id] || 'unknown') === 'unknown');
+        }
+
+        // ─────────────────────── Consistency counting ───────────────────────
+        // Number of complete role assignments consistent with the player's current choices.
+        function countConsistentSolutions() {
+            const n = characters.length;
+            let count = 0;
+            for (let mask = 0; mask < (1 << n); mask++) {
+                const roles = {};
+                let match = true;
+                for (let i = 0; i < n; i++) {
+                    const id = characters[i].id;
+                    const chosen = playerRoles[id] || 'unknown';
+                    const roleVal = ((mask >> i) & 1) === 1;
+                    if (chosen === 'truth' && !roleVal) { match = false; break; }
+                    if (chosen === 'liar' && roleVal) { match = false; break; }
+                    roles[id] = roleVal;
+                }
+                if (!match) continue;
+                if (allStatementsConsistent(roles)) count++;
+            }
+            return count;
+        }
+
+        // ─────────────────────── Check ───────────────────────
+        function doCheck() {
+            if (gameOver) return;
+            if (audioContext.state === 'suspended') audioContext.resume();
+            checksUsed++;
+            checksEl.textContent = checksUsed;
+            const unset = characters.filter(c => (playerRoles[c.id] || 'unknown') === 'unknown');
+
+            if (unset.length > 0) {
+                messageEl.textContent = unset.length + ' assignment' + (unset.length === 1 ? '' : 's') + ' remaining unset.';
+                messageEl.style.color = 'var(--accent2)';
+                return;
+            }
+            const consistent = countConsistentSolutions();
+            if (consistent === 0) {
+                // Find one contradicted statement
+                const roles = {};
+                characters.forEach(c => { roles[c.id] = playerRoles[c.id] === 'truth'; });
+                let shown = false;
+                for (const st of statements) {
+                    const tpl = TEMPLATES[st.template];
+                    if (tpl.eval(roles, st.speaker, st.targets, st.k) !== roles[st.speaker]) {
+                        const idx = characters.findIndex(c => c.id === st.speaker);
+                        const card = cardsArea.children[idx];
+                        if (card) card.classList.add('contradiction');
+                        setTimeout(() => card && card.classList.remove('contradiction'), 600);
+                        messageEl.textContent = charIdToName(st.speaker) + "'s statement is contradicted: \"" + statementText(st) + '"';
+                        messageEl.style.color = 'var(--danger)';
+                        errorSound();
+                        shown = true;
+                        break;
+                    }
+                }
+                if (!shown) { messageEl.textContent = 'The assignment is inconsistent.'; messageEl.style.color = 'var(--danger)'; errorSound(); }
+                return;
+            }
+            if (consistent === 1) {
+                // Correct!
+                complete = true; gameOver = true;
+                clearInterval(timerId);
+                elapsed = Math.round((performance.now() - startTime) / 1000);
+                saveBest();
+                winSound();
+                const roles = {};
+                characters.forEach(c => { roles[c.id] = playerRoles[c.id] === 'truth'; });
+                const summary = characters.map(c =>
+                    c.name + ': ' + (roles[c.id] ? 'Truth' : 'Liar')).join('\n');
+                showModal(`
+                    <h2>Correct!</h2>
+                    <p><b>Time:</b> ${fmtTime(elapsed)} · <b>Checks:</b> ${checksUsed} · <b>Hints:</b> ${hintsUsed}</p>
+                    <p><b>Difficulty:</b> ${cap(difficulty)} · <b>Seed:</b> ${seed}</p>
+                    <div class="panel" style="text-align:left;white-space:pre-line;margin:10px auto">${summary}</div>
+                    <div class="controls">
+                        <button id="again-btn">Play Again</button>
+                    </div>
+                `);
+                document.getElementById('again-btn').addEventListener('click', () => { hideModal(); newGame(); });
+            } else {
+                messageEl.textContent = 'Your assignment is logically inconsistent (multiple interpretations).';
+                messageEl.style.color = 'var(--danger)';
+                errorSound();
+            }
+        }
+
+        function saveBest() {
+            try {
+                const key = 'tt.best.' + difficulty;
+                const prev = localStorage.getItem(key);
+                const cur = { time: elapsed, checks: checksUsed, hints: hintsUsed };
+                if (prev === null || elapsed < Number(JSON.parse(prev).time)) {
+                    localStorage.setItem(key, JSON.stringify(cur));
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        // ─────────────────────── Hints ───────────────────────
+        function doHint() {
+            if (gameOver) return;
+            if (audioContext.state === 'suspended') audioContext.resume();
+            const n = characters.length;
+            const roles = {};
+            characters.forEach(c => {
+                const r = playerRoles[c.id] || 'unknown';
+                roles[c.id] = r === 'truth' ? true : r === 'liar' ? false : null;
+            });
+
+            if (hintLevel === 0) {
+                // Level 1: identify a useful statement — one whose speaker is referenced
+                // most often (its resolution would cascade).
+                const refCount = {};
+                characters.forEach(c => refCount[c.id] = 0);
+                for (const st of statements) {
+                    for (const t of st.targets) if (t) refCount[t]++;
+                }
+                let best = statements[0];
+                let bestScore = -1;
+                for (const st of statements) {
+                    const score = st.targets.reduce((acc, t) => acc + refCount[t], 0);
+                    if (score > bestScore) { bestScore = score; best = st; }
+                }
+                const nm = charIdToName(best.speaker);
+                messageEl.textContent = 'Hint: assume ' + nm + ' is a truth-teller and check what follows from: "' + statementText(best) + '"';
+                messageEl.style.color = 'var(--accent2)';
+            } else if (hintLevel === 1) {
+                // Level 2: number of solutions remaining under current choices
+                const remaining = countConsistentSolutions();
+                messageEl.textContent = 'Hint: ' + remaining + ' assignment' + (remaining === 1 ? '' : 's') +
+                    ' still fit your current choices.';
+                messageEl.style.color = 'var(--accent2)';
+            } else {
+                // Level 3: reveal one character's role
+                const unset = characters.filter(c => (playerRoles[c.id] || 'unknown') === 'unknown');
+                const target = unset.length ? unset[0] : characters[0];
+                playerRoles[target.id] = hiddenRoles[target.id] ? 'truth' : 'liar';
+                const idx = characters.findIndex(c => c.id === target.id);
+                const card = cardsArea.children[idx];
+                card.classList.add('revealed');
+                updateCardUI(card, target.id);
+                messageEl.textContent = 'Revealed: ' + target.name + ' is a ' + (hiddenRoles[target.id] ? 'Truth-Teller' : 'Liar') + '.';
+                messageEl.style.color = 'var(--accent2)';
+                successSound();
+            }
+            hintsUsed++;
+            hintCountEl.textContent = hintsUsed;
+            hintLevel++;
+        }
+
+        // ─────────────────────── Timer / helpers ───────────────────────
+        function fmtTime(s) {
+            s = Math.max(0, Math.floor(s));
+            const m = Math.floor(s / 60), r = s % 60;
+            return m + ':' + String(r).padStart(2, '0');
+        }
+        function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+        function updateTimer() {
+            if (!complete) {
+                elapsed = Math.floor((performance.now() - startTime) / 1000);
+                timerEl.textContent = fmtTime(elapsed);
+            }
+        }
+
+        // ─────────────────────── Modal ───────────────────────
+        function showModal(html) {
+            modalContent.innerHTML = html;
+            modal.classList.add('show');
+        }
+        function hideModal() { modal.classList.remove('show'); }
+        modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+        // ─────────────────────── New game / load ───────────────────────
+        function newGame() {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            difficulty = diffSelect.value;
+            const sd = seed || Math.floor(Math.random() * 1000000);
+            seed = sd;
+            seedInput.value = sd;
+            seedDisplayEl.textContent = sd;
+            let puz;
+            try {
+                puz = generatePuzzle(difficulty, seed);
+            } catch (e) {
+                puz = FALLBACK_PUZZLES[difficulty] || FALLBACK_PUZZLES.easy;
+            }
+            characters = puz.characters;
+            statements = puz.statements;
+            hiddenRoles = puz.roles;
+            playerRoles = {};
+            characters.forEach(c => playerRoles[c.id] = 'unknown');
+            checksUsed = 0; hintsUsed = 0; hintLevel = 0;
+            gameOver = false; complete = false;
+            checksEl.textContent = 0; hintCountEl.textContent = 0;
+            messageEl.textContent = 'Assign Truth or Liar to every character, then Check.';
+            messageEl.style.color = 'var(--accent2)';
+            startTime = performance.now();
+            clearInterval(timerId);
+            timerId = setInterval(updateTimer, 1000);
+            renderCards();
+            updateTimer();
+        }
+
+        function readURL() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('seed')) seed = parseInt(params.get('seed'), 10) || seed;
+            if (params.get('difficulty')) diffSelect.value = params.get('difficulty');
+        }
+
+        // ─────────────────────── Events ───────────────────────
+        newBtn.addEventListener('click', () => { seed = Math.floor(Math.random() * 1000000); newGame(); });
+        checkBtn.addEventListener('click', doCheck);
+        hintBtn.addEventListener('click', doHint);
+        resetBtn.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            playerRoles = {};
+            characters.forEach(c => playerRoles[c.id] = 'unknown');
+            renderCards();
+            messageEl.textContent = 'Roles cleared.';
+        });
+        seedBtn.addEventListener('click', () => {
+            const v = parseInt(seedInput.value, 10);
+            if (v) { seed = v; newGame(); }
+        });
+        rulesBtn.addEventListener('click', () => showModal(`
+            <h2>Rules</h2>
+            <p>Each character is either a Truth-Teller or a Liar.</p>
+            <p>A Truth-Teller's statement is always true; a Liar's statement is always false.</p>
+            <p>Assign a role to every character so all statements are logically consistent. Every puzzle has exactly one solution.</p>
+            <p>Tap a role button to cycle: Unknown → Truth → Liar → Unknown.</p>
+            <div class="controls"><button id="close-rules">Close</button></div>
+        `));
+        modalContent.addEventListener('click', (e) => {
+            if (e.target.id === 'close-rules') hideModal();
+        });
+        diffSelect.addEventListener('change', () => {
+            seed = Math.floor(Math.random() * 1000000);
+            try { localStorage.setItem('tt.prefs', JSON.stringify({ difficulty: diffSelect.value })); } catch (e) { /* ignore */ }
+            newGame();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (modal.classList.contains('show')) { if (e.key === 'Escape') hideModal(); return; }
+            if (e.key === 'h' || e.key === 'H') { doHint(); return; }
+        });
+
+        function announce(msg) { liveEl.textContent = msg; }
+
+        // ─────────────────────── Init ───────────────────────
+        readURL();
+        seed = seed || Math.floor(Math.random() * 1000000);
+        try {
+            const prefs = JSON.parse(localStorage.getItem('tt.prefs') || 'null');
+            if (prefs && prefs.difficulty) diffSelect.value = prefs.difficulty;
+        } catch (e) { /* ignore */ }
+        newGame();
+    });
+    </script>
+    <script>
+    (function(){
+        var t=localStorage.getItem("ui-theme")||"dark";
+        document.documentElement.dataset.theme=t;
+        var btn=document.getElementById("theme-toggle");
+        btn.textContent=t==="dark"?"☀":"☾";
+        btn.addEventListener("click",function(){
+            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
+            document.documentElement.dataset.theme=t;
+            localStorage.setItem("ui-theme",t);
+            btn.textContent=t==="dark"?"☀":"☾";
+        });
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visibility Towers</title>
+    <link rel="stylesheet" href="ui.css">
+    <style>
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1 { margin: 8px 0 4px; font-size: 1.4rem; flex-shrink: 0; }
+        .controls { gap: 8px; }
+        .stats { gap: 6px; }
+        .stat { padding: 3px 9px; font-size: 12px; }
+        .game-area {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+        }
+        .board-wrap {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px;
+            display: inline-block;
+        }
+        .board { display: grid; }
+        .clue-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text);
+            background: #222;
+            border: 1px solid #2a2a2a;
+            border-radius: 3px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .clue-cell.satisfied { background: rgba(52, 211, 153, 0.18); color: var(--accent2); }
+        .clue-cell.impossible { background: rgba(248, 113, 113, 0.25); color: var(--danger); }
+        .clue-cell.missing { color: #555; }
+        .grid-cell {
+            border: 1px solid #2a2a2a;
+            background: #262626;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 17px;
+            transition: background 0.1s;
+            border-radius: 3px;
+            position: relative;
+        }
+        .grid-cell:hover { background: #333; }
+        .grid-cell.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+        .grid-cell.highlight { background: rgba(167, 139, 250, 0.12); }
+        .grid-cell.duplicate { color: var(--danger); background: rgba(248, 113, 113, 0.15); }
+        .grid-cell.given { background: #2e2e2e; color: var(--accent2); }
+        .grid-cell.wrongcheck { background: rgba(248, 113, 113, 0.3); }
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            width: 100%;
+            height: 100%;
+            font-size: 9px;
+            line-height: 1;
+        }
+        .notes-grid span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+        }
+        .keypad {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            padding: 6px 8px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin: 6px auto 4px;
+            flex-shrink: 0;
+        }
+        .keypad button {
+            width: clamp(38px, 9vw, 48px);
+            height: clamp(38px, 9vw, 48px);
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 0;
+        }
+        .keypad button.notes-mode { color: var(--accent); border-color: var(--accent); }
+        .message { margin-top: 4px; }
+        .note { color: #666; font-size: 12px; flex-shrink: 0; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 28px;
+            text-align: center;
+            animation: popIn 0.3s ease;
+            max-width: 92vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { color: var(--accent2); margin: 0 0 10px; }
+        .modal-content p { color: var(--text); font-size: 15px; margin: 6px 0; }
+        .modal-content .controls { margin-top: 14px; }
+        #live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.1rem; margin: 6px 0 2px; }
+            .stats { gap: 4px; margin: 2px 0 4px; }
+            .stat { padding: 2px 6px; font-size: 11px; }
+            .panel { padding: 4px 8px; }
+            select, button { font-size: 12px; padding: 5px 9px; }
+            .clue-cell { font-size: 12px; }
+            .grid-cell { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
+    <h1>Visibility Towers</h1>
+    <div class="controls">
+        <div class="panel">
+            <label for="diff-select">Difficulty:</label>
+            <select id="diff-select">
+                <option value="easy">Easy · 4×4</option>
+                <option value="medium">Medium · 5×5</option>
+                <option value="hard">Hard · 6×6</option>
+            </select>
+            <button id="new-btn">New Puzzle</button>
+            <button id="restart-btn">Restart</button>
+            <button id="check-btn">Check</button>
+            <button id="hint-btn">Hint</button>
+            <button id="rules-btn">Rules</button>
+        </div>
+    </div>
+    <div class="stats">
+        <div class="stat">⏱ <span id="timer">0:00</span></div>
+        <div class="stat">Moves: <span id="moves">0</span></div>
+        <div class="stat">Hints: <span id="hint-count">0</span></div>
+        <div class="stat">Seed: <span id="seed-display">–</span></div>
+    </div>
+    <div class="game-area">
+        <div id="board-wrap" class="board-wrap"></div>
+    </div>
+    <div id="keypad" class="keypad"></div>
+    <div class="controls" style="margin-top:2px">
+        <div class="panel">
+            <label for="seed-input">Seed:</label>
+            <input id="seed-input" type="number" style="width:90px;padding:5px;border:1px solid var(--border);border-radius:5px;background:var(--btn-bg-alt);color:var(--text)">
+            <button id="seed-btn">Load</button>
+            <button id="notes-btn">Notes</button>
+        </div>
+    </div>
+    <div id="message" class="message">Press New Puzzle to start.</div>
+    <div id="note" class="note">Fill each row and column with 1–N. Clues = visible towers from that side.</div>
+    <div id="live" aria-live="polite"></div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content" id="modal-content"></div>
+    </div>
+
+    <script>
+    'use strict';
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // ─────────────────────── Audio ───────────────────────
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(freq = 700, dur = 0.1, vol = 0.25) {
+            const o = audioContext.createOscillator();
+            const g = audioContext.createGain();
+            o.connect(g); g.connect(audioContext.destination);
+            o.type = 'sine'; o.frequency.value = freq;
+            g.gain.setValueAtTime(vol, audioContext.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
+            o.start(); o.stop(audioContext.currentTime + dur);
+        }
+        function successSound() { beep(600, 0.07, 0.25); setTimeout(() => beep(900, 0.07, 0.2), 80); }
+        function errorSound() { beep(180, 0.14, 0.18); }
+        function winSound() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.12, 0.25), i * 120)); }
+
+        // ─────────────────────── Seeded PRNG (Mulberry32) ───────────────────────
+        function makePRNG(seed) {
+            let s = seed >>> 0;
+            return function () {
+                s += 0x6D2B79F5;
+                let t = Math.imul(s ^ (s >>> 15), 1 | s);
+                t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+        function shuffle(arr, rand) {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(rand() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        // ─────────────────────── DOM refs ───────────────────────
+        const diffSelect = document.getElementById('diff-select');
+        const newBtn = document.getElementById('new-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const checkBtn = document.getElementById('check-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const rulesBtn = document.getElementById('rules-btn');
+        const notesBtn = document.getElementById('notes-btn');
+        const seedInput = document.getElementById('seed-input');
+        const seedBtn = document.getElementById('seed-btn');
+        const boardWrap = document.getElementById('board-wrap');
+        const keypadEl = document.getElementById('keypad');
+        const messageEl = document.getElementById('message');
+        const timerEl = document.getElementById('timer');
+        const movesEl = document.getElementById('moves');
+        const hintCountEl = document.getElementById('hint-count');
+        const seedDisplayEl = document.getElementById('seed-display');
+        const liveEl = document.getElementById('live');
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modal-content');
+
+        // ─────────────────────── Difficulty config ───────────────────────
+        const DIFF = {
+            easy:   { N: 4, clueRatio: 0.75, prefill: 3 },
+            medium: { N: 5, clueRatio: 0.55, prefill: 0 },
+            hard:   { N: 6, clueRatio: 0.40, prefill: 0 }
+        };
+
+        // ─────────────────────── State ───────────────────────
+        let N = 4, difficulty = 'easy', seed = 1, rand = makePRNG(1);
+        let solution = [], clues = { top: [], right: [], bottom: [], left: [] };
+        let board = [], notes = [], givens = new Set();
+        let selected = null, notesMode = false, gameOver = false, complete = false;
+        let moveCount = 0, hintsUsed = 0, startTime = 0, elapsed = 0, timerId = null;
+        let cellEls = [];
+        const FALLBACKS = {};
+
+        // ─────────────────────── Model: Latin square ───────────────────────
+        function generateGrid(n, r) {
+            // Base: cyclic Latin square value(r,c) = (r + c) mod N + 1
+            let g = Array.from({ length: n }, (_, r) =>
+                Array.from({ length: n }, (_, c) => (r + c) % n + 1));
+            // Symbol shuffle
+            const sym = shuffle(Array.from({ length: n }, (_, i) => i + 1), r);
+            g = g.map(row => row.map(v => sym[v - 1]));
+            // Random row / column permutations preserve Latin-square property
+            const rows = shuffle(Array.from({ length: n }, (_, i) => i), r);
+            const cols = shuffle(Array.from({ length: n }, (_, i) => i), r);
+            g = g.map((_, i) => g[rows[i]]);
+            g = g.map(row => cols.map(c => row[c]));
+            // Optional transpose
+            if (r() < 0.5) {
+                g = g[0].map((_, c) => g.map(row => row[c]));
+            }
+            // Optional reversal of rows or columns
+            if (r() < 0.5) g.reverse();
+            if (r() < 0.5) g = g.map(row => row.slice().reverse());
+            return g;
+        }
+
+        // ─────────────────────── Solver ───────────────────────
+        function visibleCount(line) {
+            let count = 0, tallest = 0;
+            for (const h of line) {
+                if (h > tallest) { tallest = h; count++; }
+            }
+            return count;
+        }
+
+        // Clue check for a partial/full line against a clue (null = no constraint)
+        function lineClueOk(line, clue) {
+            if (clue === null || clue === undefined) return true;
+            const full = line.every(v => v > 0);
+            if (!full) {
+                // Partial prune: visible count may already exceed clue
+                if (visibleCount(line) > clue) return false;
+                // Even filling remaining with max heights cannot reach clue
+                const remaining = line.filter(v => v <= 0).length;
+                if (visibleCount(line) + remaining < clue) return false;
+                return true;
+            }
+            return visibleCount(line) === clue;
+        }
+
+        // Count solutions of a puzzle; stop at 2. grid holds values, 0 = empty.
+        function countSolutions(n, cl, board, limit = 2) {
+            let count = 0;
+            const g = board.map(row => row.slice());
+            const mrvs = [];
+
+            function candidates(r, c) {
+                const usedRow = new Set(g[r].filter(v => v > 0));
+                const usedCol = new Set(g.map(row => row[c]).filter(v => v > 0));
+                const res = [];
+                for (let v = 1; v <= n; v++) {
+                    if (usedRow.has(v) || usedCol.has(v)) continue;
+                    g[r][c] = v;
+                    if (lineClueOk(g[r], cl.left[r]) && lineClueOk(g[r].slice().reverse(), cl.right[r]) &&
+                        lineClueOk(g.map(row => row[c]), cl.top[c]) &&
+                        lineClueOk(g.map(row => row[c]).slice().reverse(), cl.bottom[c])) {
+                        res.push(v);
+                    }
+                    g[r][c] = 0;
+                }
+                return res;
+            }
+
+            function findEmpty() {
+                let best = null, bestLen = n + 1;
+                for (let r = 0; r < n; r++) {
+                    for (let c = 0; c < n; c++) {
+                        if (g[r][c] === 0) {
+                            const cs = candidates(r, c);
+                            if (cs.length < bestLen) { bestLen = cs.length; best = { r, c, cs }; }
+                            if (bestLen === 0) return best;
+                        }
+                    }
+                }
+                return best;
+            }
+
+            function solve() {
+                if (count >= limit) return;
+                const cell = findEmpty();
+                if (!cell) { count++; return; }
+                const { r, c, cs } = cell;
+                for (const v of cs) {
+                    g[r][c] = v;
+                    solve();
+                    g[r][c] = 0;
+                    if (count >= limit) return;
+                }
+            }
+            solve();
+            return count;
+        }
+
+        // ─────────────────────── Puzzle generator ───────────────────────
+        function removeClues(n, sol, cfg, r) {
+            const fullClues = {
+                top:    [], right: [], bottom: [], left: []
+            };
+            for (let c = 0; c < n; c++) {
+                const col = sol.map(row => row[c]);
+                fullClues.top.push(visibleCount(col));
+                fullClues.bottom.push(visibleCount(col.slice().reverse()));
+            }
+            for (let row of sol) {
+                fullClues.left.push(visibleCount(row));
+                fullClues.right.push(visibleCount(row.slice().reverse()));
+            }
+            const cl = {
+                top: fullClues.top.slice(), right: fullClues.right.slice(),
+                bottom: fullClues.bottom.slice(), left: fullClues.left.slice()
+            };
+            const total = n * 4;
+            const target = Math.max(4, Math.round(total * cfg.clueRatio));
+            // Shuffle removal order across all four sides
+            const positions = shuffle(
+                [...Array(n).keys()].map(c => ['top', c]),
+                r
+            ).concat(
+                shuffle([...Array(n).keys()].map(c => ['bottom', c]), r),
+                shuffle([...Array(n).keys()].map(c => ['left', c]), r),
+                shuffle([...Array(n).keys()].map(c => ['right', c]), r)
+            );
+            // Interleave sides: shuffle the whole list of positions
+            const allPos = shuffle([...Array(n).keys()].map(c => ['top', c])
+                .concat([...Array(n).keys()].map(c => ['bottom', c]))
+                .concat([...Array(n).keys()].map(c => ['left', c]))
+                .concat([...Array(n).keys()].map(c => ['right', c])), r);
+
+            let kept = total;
+            for (const [side, idx] of allPos) {
+                if (kept <= target) break;
+                const prev = cl[side][idx];
+                cl[side][idx] = null;
+                // Empty board means solver only counts full grid completions
+                const empty = Array.from({ length: n }, () => new Array(n).fill(0));
+                const cnt = countSolutions(n, cl, empty, 2);
+                if (cnt === 1) { kept--; }
+                else { cl[side][idx] = prev; }
+            }
+            return cl;
+        }
+
+        function choosePrefills(n, sol, cfg, r) {
+            const cells = shuffle([...Array(n * n).keys()], r);
+            const givens = new Set();
+            let count = 0;
+            for (const idx of cells) {
+                if (count >= cfg.prefill) break;
+                givens.add(idx);
+                count++;
+            }
+            return givens;
+        }
+
+        function generatePuzzle(diff, sd) {
+            const cfg = DIFF[diff];
+            const n = cfg.N;
+            const r = makePRNG(sd);
+            const sol = generateGrid(n, r);
+            const cl = removeClues(n, sol, cfg, r);
+            const given = choosePrefills(n, sol, cfg, r);
+            return { N: n, solution: sol, clues: cl, givens: given };
+        }
+
+        // ─────────────────────── Rendering ───────────────────────
+        function boardSize() {
+            const availW = Math.min(window.innerWidth - 32, 520);
+            const availH = Math.max(220, window.innerHeight - 320);
+            const cell = Math.floor(Math.min(availW / (N + 2), availH / (N + 2)));
+            return Math.max(30, Math.min(56, cell));
+        }
+
+        function renderBoard() {
+            boardWrap.innerHTML = '';
+            const cell = boardSize();
+            const clueW = Math.max(22, Math.floor(cell * 0.65));
+            const b = document.createElement('div');
+            b.className = 'board';
+            b.style.gridTemplateColumns = `${clueW}px repeat(${N}, ${cell}px) ${clueW}px`;
+            b.style.gridTemplateRows = `${clueW}px repeat(${N}, ${cell}px) ${clueW}px`;
+            b.style.gap = '2px';
+            boardWrap.appendChild(b);
+            cellEls = [];
+
+            function addClue(r, c, text, extra) {
+                const d = document.createElement('div');
+                d.className = 'clue-cell' + (extra ? ' ' + extra : '');
+                d.textContent = text === null || text === undefined ? '' : text;
+                d.style.gridColumn = (c + 1);
+                d.style.gridRow = (r + 1);
+                b.appendChild(d);
+                return d;
+            }
+
+            // Top row of clues (index 0)
+            addClue(0, 0, '', 'missing');
+            for (let c = 0; c < N; c++) addClue(0, c + 1, clues.top[c], clues.top[c] === null ? 'missing' : 'top');
+            addClue(0, N + 1, '', 'missing');
+
+            // Middle rows: left clue, cells, right clue
+            for (let r = 0; r < N; r++) {
+                addClue(r + 1, 0, clues.left[r], clues.left[r] === null ? 'missing' : 'left');
+                cellEls[r] = [];
+                for (let c = 0; c < N; c++) {
+                    const d = document.createElement('div');
+                    d.className = 'grid-cell' + (givens.has(r * N + c) ? ' given' : '');
+                    d.style.gridColumn = (c + 2);
+                    d.style.gridRow = (r + 2);
+                    d.style.width = cell + 'px';
+                    d.style.height = cell + 'px';
+                    d.dataset.r = r; d.dataset.c = c;
+                    d.setAttribute('role', 'button');
+                    d.setAttribute('aria-label', `Row ${r + 1}, column ${c + 1}`);
+                    d.tabIndex = 0;
+                    d.addEventListener('click', () => onCellClick(r, c));
+                    d.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCellClick(r, c); }
+                    });
+                    b.appendChild(d);
+                    cellEls[r][c] = d;
+                }
+                addClue(r + 1, N + 1, clues.right[r], clues.right[r] === null ? 'missing' : 'right');
+            }
+
+            // Bottom row of clues
+            addClue(N + 1, 0, '', 'missing');
+            for (let c = 0; c < N; c++) addClue(N + 1, c + 1, clues.bottom[c], clues.bottom[c] === null ? 'missing' : 'bottom');
+            addClue(N + 1, N + 1, '', 'missing');
+            updateAllCells();
+        }
+
+        function renderCell(r, c) {
+            const el = cellEls[r][c];
+            if (!el) return;
+            const val = board[r][c];
+            const noteSet = notes[r][c];
+            el.className = 'grid-cell';
+            if (givens.has(r * N + c)) el.classList.add('given');
+            if (val > 0) {
+                el.textContent = val;
+                el.classList.remove('notes');
+            } else if (noteSet && noteSet.size) {
+                el.textContent = '';
+                el.innerHTML = '';
+                const g = document.createElement('div');
+                g.className = 'notes-grid';
+                for (let v = 1; v <= N; v++) {
+                    const s = document.createElement('span');
+                    s.textContent = noteSet.has(v) ? v : '';
+                    g.appendChild(s);
+                }
+                el.appendChild(g);
+            } else {
+                el.textContent = '';
+                el.innerHTML = '';
+            }
+            // Selection & highlights
+            if (selected && selected.r === r && selected.c === c) el.classList.add('selected');
+            if (selected && (selected.r === r || selected.c === c)) el.classList.add('highlight');
+            // Duplicate check (only against filled non-given values, live on easy)
+            if (val > 0) {
+                let dup = false;
+                for (let cc = 0; cc < N; cc++) {
+                    if (cc !== c && board[r][cc] === val) dup = true;
+                }
+                for (let rr = 0; rr < N; rr++) {
+                    if (rr !== r && board[rr][c] === val) dup = true;
+                }
+                if (dup) el.classList.add('duplicate');
+            }
+            el.setAttribute('aria-label', `Row ${r + 1}, column ${c + 1}, ${val > 0 ? val : 'empty'}`);
+        }
+
+        function updateAllCells() {
+            for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) renderCell(r, c);
+            updateClueHighlights();
+        }
+
+        function updateClueHighlights() {
+            const cls = new Map();
+            for (let c = 0; c < N; c++) {
+                const col = board.map(row => row[c]);
+                if (col.every(v => v > 0)) {
+                    cls.set(['top', c].join(':'), visibleCount(col));
+                    cls.set(['bottom', c].join(':'), visibleCount(col.slice().reverse()));
+                }
+            }
+            for (let r = 0; r < N; r++) {
+                if (board[r].every(v => v > 0)) {
+                    cls.set(['left', r].join(':'), visibleCount(board[r]));
+                    cls.set(['right', r].join(':'), visibleCount(board[r].slice().reverse()));
+                }
+            }
+            // Iterate all clue cells in render order (row-major over the N+2 × N+2 grid)
+            const all = boardWrap.querySelectorAll('.clue-cell');
+            let pos = 0;
+            for (let r = 0; r < N + 2; r++) {
+                for (let c = 0; c < N + 2; c++) {
+                    const el = all[pos]; pos++;
+                    if (!el) continue;
+                    el.classList.remove('satisfied', 'impossible');
+                    const side = c === 0 ? 'left' : c === N + 1 ? 'right' : r === 0 ? 'top' : r === N + 1 ? 'bottom' : null;
+                    if (!side) continue;
+                    const idx = side === 'left' || side === 'right' ? r - 1 : c - 1;
+                    const v = clues[side][idx];
+                    if (v === null || v === undefined) { el.classList.add('missing'); continue; }
+                    const key = [side, idx].join(':');
+                    if (cls.has(key)) {
+                        if (cls.get(key) === v) el.classList.add('satisfied');
+                        else if (complete || checkMode) el.classList.add('impossible');
+                    }
+                }
+            }
+        }
+
+        function renderKeypad() {
+            keypadEl.innerHTML = '';
+            for (let v = 1; v <= N; v++) {
+                const btn = document.createElement('button');
+                btn.textContent = v;
+                btn.setAttribute('aria-label', v);
+                btn.addEventListener('click', () => {
+                    if (audioContext.state === 'suspended') audioContext.resume();
+                    if (!selected) { announce('Select a cell first'); return; }
+                    if (notesMode) toggleNote(selected.r, selected.c, v);
+                    else setValue(selected.r, selected.c, v);
+                });
+                keypadEl.appendChild(btn);
+            }
+            const clr = document.createElement('button');
+            clr.textContent = '⌫';
+            clr.setAttribute('aria-label', 'Clear cell');
+            clr.addEventListener('click', () => { if (selected) setValue(selected.r, selected.c, 0); });
+            keypadEl.appendChild(clr);
+        }
+
+        function onCellClick(r, c) {
+            if (gameOver) return;
+            if (audioContext.state === 'suspended') audioContext.resume();
+            if (selected && selected.r === r && selected.c === c) {
+                selected = null;
+            } else {
+                selected = { r, c };
+                announce(`Selected row ${r + 1}, column ${c + 1}`);
+            }
+            updateAllCells();
+        }
+
+        function setValue(r, c, v) {
+            if (givens.has(r * N + c)) { announce('This cell is prefilled'); return; }
+            const prev = board[r][c];
+            if (prev === v) {
+                board[r][c] = 0;
+            } else {
+                board[r][c] = v;
+                notes[r][c] = new Set();
+            }
+            moveCount++;
+            movesEl.textContent = moveCount;
+            successSound();
+            updateAllCells();
+            checkComplete();
+        }
+
+        function toggleNote(r, c, v) {
+            if (givens.has(r * N + c)) { announce('This cell is prefilled'); return; }
+            if (board[r][c] > 0) { announce('Cell is filled — clear it first'); return; }
+            const s = notes[r][c];
+            if (s.has(v)) s.delete(v); else s.add(v);
+            renderCell(r, c);
+        }
+
+        function announce(msg) {
+            liveEl.textContent = msg;
+        }
+
+        // ─────────────────────── Check / validation ───────────────────────
+        let checkMode = false;
+        function doCheck() {
+            if (gameOver) return;
+            checkMode = true;
+            let anyWrong = false;
+            for (let r = 0; r < N; r++) {
+                for (let c = 0; c < N; c++) {
+                    const el = cellEls[r][c];
+                    el.classList.remove('wrongcheck');
+                    if (board[r][c] > 0 && board[r][c] !== solution[r][c]) {
+                        el.classList.add('wrongcheck');
+                        anyWrong = true;
+                    }
+                }
+            }
+            if (anyWrong) {
+                messageEl.textContent = 'Some cells are incorrect.';
+                messageEl.style.color = 'var(--danger)';
+                errorSound();
+            } else {
+                messageEl.textContent = 'All filled cells are correct so far.';
+                messageEl.style.color = 'var(--accent2)';
+                successSound();
+            }
+            updateClueHighlights();
+        }
+
+        function isComplete() {
+            for (let r = 0; r < N; r++) {
+                const vals = board[r].slice();
+                if (vals.some(v => v <= 0)) return false;
+                if (new Set(vals).size !== N) return false;
+            }
+            for (let c = 0; c < N; c++) {
+                const vals = board.map(row => row[c]);
+                if (new Set(vals).size !== N) return false;
+            }
+            // Validate all displayed clues
+            const checkLine = (line, clue) => clue === null || clue === undefined || visibleCount(line) === clue;
+            for (let r = 0; r < N; r++) {
+                if (!checkLine(board[r], clues.left[r])) return false;
+                if (!checkLine(board[r].slice().reverse(), clues.right[r])) return false;
+            }
+            for (let c = 0; c < N; c++) {
+                const col = board.map(row => row[c]);
+                if (!checkLine(col, clues.top[c])) return false;
+                if (!checkLine(col.slice().reverse(), clues.bottom[c])) return false;
+            }
+            return true;
+        }
+
+        function checkComplete() {
+            if (complete) return;
+            if (isComplete()) {
+                complete = true; gameOver = true;
+                clearInterval(timerId);
+                elapsed = Math.round((performance.now() - startTime) / 1000);
+                saveBest();
+                winSound();
+                showModal(`
+                    <h2>Puzzle solved!</h2>
+                    <p>Time: <b>${fmtTime(elapsed)}</b></p>
+                    <p>Moves: <b>${moveCount}</b> · Hints: <b>${hintsUsed}</b></p>
+                    <p>Difficulty: <b>${cap(difficulty)}</b> · Seed: <b>${seed}</b></p>
+                    <div class="controls">
+                        <button id="again-btn">Play Again</button>
+                    </div>
+                `);
+                document.getElementById('again-btn').addEventListener('click', () => { hideModal(); newGame(); });
+            }
+        }
+
+        function saveBest() {
+            try {
+                const key = 'vt.best.' + difficulty;
+                const prev = localStorage.getItem(key);
+                if (prev === null || elapsed < Number(prev)) localStorage.setItem(key, String(elapsed));
+            } catch (e) { /* ignore */ }
+        }
+
+        // ─────────────────────── Hint system ───────────────────────
+        function doHint() {
+            if (gameOver) return;
+            // Level 1: highlight row/col with an obvious deduction or explain a clue rule
+            // Level 2: remove impossible candidate
+            // Level 3: reveal one cell
+            const hintLevel = hintsUsed % 3;
+            if (hintLevel === 0) {
+                // Find a fully determined empty cell candidate by checking MRV via solver row
+                const emptyCells = [];
+                for (let r = 0; r < N; r++) for (let c = 0; c < N; c++)
+                    if (board[r][c] === 0) emptyCells.push([r, c]);
+                if (!emptyCells.length) { announce('No empty cells'); return; }
+                // Explain clue-1 rule if any clue is 1
+                let explained = false;
+                for (let r = 0; r < N && !explained; r++) {
+                    if (clues.left[r] === 1 && board[r][0] === 0) {
+                        messageEl.textContent = 'Hint: a clue of 1 means the tallest tower (N) is first in that line.';
+                        explained = true;
+                    }
+                }
+                if (!explained) {
+                    // Highlight a row or column that has the most filled cells
+                    let best = null, bestFilled = -1;
+                    for (let r = 0; r < N; r++) {
+                        const f = board[r].filter(v => v > 0).length;
+                        if (f > bestFilled) { bestFilled = f; best = ['row', r]; }
+                    }
+                    for (let c = 0; c < N; c++) {
+                        const f = board.map(row => row[c]).filter(v => v > 0).length;
+                        if (f > bestFilled) { bestFilled = f; best = ['col', c]; }
+                    }
+                    if (best) {
+                        const [kind, idx] = best;
+                        if (kind === 'row') {
+                            for (let c = 0; c < N; c++) cellEls[idx][c].classList.add('highlight');
+                        } else {
+                            for (let r = 0; r < N; r++) cellEls[r][idx].classList.add('highlight');
+                        }
+                        messageEl.textContent = 'Hint: focus on ' + (kind === 'row' ? 'row' : 'column') + ' ' + (idx + 1) + '.';
+                    }
+                }
+            } else if (hintLevel === 1) {
+                // Remove an impossible candidate from a notes cell, or suggest a candidate removal
+                for (let r = 0; r < N; r++) {
+                    for (let c = 0; c < N; c++) {
+                        if (board[r][c] > 0) continue;
+                        const s = notes[r][c];
+                        if (s.size) {
+                            for (const v of [...s]) {
+                                const usedRow = new Set(board[r].filter(x => x > 0));
+                                const usedCol = new Set(board.map(row => row[c]).filter(x => x > 0));
+                                if (usedRow.has(v) || usedCol.has(v)) {
+                                    s.delete(v);
+                                    renderCell(r, c);
+                                    messageEl.textContent = 'Hint: removed impossible candidate ' + v + ' from row ' + (r + 1) + ', column ' + (c + 1) + '.';
+                                    hintsUsed++;
+                                    hintCountEl.textContent = hintsUsed;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+                messageEl.textContent = 'Hint: no removable candidates — try Check for feedback.';
+            } else {
+                // Reveal one empty cell from solution
+                const emptyCells = [];
+                for (let r = 0; r < N; r++) for (let c = 0; c < N; c++)
+                    if (board[r][c] === 0) emptyCells.push([r, c]);
+                if (!emptyCells.length) { announce('No empty cells'); return; }
+                const [r, c] = emptyCells[0];
+                board[r][c] = solution[r][c];
+                notes[r][c] = new Set();
+                moveCount++;
+                movesEl.textContent = moveCount;
+                successSound();
+                messageEl.textContent = 'Hint: revealed cell at row ' + (r + 1) + ', column ' + (c + 1) + '.';
+                updateAllCells();
+            }
+            hintsUsed++;
+            hintCountEl.textContent = hintsUsed;
+            checkComplete();
+        }
+
+        // ─────────────────────── Timer / helpers ───────────────────────
+        function fmtTime(s) {
+            s = Math.max(0, Math.floor(s));
+            const m = Math.floor(s / 60), r = s % 60;
+            return m + ':' + String(r).padStart(2, '0');
+        }
+        function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+        function updateTimer() {
+            if (!complete) {
+                elapsed = Math.floor((performance.now() - startTime) / 1000);
+                timerEl.textContent = fmtTime(elapsed);
+            }
+        }
+
+        // ─────────────────────── Modal ───────────────────────
+        function showModal(html) {
+            modalContent.innerHTML = html;
+            modal.classList.add('show');
+        }
+        function hideModal() { modal.classList.remove('show'); }
+        modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+        // ─────────────────────── New game / load ───────────────────────
+        function newGame() {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            difficulty = diffSelect.value;
+            N = DIFF[difficulty].N;
+            const sd = seed || Math.floor(Math.random() * 1000000);
+            seed = sd;
+            seedInput.value = sd;
+            seedDisplayEl.textContent = sd;
+            let puz;
+            try {
+                puz = generatePuzzle(difficulty, seed);
+            } catch (e) {
+                puz = generatePuzzle('easy', seed); // safe fallback
+            }
+            solution = puz.solution;
+            clues = puz.clues;
+            givens = puz.givens;
+            board = Array.from({ length: N }, () => new Array(N).fill(0));
+            notes = Array.from({ length: N }, () => Array.from({ length: N }, () => new Set()));
+            for (const idx of givens) {
+                board[Math.floor(idx / N)][idx % N] = solution[Math.floor(idx / N)][idx % N];
+            }
+            selected = null; gameOver = false; complete = false; checkMode = false;
+            moveCount = 0; hintsUsed = 0; notesMode = false;
+            movesEl.textContent = 0; hintCountEl.textContent = 0;
+            messageEl.textContent = difficulty === 'easy' ? 'Easy: fill the grid!' : cap(difficulty) + ': fill the grid!';
+            messageEl.style.color = 'var(--accent2)';
+            notesBtn.classList.remove('notes-mode');
+            startTime = performance.now();
+            clearInterval(timerId);
+            timerId = setInterval(updateTimer, 1000);
+            renderBoard();
+            renderKeypad();
+            updateTimer();
+        }
+
+        // ─────────────────────── URL parameters ───────────────────────
+        function readURL() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('seed')) seed = parseInt(params.get('seed'), 10) || seed;
+            if (params.get('difficulty')) diffSelect.value = params.get('difficulty');
+            if (params.get('size')) {
+                const size = parseInt(params.get('size'), 10);
+                if (size === 4) diffSelect.value = 'easy';
+                else if (size === 5) diffSelect.value = 'medium';
+                else if (size === 6) diffSelect.value = 'hard';
+            }
+        }
+
+        // ─────────────────────── Events ───────────────────────
+        newBtn.addEventListener('click', () => { seed = Math.floor(Math.random() * 1000000); newGame(); });
+        restartBtn.addEventListener('click', () => { if (audioContext.state === 'suspended') audioContext.resume(); newGame(); });
+        checkBtn.addEventListener('click', doCheck);
+        hintBtn.addEventListener('click', doHint);
+        notesBtn.addEventListener('click', () => {
+            notesMode = !notesMode;
+            notesBtn.classList.toggle('notes-mode', notesMode);
+            messageEl.textContent = notesMode ? 'Notes mode ON — keypad adds candidates.' : 'Notes mode OFF.';
+        });
+        seedBtn.addEventListener('click', () => {
+            const v = parseInt(seedInput.value, 10);
+            if (v) { seed = v; newGame(); }
+        });
+        rulesBtn.addEventListener('click', () => showModal(`
+            <h2>Rules</h2>
+            <p>Fill the grid so each row and column contains 1–N exactly once.</p>
+            <p>Numbers around the edge show how many towers are visible from that side. A taller tower hides shorter ones behind it.</p>
+            <p>Tap a cell, then tap a number to fill it. Use Notes to mark candidates. Check verifies your fills.</p>
+            <div class="controls"><button id="close-rules">Close</button></div>
+        `));
+        modalContent.addEventListener('click', (e) => {
+            if (e.target.id === 'close-rules') hideModal();
+        });
+        diffSelect.addEventListener('change', () => { seed = Math.floor(Math.random() * 1000000); newGame(); });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (modal.classList.contains('show')) { if (e.key === 'Escape') hideModal(); return; }
+            if (selected) {
+                let { r, c } = selected;
+                if (e.key === 'ArrowUp') r = Math.max(0, r - 1);
+                else if (e.key === 'ArrowDown') r = Math.min(N - 1, r + 1);
+                else if (e.key === 'ArrowLeft') c = Math.max(0, c - 1);
+                else if (e.key === 'ArrowRight') c = Math.min(N - 1, c + 1);
+                else if (/^[1-9]$/.test(e.key) && Number(e.key) <= N) { setValue(r, c, Number(e.key)); return; }
+                else if (e.key === '0' || e.key === 'Delete' || e.key === 'Backspace') { setValue(r, c, 0); return; }
+                else if (e.key === 'n' || e.key === 'N') { notesMode = !notesMode; notesBtn.classList.toggle('notes-mode', notesMode); return; }
+                else if (e.key === 'h' || e.key === 'H') { doHint(); return; }
+                else return;
+                if (e.key.startsWith('Arrow')) {
+                    e.preventDefault();
+                    selected = { r, c };
+                    updateAllCells();
+                    const el = cellEls[r][c];
+                    if (el) el.focus();
+                }
+            }
+        });
+
+        // ─────────────────────── Init ───────────────────────
+        readURL();
+        seed = seed || Math.floor(Math.random() * 1000000);
+        // Load saved difficulty preference
+        try {
+            const prefs = JSON.parse(localStorage.getItem('vt.prefs') || 'null');
+            if (prefs && prefs.difficulty) diffSelect.value = prefs.difficulty;
+        } catch (e) { /* ignore */ }
+        diffSelect.addEventListener('change', () => {
+            try { localStorage.setItem('vt.prefs', JSON.stringify({ difficulty: diffSelect.value })); } catch (e) { /* ignore */ }
+        });
+        newGame();
+    });
+    </script>
+    <script>
+    (function(){
+        var t=localStorage.getItem("ui-theme")||"dark";
+        document.documentElement.dataset.theme=t;
+        var btn=document.getElementById("theme-toggle");
+        btn.textContent=t==="dark"?"☀":"☾";
+        btn.addEventListener("click",function(){
+            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
+            document.documentElement.dataset.theme=t;
+            localStorage.setItem("ui-theme",t);
+            btn.textContent=t==="dark"?"☀":"☾";
+        });
+    })();
+    </script>
+</body>
+</html>
