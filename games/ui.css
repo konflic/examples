@@ -79,6 +79,10 @@ button:disabled {
 }
 
 /* ── Layout primitives ───────────────────────────────────── */
+/* Controls layout convention (shared with recent games, e.g. nonograms):
+   • inputs/selects (any field with a label) → own full-width row (.field)
+   • action buttons → 1–4 per row, equally fitted (each = 1/N width via flex:1)
+   • stats → 1–5 per row, equally fitted */
 .panel {
     background: var(--panel);
     border: 1px solid var(--border);

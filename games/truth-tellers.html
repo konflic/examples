@@ -16,7 +16,46 @@
             -webkit-tap-highlight-color: transparent;
         }
         h1 { margin: 8px 0 4px; font-size: 1.4rem; flex-shrink: 0; }
-        .controls { gap: 8px; }
+        body > .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: min(94vw, 900px);
+            margin: 4px auto 8px;
+            padding: 8px 12px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        body > .controls .field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            min-width: 0;
+        }
+        body > .controls .field label {
+            font-size: 13px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        body > .controls .field select {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+        }
+        body > .controls .btns {
+            display: flex;
+            gap: 8px;
+        }
+        body > .controls .btns button {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+        }
         .stats { gap: 6px; }
         .stat { padding: 3px 9px; font-size: 12px; }
         .cards-area {
@@ -120,13 +159,15 @@
     <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
     <h1>Truth-Tellers</h1>
     <div class="controls">
-        <div class="panel">
+        <div class="field">
             <label for="diff-select">Difficulty:</label>
             <select id="diff-select">
                 <option value="easy">Easy · 3–4</option>
                 <option value="medium">Medium · 5–6</option>
                 <option value="hard">Hard · 7–8</option>
             </select>
+        </div>
+        <div class="btns">
             <button id="new-btn">New Puzzle</button>
             <button id="check-btn">Check</button>
             <button id="hint-btn">Hint</button>
@@ -142,9 +183,11 @@
     </div>
     <div class="cards-area" id="cards-area"></div>
     <div class="controls" style="margin-top:2px">
-        <div class="panel">
+        <div class="field">
             <label for="seed-input">Seed:</label>
             <input id="seed-input" type="number" style="width:90px;padding:5px;border:1px solid var(--border);border-radius:5px;background:var(--btn-bg-alt);color:var(--text)">
+        </div>
+        <div class="btns">
             <button id="seed-btn">Load</button>
         </div>
     </div>
