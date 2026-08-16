@@ -64,6 +64,7 @@
             transform: rotateY(180deg);
             perspective: 1000px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            container-type: inline-size;
         }
 
         .card.flipped {
@@ -124,7 +125,7 @@
         }
 
         .card-content {
-            font-size: clamp(5.5rem, 5vw, 5.5rem);
+            font-size: clamp(6px, 38cqw, 88px);
             font-weight: bold;
             line-height: 1;
         }
@@ -181,6 +182,17 @@
             const totalPairsElement = document.getElementById('total-pairs');
             const startGameBtn = document.getElementById('start-game');
             const newGameBtn = document.getElementById('new-game');
+            const rowsInput = document.getElementById('rows');
+            const colsInput = document.getElementById('cols');
+
+            const isMobile = window.matchMedia('(pointer: coarse)').matches;
+            const maxDim = isMobile ? 5 : 20;
+            rowsInput.max = maxDim;
+            colsInput.max = maxDim;
+            if (isMobile) {
+                rowsInput.value = Math.min(parseInt(rowsInput.value, 10) || 4, 5);
+                colsInput.value = Math.min(parseInt(colsInput.value, 10) || 4, 5);
+            }
 
             let cards = [];
             let flippedCards = [];
@@ -198,8 +210,8 @@
                 const symbolType = document.getElementById('symbol-type').value;
 
                 // Validate input
-                if (rows < 2 || rows > 20 || cols < 2 || cols > 20) {
-                    alert('Please enter values between 2 and 20 for both rows and columns.');
+                if (rows < 2 || rows > maxDim || cols < 2 || cols > maxDim) {
+                    alert('Please enter values between 2 and ' + maxDim + ' for both rows and columns.');
                     return;
                 }
 
