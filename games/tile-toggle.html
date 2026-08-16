@@ -33,14 +33,14 @@
             border-radius: 6px;
             padding: 10px;
             display: inline-block;
+            width: min(94vw, 900px);
+            box-sizing: border-box;
         }
         .board {
             display: grid;
             gap: 5px;
         }
         .tile {
-            width: clamp(44px, 13vw, 72px);
-            height: clamp(44px, 13vw, 72px);
             padding: 0;
             border-radius: 8px;
             font-size: 18px;
@@ -50,6 +50,8 @@
             border: 2px solid var(--border);
             transition: background 0.12s, border-color 0.12s, transform 0.12s;
             touch-action: manipulation;
+            width: 100%;
+            height: 100%;
         }
         .tile[data-on="0"] {
             background: var(--btn-bg-alt);
@@ -331,11 +333,20 @@
 
         // ─────────────────────── Rendering ───────────────────────
         function renderBoard() {
+            const area = boardWrap.closest('.game-area');
+            const availW = Math.min(area.clientWidth, 900) * 0.94 - 22;
+            const availH = area.clientHeight - 42;
+            const gap = 5;
+            const ts = Math.max(24, Math.floor(Math.min(
+                (availW - (size - 1) * gap) / size,
+                (availH - (size - 1) * gap) / size
+            )));
+            boardWrap.style.setProperty('--ts', ts + 'px');
             boardWrap.innerHTML = '';
             const b = document.createElement('div');
             b.className = 'board';
-            b.style.gridTemplateColumns = `repeat(${size}, clamp(44px, 13vw, 72px))`;
-            b.style.gridTemplateRows = `repeat(${size}, clamp(44px, 13vw, 72px))`;
+            b.style.gridTemplateColumns = `repeat(${size}, var(--ts))`;
+            b.style.gridTemplateRows = `repeat(${size}, var(--ts))`;
             boardWrap.appendChild(b);
             tileEls = [];
             for (let r = 0; r < size; r++) {
@@ -654,6 +665,12 @@
         document.addEventListener('keydown', (e) => {
             if (modal.classList.contains('show')) { if (e.key === 'Escape') hideModal(); return; }
             if (e.key === 'h' || e.key === 'H') { doHint(); return; }
+        });
+
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(renderBoard, 120);
         });
 
         function announce(msg) { liveEl.textContent = msg; }
