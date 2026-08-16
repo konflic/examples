@@ -121,7 +121,6 @@
         }
         .feedback i.exact { background: #e5e5e5; border-color: #999; }
         .feedback i.match { background: #f87171; border-color: #f87171; }
-        .note { color: #666; font-size: 12px; flex-shrink: 0; }
         @media (max-width: 600px) {
             h1 { font-size: 1.15rem; margin: 6px 0 2px; }
             .stats { gap: 5px; }
@@ -164,7 +163,6 @@
         <div id="palette" class="palette"></div>
         <div id="current-row" class="current-row"></div>
         <div id="board" class="board"></div>
-        <div id="legend" class="note">● white = right color &amp; right position · red = right color, wrong position</div>
     </div>
     <script>
     'use strict';
@@ -197,7 +195,6 @@
         const paletteEl = document.getElementById('palette');
         const currentRowEl = document.getElementById('current-row');
         const boardEl = document.getElementById('board');
-        const legendEl = document.getElementById('legend');
         const winsEl = document.getElementById('wins');
         const lossesEl = document.getElementById('losses');
         const bestEl = document.getElementById('best');
@@ -439,9 +436,6 @@
             gameOver = false;
             guessBtn.disabled = false;
             clearBtn.disabled = false;
-            legendEl.textContent = cfg.mode === 'black'
-                ? 'HARD MODE: feedback shows ONLY exact matches (white dots). No color info!'
-                : '● white = right color & right position · red = right color, wrong position';
             renderPalette();
             renderCurrentRow();
             renderBoard();

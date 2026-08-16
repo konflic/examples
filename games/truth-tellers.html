@@ -42,18 +42,6 @@
         }
         .card.contradiction { border-color: var(--danger); animation: shake 0.4s; }
         .card.revealed { border-color: var(--accent); }
-        .card .avatar {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            background: var(--accent);
-            color: #fff;
-            font-size: 20px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 6px;
-        }
         .card .name { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
         .card .statement {
             font-size: 13px;
@@ -78,7 +66,6 @@
         .role-btns button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
         .role-btns button.active.liar { background: var(--danger); border-color: var(--danger); }
         .message { margin-top: 4px; }
-        .note { color: #666; font-size: 12px; flex-shrink: 0; }
         .modal {
             display: none;
             position: fixed;
@@ -151,7 +138,6 @@
         </div>
     </div>
     <div id="message" class="message">Press New Puzzle to start.</div>
-    <div id="note" class="note">Each character is a Truth-Teller or a Liar. Truth-tellers always tell the truth; liars always lie.</div>
     <div id="live" aria-live="polite"></div>
 
     <div id="modal" class="modal">
@@ -404,29 +390,47 @@
                     { speaker: 'c2', template: 'SAME_TYPE', targets: [0] }
                 ],
                 roles: { c0: false, c1: true, c2: false }
+            },
+            medium: {
+                characters: [
+                    { id: 'c0', name: 'Ava' }, { id: 'c1', name: 'Ben' }, { id: 'c2', name: 'Cora' },
+                    { id: 'c3', name: 'Dan' }, { id: 'c4', name: 'Eve' }
+                ],
+                statements: [
+                    { speaker: 'c0', template: 'TARGET_IS_LIAR', targets: [1] },
+                    { speaker: 'c1', template: 'TARGET_IS_LIAR', targets: [2] },
+                    { speaker: 'c2', template: 'DIFFERENT_TYPES', targets: [0] },
+                    { speaker: 'c3', template: 'TARGET_IS_LIAR', targets: [4] },
+                    { speaker: 'c4', template: 'TARGET_IS_LIAR', targets: [0] }
+                ],
+                roles: { c0: false, c1: true, c2: false, c3: false, c4: true }
+            },
+            hard: {
+                characters: [
+                    { id: 'c0', name: 'Ava' }, { id: 'c1', name: 'Ben' }, { id: 'c2', name: 'Cora' },
+                    { id: 'c3', name: 'Dan' }, { id: 'c4', name: 'Eve' }, { id: 'c5', name: 'Finn' },
+                    { id: 'c6', name: 'Gina' }
+                ],
+                statements: [
+                    { speaker: 'c0', template: 'TARGET_IS_LIAR', targets: [1] },
+                    { speaker: 'c1', template: 'TARGET_IS_LIAR', targets: [2] },
+                    { speaker: 'c2', template: 'DIFFERENT_TYPES', targets: [0] },
+                    { speaker: 'c3', template: 'TARGET_IS_LIAR', targets: [4] },
+                    { speaker: 'c4', template: 'TARGET_IS_LIAR', targets: [0] },
+                    { speaker: 'c5', template: 'TARGET_IS_LIAR', targets: [6] },
+                    { speaker: 'c6', template: 'TARGET_IS_LIAR', targets: [2] }
+                ],
+                roles: { c0: false, c1: true, c2: false, c3: false, c4: true, c5: false, c6: true }
             }
         };
 
         // ─────────────────────── Rendering ───────────────────────
-        function avatarColor(name) {
-            const palette = ['#6c5ce7', '#0984e3', '#00b894', '#e17055', '#d63031', '#e84393',
-                             '#6ab04c', '#4834d4', '#eb4d4b', '#22a6b3', '#f0932b', '#be2edd'];
-            let h = 0;
-            for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 997;
-            return palette[h % palette.length];
-        }
-
         function renderCards() {
             cardsArea.innerHTML = '';
             characters.forEach((char, i) => {
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.dataset.id = char.id;
-
-                const av = document.createElement('div');
-                av.className = 'avatar';
-                av.style.background = avatarColor(char.name);
-                av.textContent = char.name[0];
 
                 const nm = document.createElement('div');
                 nm.className = 'name';
@@ -454,7 +458,6 @@
                     btnEls[r.key] = b;
                 });
 
-                card.appendChild(av);
                 card.appendChild(nm);
                 card.appendChild(st);
                 card.appendChild(btns);
@@ -742,7 +745,7 @@
         });
         diffSelect.addEventListener('change', () => {
             seed = Math.floor(Math.random() * 1000000);
-            try { localStorage.setItem('tt.prefs', JSON.stringify({ difficulty: diffSelect.value })); } catch (e) { /* ignore */ }
+            try { localStorage.setItem('truth.prefs', JSON.stringify({ difficulty: diffSelect.value })); } catch (e) { /* ignore */ }
             newGame();
         });
 
@@ -757,7 +760,7 @@
         readURL();
         seed = seed || Math.floor(Math.random() * 1000000);
         try {
-            const prefs = JSON.parse(localStorage.getItem('tt.prefs') || 'null');
+            const prefs = JSON.parse(localStorage.getItem('truth.prefs') || 'null');
             if (prefs && prefs.difficulty) diffSelect.value = prefs.difficulty;
         } catch (e) { /* ignore */ }
         newGame();
