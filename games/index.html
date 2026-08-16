@@ -128,8 +128,8 @@
             { href: "picture.html", icon: "fas fa-image", name: "Picture Puzzle" },
             { href: "flyletters.html", icon: "fas fa-font", name: "Fly Letters" },
             { href: "numorder.html", icon: "fas fa-sort-numeric-up", name: "Number Order" },
-            { href: "bricks.html", icon: "fa-solid fa-cube", name: "Bricks", mobile: true },
-            { href: "water.html", icon: "fa-solid fa-water", name: "Water", mobile: true },
+            { href: "bricks.html", icon: "fa-solid fa-cube", name: "Bricks", desktopOnly: true },
+            { href: "water.html", icon: "fa-solid fa-water", name: "Water", desktopOnly: true },
             { href: "counting.html", icon: "fas fa-calculator", name: "Counting Game" },
             { href: "arithmetic.html", icon: "fas fa-plus", name: "Arithmetic Trainer" },
             { href: "mastermind.html", icon: "fas fa-key", name: "Mastermind" },
@@ -149,7 +149,7 @@
 
         function renderGames() {
             var isMobile = mobileQuery.matches;
-            var visible = GAMES.filter(function(g) { return !isMobile || g.mobile; });
+            var visible = GAMES.filter(function(g) { return !(isMobile && g.desktopOnly); });
             grid.innerHTML = visible.map(function(g) {
                 return '<div class="game-card"><a href="' + g.href + '"><i class="' + g.icon + '"></i><span>' + g.name + '</span></a></div>';
             }).join("");
