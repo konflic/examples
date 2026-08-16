@@ -101,132 +101,7 @@
     <div class="container">
         <h1>Game Hub</h1>
 
-        <div class="games-grid">
-            <div class="game-card">
-                <a href="memory.html">
-                    <i class="fas fa-brain"></i>
-                    <span>Memory Game</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="picture.html">
-                    <i class="fas fa-image"></i>
-                    <span>Picture Puzzle</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="flyletters.html">
-                    <i class="fas fa-font"></i>
-                    <span>Fly Letters</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="numorder.html">
-                    <i class="fas fa-sort-numeric-up"></i>
-                    <span>Number Order</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="bricks.html">
-                    <i class="fa-solid fa-cube"></i>
-                    <span>Bricks</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="water.html">
-                    <i class="fa-solid fa-water"></i>
-                    <span>Water</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="counting.html">
-                    <i class="fas fa-calculator"></i>
-                    <span>Counting Game</span>
-                </a>
-            </div>
-            <div class="game-card">
-                <a href="arithmetic.html">
-                    <i class="fas fa-plus"></i>
-                    <span>Arithmetic Trainer</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="mastermind.html">
-                    <i class="fas fa-key"></i>
-                    <span>Mastermind</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="nonograms.html">
-                    <i class="fas fa-th"></i>
-                    <span>Nonograms</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="pixelart.html">
-                    <i class="fas fa-palette"></i>
-                    <span>Pixel Art</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="life.html">
-                    <i class="fas fa-seedling"></i>
-                    <span>Life Simulator</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="avoid-collision.html">
-                    <i class="fas fa-rocket"></i>
-                    <span>Space Shooter</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="findletter.html">
-                    <i class="fas fa-search"></i>
-                    <span>Find Letter</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="visibility-towers.html">
-                    <i class="fas fa-building"></i>
-                    <span>Visibility Towers</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="truth-tellers.html">
-                    <i class="fas fa-comments"></i>
-                    <span>Truth-Tellers</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="cryptograms.html">
-                    <i class="fas fa-lock"></i>
-                    <span>Cryptograms</span>
-                </a>
-            </div>
-
-            <div class="game-card">
-                <a href="tile-toggle.html">
-                    <i class="fas fa-th-large"></i>
-                    <span>Tile Toggle</span>
-                </a>
-            </div>
-        </div>
+        <div class="games-grid" id="games-grid"></div>
 
         <footer>
             © Game Hub | All games are property of their respective owners
@@ -244,6 +119,44 @@
             localStorage.setItem("ui-theme",t);
             btn.textContent=t==="dark"?"☀":"☾";
         });
+    })();
+    </script>
+    <script>
+    (function(){
+        var GAMES = [
+            { href: "memory.html", icon: "fas fa-brain", name: "Memory Game" },
+            { href: "picture.html", icon: "fas fa-image", name: "Picture Puzzle" },
+            { href: "flyletters.html", icon: "fas fa-font", name: "Fly Letters" },
+            { href: "numorder.html", icon: "fas fa-sort-numeric-up", name: "Number Order" },
+            { href: "bricks.html", icon: "fa-solid fa-cube", name: "Bricks", mobile: true },
+            { href: "water.html", icon: "fa-solid fa-water", name: "Water", mobile: true },
+            { href: "counting.html", icon: "fas fa-calculator", name: "Counting Game" },
+            { href: "arithmetic.html", icon: "fas fa-plus", name: "Arithmetic Trainer" },
+            { href: "mastermind.html", icon: "fas fa-key", name: "Mastermind" },
+            { href: "nonograms.html", icon: "fas fa-th", name: "Nonograms" },
+            { href: "pixelart.html", icon: "fas fa-palette", name: "Pixel Art" },
+            { href: "life.html", icon: "fas fa-seedling", name: "Life Simulator" },
+            { href: "avoid-collision.html", icon: "fas fa-rocket", name: "Space Shooter" },
+            { href: "findletter.html", icon: "fas fa-search", name: "Find Letter" },
+            { href: "visibility-towers.html", icon: "fas fa-building", name: "Visibility Towers" },
+            { href: "truth-tellers.html", icon: "fas fa-comments", name: "Truth-Tellers" },
+            { href: "cryptograms.html", icon: "fas fa-lock", name: "Cryptograms" },
+            { href: "tile-toggle.html", icon: "fas fa-th-large", name: "Tile Toggle" }
+        ];
+
+        var mobileQuery = window.matchMedia("(pointer: coarse)");
+        var grid = document.getElementById("games-grid");
+
+        function renderGames() {
+            var isMobile = mobileQuery.matches;
+            var visible = GAMES.filter(function(g) { return !isMobile || g.mobile; });
+            grid.innerHTML = visible.map(function(g) {
+                return '<div class="game-card"><a href="' + g.href + '"><i class="' + g.icon + '"></i><span>' + g.name + '</span></a></div>';
+            }).join("");
+        }
+
+        renderGames();
+        mobileQuery.addEventListener("change", renderGames);
     })();
     </script>
 </body>
