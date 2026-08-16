@@ -13,6 +13,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             padding: 20px;
             min-height: 100vh;
             position: relative;
@@ -41,7 +42,7 @@
             padding: 30px;
             border-radius: 15px;
             margin-bottom: 20px;
-            width: 350px;
+            width: min(94vw, 480px);
             text-align: center;
             box-shadow:
                 0 8px 32px rgba(0, 0, 0, 0.3),
@@ -55,7 +56,7 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            max-width: 1200px;
+            max-width: 1400px;
         }
 
         .game-main {
@@ -94,7 +95,7 @@
             background: linear-gradient(145deg, #2d2d2d 0%, #252525 100%);
             border-radius: 15px;
             padding: 40px;
-            min-height: 500px;
+            min-height: 60vh;
             width: 100%;
             position: relative;
             box-shadow:
@@ -266,56 +267,7 @@
             }
         }
 
-        @media (max-width: 900px) {
-            .game-main {
-                flex-direction: column;
-                align-items: center;
-                gap: 20px;
-            }
-
-            .game-left-panel {
-                min-width: auto;
-                max-width: none;
-                width: 100%;
-                max-width: 500px;
-            }
-
-            .options-container {
-                flex-direction: row;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 15px;
-            }
-
-            .option-btn {
-                width: auto;
-                min-width: 100px;
-                aspect-ratio: 1;
-                font-size: 2.5em;
-            }
-
-            .emoji-area {
-                min-height: 400px;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .option-btn {
-                font-size: 2em;
-                min-width: 80px;
-                height: 60px;
-            }
-
-            .emoji {
-                font-size: 6rem;
-            }
-
-            .emoji-area {
-                min-height: 350px;
-                padding: 20px;
-            }
-        }
-    </style>
+        </style>
 </head>
 <body>
     <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
