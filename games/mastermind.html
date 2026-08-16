@@ -18,50 +18,6 @@
         }
         h1 { flex-shrink: 0; }
         .stat { min-width: 86px; }
-        .stats {
-            width: min(94vw, 900px);
-            margin: 4px auto 8px;
-        }
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: min(94vw, 900px);
-            margin: 4px auto 8px;
-            padding: 8px 12px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            flex-shrink: 0;
-        }
-        .controls .field {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            min-width: 0;
-        }
-        .controls .field label {
-            font-size: 13px;
-            color: var(--muted);
-            white-space: nowrap;
-        }
-        .controls .field select {
-            flex: 1;
-            min-width: 0;
-            width: 100%;
-        }
-        .controls .btns {
-            display: flex;
-            gap: 8px;
-        }
-        .controls .btns button {
-            flex: 1;
-            min-width: 0;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 14px;
-        }
         .game-area {
             flex: 1;
             min-height: 0;
@@ -168,10 +124,8 @@
         .note { color: #666; font-size: 12px; flex-shrink: 0; }
         @media (max-width: 600px) {
             h1 { font-size: 1.15rem; margin: 6px 0 2px; }
-            .stats { gap: 5px; margin: 2px auto 4px; }
+            .stats { gap: 5px; }
             .stat { min-width: 0; padding: 3px 7px; font-size: 11px; }
-            .controls { gap: 6px; margin: 2px auto 6px; padding: 6px 10px; }
-            .controls .btns button { padding: 5px 9px; }
             select, button { font-size: 12px; padding: 5px 9px; }
             .game-area { width: 98vw; }
             .palette { gap: 6px; padding: 6px; }

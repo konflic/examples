@@ -79,10 +79,13 @@ button:disabled {
 }
 
 /* ── Layout primitives ───────────────────────────────────── */
-/* Controls layout convention (shared with recent games, e.g. nonograms):
-   • inputs/selects (any field with a label) → own full-width row (.field)
-   • action buttons → 1–4 per row, equally fitted (each = 1/N width via flex:1)
-   • stats → 1–5 per row, equally fitted */
+/* Shared block convention (top-level body children):
+   • body > .controls → column panel with a full-width field row (.field) and
+     equally fitted action buttons (.btns); constrained to min(94vw, 900px)
+   • .stats → 1–5 equally fitted stat chips on the same width as .controls
+   • .tools → toolbar on the same width as .controls
+   Any game may override by re-declaring the same selectors (inline <style>
+   loads after ui.css, so equal-specificity rules in the game win). */
 .panel {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -100,12 +103,59 @@ button:disabled {
     flex-shrink: 0;
 }
 
+body > .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(94vw, 900px);
+    margin: 4px auto 8px;
+    padding: 8px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+body > .controls .field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    min-width: 0;
+}
+
+body > .controls .field label {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+body > .controls .field select {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+}
+
+body > .controls .btns {
+    display: flex;
+    gap: 8px;
+}
+
+body > .controls .btns button {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+}
+
 .stats {
     display: flex;
     gap: 8px;
     justify-content: center;
     flex-wrap: nowrap;
-    margin: 2px 0 6px;
+    width: min(94vw, 900px);
+    margin: 4px auto 8px;
     flex-shrink: 0;
 }
 
@@ -151,7 +201,12 @@ button:disabled {
     gap: 8px;
     justify-content: center;
     align-items: center;
-    margin: 2px 0 6px;
+    width: min(94vw, 900px);
+    margin: 2px auto 6px;
+    padding: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
     flex-shrink: 0;
 }
 
@@ -159,6 +214,14 @@ button:disabled {
     display: flex;
     align-items: center;
     gap: 4px;
+}
+
+.tools .tool {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
 }
 
 .tool .swatch {
@@ -229,4 +292,13 @@ button:disabled {
 @keyframes popIn {
     0%   { transform: scale(0.5); opacity: 0; }
     100% { transform: scale(1);   opacity: 1; }
+}
+
+/* ── Narrow screens (shared block compaction) ────────────── */
+@media (max-width: 600px) {
+    body > .controls { gap: 6px; margin: 2px auto 6px; padding: 6px 10px; }
+    body > .controls .btns button { padding: 5px 9px; }
+    .stats { gap: 4px; margin: 2px auto 4px; }
+    .tools { gap: 6px; margin: 2px auto 4px; padding: 6px; }
+    .tools .tool { padding: 5px 9px; }
 }

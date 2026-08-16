@@ -16,46 +16,6 @@
             -webkit-tap-highlight-color: transparent;
         }
         h1 { margin: 8px 0 4px; font-size: 1.4rem; flex-shrink: 0; }
-        body > .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: min(94vw, 900px);
-            margin: 4px auto 8px;
-            padding: 8px 12px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            flex-shrink: 0;
-        }
-        body > .controls .field {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            min-width: 0;
-        }
-        body > .controls .field label {
-            font-size: 13px;
-            color: var(--muted);
-            white-space: nowrap;
-        }
-        body > .controls .field select {
-            flex: 1;
-            min-width: 0;
-            width: 100%;
-        }
-        body > .controls .btns {
-            display: flex;
-            gap: 8px;
-        }
-        body > .controls .btns button {
-            flex: 1;
-            min-width: 0;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 14px;
-        }
         .stats { gap: 6px; }
         .stat { padding: 3px 9px; font-size: 12px; }
         .game-area {
@@ -151,7 +111,6 @@
         #live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
         @media (max-width: 600px) {
             h1 { font-size: 1.1rem; margin: 6px 0 2px; }
-            .stats { gap: 4px; margin: 2px 0 4px; }
             .stat { padding: 2px 6px; font-size: 11px; }
             .panel { padding: 4px 8px; }
             select, button { font-size: 12px; padding: 5px 9px; }

@@ -17,45 +17,14 @@
             -webkit-tap-highlight-color: transparent;
         }
         h1 { margin: 15px 0 5px; font-size: 1.6rem; flex-shrink: 0; }
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        body > .controls {
             width: min(92vw, 1200px);
             margin: 5px auto 8px;
-            padding: 8px 12px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            flex-shrink: 0;
         }
-        .controls .field {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            min-width: 0;
-        }
-        .controls .field label {
+        body > .controls .field label {
             font-size: 14px;
             color: var(--muted);
             white-space: nowrap;
-        }
-        .controls .field select {
-            flex: 1;
-            min-width: 0;
-            width: 100%;
-        }
-        .controls .btns {
-            display: flex;
-            gap: 8px;
-        }
-        .controls .btns button {
-            flex: 1;
-            min-width: 0;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 14px;
         }
         select, button { font-size: 15px; padding: 8px 14px; }
         #start-btn {
@@ -166,8 +135,7 @@
 
 @media (max-width: 600px) {
     h1 { font-size: 1.2rem; margin: 8px 0 4px; }
-    .controls { margin: 2px auto 4px; gap: 6px; padding: 6px 10px; }
-    .controls .btns button { padding: 5px 10px; }
+    body > .controls .btns button { padding: 5px 10px; }
     select, button { font-size: 13px; padding: 5px 10px; border-radius: 14px; }
     .content { width: 98vw; }
     .expression { font-size: clamp(20px, 9vw, 56px); padding: 2vw 3vw; border-radius: 10px; }
@@ -185,7 +153,7 @@
 
 @media (max-height: 600px) and (max-width: 600px) {
     h1 { font-size: 1rem; margin: 4px 0 2px; }
-    .controls { margin: 0 0 2px; padding: 4px 8px; }
+    body > .controls { margin: 0 0 2px; padding: 4px 8px; }
     select, button { font-size: 12px; padding: 4px 8px; }
     .stats { margin: 0 auto 2px; gap: 3px; }
     .stat { padding: 2px 6px; font-size: 11px; }

@@ -16,69 +16,7 @@
             -webkit-tap-highlight-color: transparent;
         }
         h1 { margin: 8px 0 4px; font-size: 1.4rem; flex-shrink: 0; }
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: min(94vw, 900px);
-            margin: 4px auto 8px;
-            padding: 8px 12px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            flex-shrink: 0;
-        }
-        .controls .field {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            min-width: 0;
-        }
-        .controls .field label {
-            font-size: 13px;
-            color: var(--muted);
-            white-space: nowrap;
-        }
-        .controls .field select {
-            flex: 1;
-            min-width: 0;
-            width: 100%;
-        }
-        .controls .btns {
-            display: flex;
-            gap: 8px;
-        }
-        .controls .btns button {
-            flex: 1;
-            min-width: 0;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 14px;
-        }
-        .tools {
-            display: flex;
-            gap: 8px;
-            width: min(94vw, 900px);
-            margin: 2px auto 6px;
-            padding: 8px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            flex-shrink: 0;
-        }
-        .tools .tool {
-            flex: 1;
-            min-width: 0;
-            justify-content: center;
-            border: none;
-            border-radius: 8px;
-        }
-        .stats {
-            gap: 6px;
-            width: min(94vw, 900px);
-            margin: 4px auto 8px;
-        }
+        .stats { gap: 6px; }
         .stat { padding: 3px 9px; font-size: 12px; }
         .game-area {
             flex: 1;
@@ -145,13 +83,8 @@
         .note { color: #666; font-size: 11px; flex-shrink: 0; }
         @media (max-width: 600px) {
             h1 { font-size: 1.1rem; margin: 6px 0 2px; }
-            .stats { gap: 4px; margin: 2px auto 4px; }
             .stat { padding: 2px 6px; font-size: 11px; }
-            .controls { gap: 6px; margin: 2px auto 6px; padding: 6px 10px; }
-            .controls .btns button { padding: 5px 9px; }
             select, button { font-size: 12px; padding: 5px 9px; }
-            .tools { gap: 6px; margin: 2px auto 4px; padding: 6px; }
-            .tools .tool { padding: 5px 9px; }
         }
         @media (max-height: 640px) {
             h1 { font-size: 1rem; margin: 4px 0 2px; }
