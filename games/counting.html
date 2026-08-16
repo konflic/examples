@@ -298,7 +298,6 @@
                 <div class="options-container" id="options"></div>
                 <div id="message" style="min-height: 26px; font-weight: bold; font-size: 1.2em; text-align: center;"></div>
                 <button id="next-round" style="display: none;">Next Round</button>
-                <button id="new-game">New Game</button>
             </div>
 
             <div class="game-right-panel">
@@ -317,7 +316,6 @@
             const roundElement = document.getElementById('round');
             const messageElement = document.getElementById('message');
             const startGameBtn = document.getElementById('start-game');
-            const newGameBtn = document.getElementById('new-game');
             const nextRoundBtn = document.getElementById('next-round');
 
             let maxCount = 10;
@@ -333,7 +331,6 @@
                            '⚽', '🏀', '🎾', '🎯', '🎲', '🧩', '🎮', '🚗', '🚕', '🚙'];
 
             startGameBtn.addEventListener('click', startGame);
-            newGameBtn.addEventListener('click', resetGame);
             nextRoundBtn.addEventListener('click', nextRound);
 
             function startGame() {
@@ -351,16 +348,6 @@
                 initializeRound();
             }
 
-            function resetGame() {
-                score = 0;
-                round = 1;
-                gameContainer.style.display = 'none';
-                setupContainer.style.display = 'block';
-                scoreElement.textContent = score;
-                roundElement.textContent = round;
-                messageElement.textContent = '';
-            }
-
             function initializeRound() {
                 answered = false;
                 messageElement.textContent = '';
@@ -376,12 +363,13 @@
                 emojiArea.innerHTML = '';
                 const areaWidth = emojiArea.offsetWidth - 100;
                 const areaHeight = emojiArea.offsetHeight - 100;
+                const stagger = correctAnswer > 1 ? Math.min(0.05, 1 / (correctAnswer - 1)) : 0;
 
                 for (let i = 0; i < correctAnswer; i++) {
                     const emojiSpan = document.createElement('span');
                     emojiSpan.className = 'emoji';
                     emojiSpan.textContent = selectedEmoji;
-                    emojiSpan.style.animationDelay = `${i * 0.05}s`;
+                    emojiSpan.style.animationDelay = `${i * stagger}s`;
 
                     // Random position within the area
                     const randomX = Math.random() * areaWidth;
@@ -448,10 +436,10 @@
                     // Disable all buttons
                     allButtons.forEach(btn => btn.disabled = true);
 
-                    // Automatically continue to next round after 5 seconds
+                    // Automatically continue to next round after 3 seconds
                     setTimeout(() => {
                         nextRound();
-                    }, 5000);
+                    }, 3000);
                 } else {
                     // Wrong answer
                     button.classList.add('wrong');
