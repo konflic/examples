@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space Shooter</title>
     <link rel="stylesheet" href="ui.css">
+    <script src="ui.js"></script>
     <style>
         body {
             background-color: #0a0a1a;
@@ -1466,19 +1467,6 @@
             setupContainer.style.display = 'block';
         }
     </script>
-    <script>
-    (function(){
-        var t=localStorage.getItem("ui-theme")||"dark";
-        document.documentElement.dataset.theme=t;
-        var btn=document.getElementById("theme-toggle");
-        btn.textContent=t==="dark"?"☀":"☾";
-        btn.addEventListener("click",function(){
-            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
-            document.documentElement.dataset.theme=t;
-            localStorage.setItem("ui-theme",t);
-            btn.textContent=t==="dark"?"☀":"☾";
-        });
-    })();
-    </script>
+
 </body>
 </html>

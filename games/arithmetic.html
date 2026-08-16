@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Arithmetic Trainer</title>
     <link rel="stylesheet" href="ui.css">
+    <script src="ui.js"></script>
     <style>
         :root { --gap: 5px; }
         html, body { height: 100%; overflow: hidden; }
@@ -218,18 +219,9 @@
         const solvedEl = document.getElementById('solved');
 
         // Audio
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        function beep(freq = 700, dur = 0.1, vol = 0.25) {
-            const o = audioContext.createOscillator();
-            const g = audioContext.createGain();
-            o.connect(g); g.connect(audioContext.destination);
-            o.type = 'sine'; o.frequency.value = freq;
-            g.gain.setValueAtTime(vol, audioContext.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
-            o.start(); o.stop(audioContext.currentTime + dur);
-        }
-        function successSound(){ beep(500,0.07,0.25); setTimeout(()=>beep(800,0.07,0.2),80); }
-        function errorSound(){ beep(200,0.12,0.18); }
+        const beep = uiAudio.beep;
+        const successSound = uiAudio.success;
+        const errorSound = uiAudio.error;
 
         let gameActive = false;
         let score = 0;
@@ -240,7 +232,7 @@
         let currentQuestion = '';
 
         startBtn.addEventListener('click', () => {
-            if (audioContext.state === 'suspended') audioContext.resume();
+            
             gameActive = true;
             score = 0; solved = 0; totalTime = 0;
             updateStats();
@@ -431,19 +423,6 @@
         }
     });
     </script>
-    <script>
-    (function(){
-        var t=localStorage.getItem("ui-theme")||"dark";
-        document.documentElement.dataset.theme=t;
-        var btn=document.getElementById("theme-toggle");
-        btn.textContent=t==="dark"?"☀":"☾";
-        btn.addEventListener("click",function(){
-            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
-            document.documentElement.dataset.theme=t;
-            localStorage.setItem("ui-theme",t);
-            btn.textContent=t==="dark"?"☀":"☾";
-        });
-    })();
-    </script>
+
 </body>
 </html>

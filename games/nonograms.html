@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nonograms — Picross Puzzle</title>
     <link rel="stylesheet" href="ui.css">
+    <script src="ui.js"></script>
     <style>
         html, body { height: 100%; overflow: hidden; }
         body {
@@ -143,19 +144,10 @@
         const modeBtns = { fill: document.getElementById('mode-fill'), x: document.getElementById('mode-x'), erase: document.getElementById('mode-erase') };
 
         // Audio
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        function beep(freq = 700, dur = 0.1, vol = 0.25) {
-            const o = audioContext.createOscillator();
-            const g = audioContext.createGain();
-            o.connect(g); g.connect(audioContext.destination);
-            o.type = 'sine'; o.frequency.value = freq;
-            g.gain.setValueAtTime(vol, audioContext.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
-            o.start(); o.stop(audioContext.currentTime + dur);
-        }
-        function successSound() { beep(600, 0.07, 0.25); setTimeout(() => beep(900, 0.07, 0.2), 80); }
-        function errorSound() { beep(180, 0.14, 0.18); }
-        function winSound() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.12, 0.25), i * 120)); }
+        const beep = uiAudio.beep;
+        const successSound = uiAudio.success;
+        const errorSound = uiAudio.error;
+        const winSound = uiAudio.win;
 
         // State
         let cfg = null, pattern = [], rowClues = [], colClues = [], state = [];
@@ -407,7 +399,7 @@
 
         function onCell(r, c) {
             if (gameOver || !cfg) return;
-            if (audioContext.state === 'suspended') audioContext.resume();
+            
             const isPatternFilled = pattern[r][c];
             if (mode === 'fill') {
                 if (state[r][c] === 1 || state[r][c] === 3) {
@@ -476,7 +468,7 @@
         }
 
         function newGame() {
-            if (audioContext.state === 'suspended') audioContext.resume();
+            
             const lIdx = Number(levelSelect.value);
             cfg = LEVELS[lIdx];
             boardEl.innerHTML = '';
@@ -533,19 +525,6 @@
         newGame();
     });
     </script>
-    <script>
-    (function(){
-        var t=localStorage.getItem("ui-theme")||"dark";
-        document.documentElement.dataset.theme=t;
-        var btn=document.getElementById("theme-toggle");
-        btn.textContent=t==="dark"?"☀":"☾";
-        btn.addEventListener("click",function(){
-            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
-            document.documentElement.dataset.theme=t;
-            localStorage.setItem("ui-theme",t);
-            btn.textContent=t==="dark"?"☀":"☾";
-        });
-    })();
-    </script>
+
 </body>
 </html>

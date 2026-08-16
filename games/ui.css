@@ -245,12 +245,6 @@ body > .controls .btns button {
     margin-top: 2px;
 }
 
-.note {
-    color: var(--muted);
-    font-size: 12px;
-    flex-shrink: 0;
-}
-
 /* ── Theme toggle button ─────────────────────────────────── */
 .theme-toggle {
     position: fixed;

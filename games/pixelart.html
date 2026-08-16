@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pixel Art for Kids</title>
     <link rel="stylesheet" href="ui.css">
+    <script src="ui.js"></script>
     <style>
         /* pixelart-specific tokens that extend ui.css */
         :root {
@@ -301,7 +302,6 @@
         const grid = document.getElementById('grid');
         const palette = document.getElementById('palette');
         const refreshBtn = document.getElementById('refresh');
-        const themeBtn = document.getElementById('theme-toggle');
         const gridBtn = document.getElementById('grid-toggle');
 
         let painted = new Map(); // "r-c" -> color
@@ -330,20 +330,6 @@
             clearTimeout(saveTimer);
             saveTimer = setTimeout(saveDrawing, 250);
         }
-
-        // Theme: shared ui-theme key across all games
-        function setTheme(theme) {
-            document.documentElement.dataset.theme = theme;
-            themeBtn.textContent = theme === 'dark' ? '☀' : '☾';
-            themeBtn.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
-            localStorage.setItem('ui-theme', theme);
-        }
-
-        setTheme(localStorage.getItem('ui-theme') === 'light' ? 'light' : 'dark');
-
-        themeBtn.addEventListener('click', () => {
-            setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-        });
 
         // Color helpers: blend a base color toward white by intensity level
         function hexToRgb(hex) {

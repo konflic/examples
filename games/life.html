@@ -385,6 +385,7 @@
         }
     </style>
     <link rel="stylesheet" href="ui.css">
+    <script src="ui.js"></script>
 </head>
 <body>
     <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
@@ -1115,19 +1116,6 @@
         buildSpeciesBar();
         buildSettingsPanel();
     </script>
-    <script>
-    (function(){
-        var t=localStorage.getItem("ui-theme")||"dark";
-        document.documentElement.dataset.theme=t;
-        var btn=document.getElementById("theme-toggle");
-        btn.textContent=t==="dark"?"☀":"☾";
-        btn.addEventListener("click",function(){
-            t=document.documentElement.dataset.theme==="dark"?"light":"dark";
-            document.documentElement.dataset.theme=t;
-            localStorage.setItem("ui-theme",t);
-            btn.textContent=t==="dark"?"☀":"☾";
-        });
-    })();
-    </script>
+
 </body>
 </html>
