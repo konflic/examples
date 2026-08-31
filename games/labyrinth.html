@@ -172,7 +172,7 @@
 
         // ─────────────────────── Constants ───────────────────────
         const LEVELS = 120;
-        const MIN_CELLS = 6, MAX_CELLS = 30;
+        const MIN_CELLS = 6, SIZE_STEP = 2, LEVEL_BAND = 10;
         const STORE_KEY = 'labyrinth-progress';
         const KEY_DIRS = {
             ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
@@ -224,10 +224,8 @@
         }
 
         function levelDims(lvl) {
-            const base = MIN_CELLS + Math.floor((lvl - 1) * (MAX_CELLS - MIN_CELLS) / (LEVELS - 1));
-            const r = Math.max(MIN_CELLS, Math.min(MAX_CELLS, base + ((lvl % 3) - 1)));
-            const c = Math.max(MIN_CELLS, Math.min(MAX_CELLS, base + (lvl % 2)));
-            return [c, r];
+            const size = MIN_CELLS + SIZE_STEP * Math.floor((lvl - 1) / LEVEL_BAND);
+            return [size, size];
         }
 
         // ─────────────────────── Progress ───────────────────────
