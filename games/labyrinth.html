@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labyrinth</title>
+    <link rel="stylesheet" href="ui.css">
+    <script src="ui.js"></script>
+    <style>
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+        }
+        h1 { margin: 8px 0 4px; font-size: 1.4rem; flex-shrink: 0; }
+        .stats { gap: 6px; }
+        .stat { padding: 3px 9px; font-size: 12px; }
+        #game { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+        .game-area {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+        }
+        #maze {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .message { margin-top: 2px; }
+        #level-input {
+            width: 70px;
+            padding: 5px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            background: var(--btn-bg-alt);
+            color: var(--text);
+            text-align: center;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 28px;
+            text-align: center;
+            animation: popIn 0.3s ease;
+            max-width: 92vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { color: var(--accent2); margin: 0 0 10px; }
+        .modal-content p { color: var(--text); font-size: 15px; margin: 6px 0; }
+        .modal-content .record { color: var(--accent); font-weight: 600; }
+        .modal-content .controls { margin-top: 14px; }
+        #mobile-guard {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .guard-box {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 30px 36px;
+            max-width: 420px;
+        }
+        .guard-box h2 { color: var(--accent); margin: 0 0 10px; }
+        .guard-box p { color: var(--text); font-size: 15px; margin: 0; }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.1rem; margin: 6px 0 2px; }
+            .stat { padding: 2px 6px; font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☀</button>
+    <div id="mobile-guard">
+        <div class="guard-box">
+            <h2>Desktop only</h2>
+            <p>Labyrinth is played with keyboard arrows — please open it on a desktop computer.</p>
+        </div>
+    </div>
+    <div id="game">
+        <h1>Labyrinth</h1>
+        <div class="controls">
+            <div class="field">
+                <label for="level-input">Level:</label>
+                <button id="prev-btn" title="Previous level">‹</button>
+                <input id="level-input" type="number" min="1" max="120" value="1">
+                <button id="next-btn" title="Next level">›</button>
+            </div>
+            <div class="btns">
+                <button id="restart-btn">Restart</button>
+                <button id="rules-btn">?</button>
+            </div>
+        </div>
+        <div class="stats">
+            <div class="stat">Level <span id="level-display">1/120</span></div>
+            <div class="stat">Moves: <span id="moves">0</span></div>
+            <div class="stat">⏱ <span id="timer">0:00</span></div>
+            <div class="stat">Best: <span id="best">–</span></div>
+            <div class="stat">Solved: <span id="solved">0/120</span></div>
+        </div>
+        <div class="game-area" id="game-area">
+            <canvas id="maze"></canvas>
+        </div>
+        <div id="message" class="message">Use arrow keys to reach the green exit.</div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content" id="modal-content"></div>
+    </div>
+
+    <script>
+    'use strict';
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // ─────────────────────── Audio ───────────────────────
+        const errorSound = uiAudio.error;
+        const winSound = uiAudio.win;
+
+        // ─────────────────────── DOM refs ───────────────────────
+        const gameEl = document.getElementById('game');
+        const guardEl = document.getElementById('mobile-guard');
+        const gameArea = document.getElementById('game-area');
+        const canvas = document.getElementById('maze');
+        const ctx = canvas.getContext('2d');
+        const levelInput = document.getElementById('level-input');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const rulesBtn = document.getElementById('rules-btn');
+        const messageEl = document.getElementById('message');
+        const levelDisplayEl = document.getElementById('level-display');
+        const movesEl = document.getElementById('moves');
+        const timerEl = document.getElementById('timer');
+        const bestEl = document.getElementById('best');
+        const solvedEl = document.getElementById('solved');
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modal-content');
+
+        // ─────────────────────── Desktop-only guard ───────────────────────
+        const coarseQuery = window.matchMedia('(pointer: coarse)');
+        function applyGuard() {
+            const blocked = coarseQuery.matches;
+            guardEl.style.display = blocked ? 'flex' : 'none';
+            gameEl.style.display = blocked ? 'none' : 'flex';
+        }
+        applyGuard();
+        coarseQuery.addEventListener('change', applyGuard);
+
+        // ─────────────────────── Constants ───────────────────────
+        const LEVELS = 120;
+        const MIN_CELLS = 6, MAX_CELLS = 30;
+        const STORE_KEY = 'labyrinth-progress';
+        const KEY_DIRS = {
+            ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
+            w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0],
+            W: [0, -1], S: [0, 1], A: [-1, 0], D: [1, 0]
+        };
+
+        // ─────────────────────── State ───────────────────────
+        let progress = { unlocked: 1, best: {} };
+        try {
+            const p = JSON.parse(localStorage.getItem(STORE_KEY));
+            if (p && p.unlocked >= 1 && p.best) progress = p;
+        } catch (e) { /* corrupted storage — start fresh */ }
+
+        let level = 1, cols = 0, rows = 0, walls = null;
+        let player = { x: 0, y: 0 }, px = 0, py = 0, anim = null;
+        let moves = 0, won = false, startTime = 0, elapsed = 0, timerId = null;
+        let cell = 20, pad = 8, cssW = 0, cssH = 0;
+        let keysHeld = [], lastBump = 0;
+        let colors = {};
+
+        // ─────────────────────── Maze generation ───────────────────────
+        // Perfect maze via iterative recursive backtracker; walls are bitmasks
+        // (1=N, 2=E, 4=S, 8=W), so every level has exactly one solution path.
+        function genMaze(w, h, rand) {
+            const ws = new Uint8Array(w * h).fill(15);
+            const visited = new Uint8Array(w * h);
+            const stack = [0];
+            visited[0] = 1;
+            const DIRS = [[1, 0, 2, 8], [0, 1, 4, 1], [-1, 0, 8, 2], [0, -1, 1, 4]];
+            while (stack.length) {
+                const cur = stack[stack.length - 1];
+                const cx = cur % w, cy = (cur / w) | 0;
+                const opts = [];
+                for (const [dx, dy, wa, wb] of DIRS) {
+                    const nx = cx + dx, ny = cy + dy;
+                    if (nx >= 0 && nx < w && ny >= 0 && ny < h && !visited[ny * w + nx]) {
+                        opts.push([nx, ny, wa, wb]);
+                    }
+                }
+                if (!opts.length) { stack.pop(); continue; }
+                const [nx, ny, wa, wb] = opts[(rand() * opts.length) | 0];
+                ws[cur] &= ~wa;
+                ws[ny * w + nx] &= ~wb;
+                visited[ny * w + nx] = 1;
+                stack.push(ny * w + nx);
+            }
+            return ws;
+        }
+
+        function levelDims(lvl) {
+            const base = MIN_CELLS + Math.floor((lvl - 1) * (MAX_CELLS - MIN_CELLS) / (LEVELS - 1));
+            const r = Math.max(MIN_CELLS, Math.min(MAX_CELLS, base + ((lvl % 3) - 1)));
+            const c = Math.max(MIN_CELLS, Math.min(MAX_CELLS, base + (lvl % 2)));
+            return [c, r];
+        }
+
+        // ─────────────────────── Progress ───────────────────────
+        function saveProgress() {
+            try { localStorage.setItem(STORE_KEY, JSON.stringify(progress)); } catch (e) { /* quota */ }
+        }
+
+        // ─────────────────────── Level lifecycle ───────────────────────
+        function loadLevel(lvl) {
+            closeModal();
+            if (lvl > progress.unlocked) {
+                message('Level locked — solve the previous one first.');
+                lvl = progress.unlocked;
+            }
+            lvl = Math.max(1, Math.min(LEVELS, lvl));
+            level = lvl;
+            levelInput.value = lvl;
+            [cols, rows] = levelDims(lvl);
+            const rand = makePRNG(lvl * 1013904223 + 7);
+            walls = genMaze(cols, rows, rand);
+            walls[(rows - 1) * cols + (cols - 1)] &= ~2; // open the exit in the border
+            player.x = 0; player.y = 0; px = 0; py = 0; anim = null;
+            moves = 0; won = false; startTime = 0; elapsed = 0;
+            clearInterval(timerId); timerId = null;
+            movesEl.textContent = '0';
+            timerEl.textContent = '0:00';
+            fitCanvas();
+            updateStats();
+        }
+
+        function updateStats() {
+            levelDisplayEl.textContent = level + '/' + LEVELS;
+            const b = progress.best[level];
+            bestEl.textContent = b ? b[0] + ' / ' + fmtTime(b[1]) : '–';
+            solvedEl.textContent = Object.keys(progress.best).length + '/' + LEVELS;
+            prevBtn.disabled = level <= 1;
+            nextBtn.disabled = level >= Math.min(LEVELS, progress.unlocked);
+        }
+
+        function winLevel() {
+            won = true;
+            clearInterval(timerId); timerId = null;
+            elapsed = Date.now() - startTime;
+            timerEl.textContent = fmtTime(elapsed);
+            winSound();
+            const prev = progress.best[level];
+            const isRecord = !prev || moves < prev[0] || (moves === prev[0] && elapsed < prev[1]);
+            if (isRecord) progress.best[level] = [moves, elapsed];
+            if (level < LEVELS) progress.unlocked = Math.max(progress.unlocked, level + 1);
+            saveProgress();
+            updateStats();
+            showWinModal(isRecord);
+        }
+
+        // ─────────────────────── Movement ───────────────────────
+        function tryMove(d, held) {
+            if (won || anim) return;
+            const [dx, dy] = d;
+            const w = walls[player.y * cols + player.x];
+            const blocked = dx === 1 ? (w & 2) : dx === -1 ? (w & 8) : dy === 1 ? (w & 4) : (w & 1);
+            if (blocked) {
+                if (!held) bump();
+                return;
+            }
+            anim = {
+                fx: player.x, fy: player.y,
+                tx: player.x + dx, ty: player.y + dy,
+                t0: performance.now(),
+                dur: Math.max(50, Math.min(120, cell * 3))
+            };
+            moves++;
+            movesEl.textContent = moves;
+            if (!startTime) {
+                startTime = Date.now();
+                timerId = setInterval(() => {
+                    timerEl.textContent = fmtTime(Date.now() - startTime);
+                }, 250);
+            }
+        }
+
+        function bump() {
+            const now = performance.now();
+            if (now - lastBump > 180) {
+                lastBump = now;
+                errorSound();
+            }
+        }
+
+        function tick(now) {
+            if (!won) {
+                if (anim) {
+                    const k = Math.min(1, (now - anim.t0) / anim.dur);
+                    px = anim.fx + (anim.tx - anim.fx) * k;
+                    py = anim.fy + (anim.ty - anim.fy) * k;
+                    if (k >= 1) {
+                        player.x = anim.tx; player.y = anim.ty;
+                        px = anim.tx; py = anim.ty;
+                        anim = null;
+                        if (player.x === cols - 1 && player.y === rows - 1) winLevel();
+                    }
+                }
+                if (!anim && !won && keysHeld.length) {
+                    tryMove(KEY_DIRS[keysHeld[keysHeld.length - 1]], true);
+                }
+            }
+            draw();
+            requestAnimationFrame(tick);
+        }
+
+        // ─────────────────────── Rendering ───────────────────────
+        function refreshColors() {
+            const cs = getComputedStyle(document.documentElement);
+            colors = {
+                wall: cs.getPropertyValue('--text').trim(),
+                player: cs.getPropertyValue('--accent').trim(),
+                exit: cs.getPropertyValue('--accent2').trim()
+            };
+        }
+
+        function fitCanvas() {
+            const availW = gameArea.clientWidth - 16;
+            const availH = gameArea.clientHeight - 16;
+            cell = Math.max(8, Math.floor(Math.min(availW / (cols + 1), availH / rows)));
+            pad = Math.max(6, Math.round(cell * 0.35));
+            cssW = cols * cell + pad * 2 + cell;
+            cssH = rows * cell + pad * 2;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssW * dpr);
+            canvas.height = Math.round(cssH * dpr);
+            canvas.style.width = cssW + 'px';
+            canvas.style.height = cssH + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function draw() {
+            if (!walls) return;
+            ctx.clearRect(0, 0, cssW, cssH);
+            const ex = pad + (cols - 1) * cell, ey = pad + (rows - 1) * cell;
+            ctx.fillStyle = colors.exit + '40';
+            ctx.fillRect(ex, ey, cell, cell);
+            const ms = Math.max(6, cell * 0.5);
+            ctx.fillStyle = colors.exit;
+            ctx.fillRect(pad + cols * cell + (cell - ms) / 2, ey + (cell - ms) / 2, ms, ms);
+
+            ctx.strokeStyle = colors.wall;
+            ctx.lineWidth = Math.max(2, Math.min(5, Math.round(cell * 0.12)));
+            ctx.lineCap = 'square';
+            ctx.beginPath();
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const w = walls[y * cols + x];
+                    const X = pad + x * cell, Y = pad + y * cell;
+                    if (w & 1) { ctx.moveTo(X, Y); ctx.lineTo(X + cell, Y); }
+                    if (w & 8) { ctx.moveTo(X, Y); ctx.lineTo(X, Y + cell); }
+                    if ((w & 4) && y === rows - 1) { ctx.moveTo(X, Y + cell); ctx.lineTo(X + cell, Y + cell); }
+                    if ((w & 2) && x === cols - 1) { ctx.moveTo(X + cell, Y); ctx.lineTo(X + cell, Y + cell); }
+                }
+            }
+            ctx.stroke();
+
+            const inset = Math.max(1.5, cell * 0.16);
+            ctx.fillStyle = colors.player;
+            ctx.fillRect(pad + px * cell + inset, pad + py * cell + inset,
+                cell - 2 * inset, cell - 2 * inset);
+        }
+
+        // ─────────────────────── Modal ───────────────────────
+        function showWinModal(isRecord) {
+            const isLast = level >= LEVELS;
+            modalContent.innerHTML =
+                '<h2>' + (isLast ? 'All 120 levels complete!' : 'Level ' + level + ' complete!') + '</h2>' +
+                '<p>Moves: ' + moves + ' · Time: ' + fmtTime(elapsed) + '</p>' +
+                (isRecord ? '<p class="record">New record!</p>' : '') +
+                '<div class="controls">' +
+                '<button id="modal-replay">Replay</button>' +
+                (isLast ? '' : '<button id="modal-next">Next level</button>') +
+                '</div>';
+            modal.classList.add('show');
+            document.getElementById('modal-replay').addEventListener('click', () => loadLevel(level));
+            const next = document.getElementById('modal-next');
+            if (next) {
+                next.addEventListener('click', () => loadLevel(level + 1));
+                next.focus();
+            }
+        }
+
+        function showRules() {
+            modalContent.innerHTML =
+                '<h2>How to play</h2>' +
+                '<p>Move the square with the arrow keys (or WASD).</p>' +
+                '<p>Find the way through the maze to the green exit on the right.</p>' +
+                '<p>There are ' + LEVELS + ' levels — each one is bigger and trickier. ' +
+                'Solving a level unlocks the next one.</p>' +
+                '<div class="controls"><button id="modal-close">Close</button></div>';
+            modal.classList.add('show');
+            const close = document.getElementById('modal-close');
+            close.addEventListener('click', closeModal);
+            close.focus();
+        }
+
+        function closeModal() { modal.classList.remove('show'); }
+
+        // ─────────────────────── Helpers ───────────────────────
+        function fmtTime(ms) {
+            const s = Math.floor(ms / 1000);
+            return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+        }
+
+        function message(txt) { messageEl.textContent = txt; }
+
+        // ─────────────────────── Events ───────────────────────
+        window.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            if (modal.classList.contains('show')) {
+                if (document.activeElement && document.activeElement.tagName === 'BUTTON') return;
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (won) loadLevel(level < LEVELS ? level + 1 : level);
+                    else closeModal();
+                }
+                return;
+            }
+            const d = KEY_DIRS[e.key];
+            if (!d) return;
+            e.preventDefault();
+            if (!keysHeld.includes(e.key)) keysHeld.push(e.key);
+            tryMove(d, false);
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keysHeld = keysHeld.filter(k => k !== e.key);
+        });
+
+        window.addEventListener('blur', () => { keysHeld = []; });
+        window.addEventListener('resize', () => {
+            if (!coarseQuery.matches) { fitCanvas(); }
+        });
+
+        prevBtn.addEventListener('click', () => loadLevel(level - 1));
+        nextBtn.addEventListener('click', () => loadLevel(level + 1));
+        restartBtn.addEventListener('click', () => loadLevel(level));
+        rulesBtn.addEventListener('click', showRules);
+        levelInput.addEventListener('change', () => {
+            const v = parseInt(levelInput.value, 10);
+            if (!isNaN(v)) loadLevel(v);
+            else levelInput.value = level;
+        });
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            setTimeout(refreshColors, 0);
+        });
+
+        // ─────────────────────── Init ───────────────────────
+        refreshColors();
+        loadLevel(Math.min(LEVELS, progress.unlocked));
+        requestAnimationFrame(tick);
+    });
+    </script>
+</body>
+</html>
